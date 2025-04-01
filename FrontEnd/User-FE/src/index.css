@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+* {
+  font-family: "Poppins", sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: #fdfeff;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .input-box {
+    @apply text-xl bg-cyan-200/100 rounded px-5 py-3 outline-none;
+  }
+}
