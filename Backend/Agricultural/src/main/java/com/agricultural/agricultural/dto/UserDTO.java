@@ -15,6 +15,7 @@ public class UserDTO {
     private String email;
     private String phone;
     private String roleName; // Thay vì trả về cả object Role, chỉ lấy role name
+    private String imageUrl;
 
 
     public UserDTO(User user) {

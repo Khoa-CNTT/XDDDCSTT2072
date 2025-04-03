@@ -46,6 +46,9 @@ public class User extends BaseEntity implements UserDetails {
     @Pattern(regexp = "^(\\+?\\d{1,3})?\\d{10}$", message = "Số điện thoại không hợp lệ") // Hỗ trợ số điện thoại quốc tế
     private String phone;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id" , referencedColumnName = "id")
     private Role role;
