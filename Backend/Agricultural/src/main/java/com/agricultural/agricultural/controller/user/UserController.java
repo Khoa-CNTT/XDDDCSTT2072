@@ -8,11 +8,14 @@ import com.agricultural.agricultural.service.impl.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -44,8 +47,6 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body((UserDTO) Map.of("error", "User not found with name: " + name)));
     }
-
-
 
     /**
      * Lấy danh sách tất cả người dùng
@@ -81,6 +82,28 @@ public class UserController {
     }
 
     /**
+     * Upload ảnh đại diện cho người dùng
+     */
+    @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadProfileImage(
+            @PathVariable int id,
+            @RequestParam("image") MultipartFile file) {
+        try {
+            // Gọi service để xử lý việc upload ảnh
+            UserDTO updatedUser = userService.uploadAndUpdateProfileImage(id, file);
+            return ResponseEntity.ok(updatedUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Không thể upload ảnh: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Xóa người dùng theo ID
      */
     @DeleteMapping("/{id}")
@@ -101,6 +124,31 @@ public class UserController {
         try {
             User newUser = userService.createUser(userDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(userMapper.toDTO(newUser)); // ✅ Dùng Mapper để chuyển đổi
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    /**
+     * Đăng ký tài khoản với ảnh đại diện
+     */
+    @PostMapping(value = "/register-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createUserWithImage(
+            @Valid @ModelAttribute UserDTO userDTO,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(getValidationErrors(result));
+        }
+
+        try {
+            User newUser = userService.registerUserWithImage(userDTO, image);
+            return ResponseEntity.status(HttpStatus.CREATED).body(userMapper.toDTO(newUser));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Không thể upload ảnh: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
