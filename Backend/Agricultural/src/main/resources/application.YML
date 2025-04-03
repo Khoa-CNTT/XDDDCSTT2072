@@ -46,12 +46,15 @@ jwt:
 api:
   prefix: api/v1
 
+<<<<<<< HEAD
   cloudinary:
     cloud-name: dey5xwdud
     api-key: 817519282872467
     api-secret: X5teIyL-lyHbr2kfXX2ezQkknBo
     secure: true
 
+=======
+>>>>>>> dev
 
 
 

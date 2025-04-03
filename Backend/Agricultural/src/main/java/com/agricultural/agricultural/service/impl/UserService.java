@@ -1,4 +1,8 @@
 package com.agricultural.agricultural.service.impl;
+<<<<<<< HEAD
+=======
+
+>>>>>>> dev
 import com.agricultural.agricultural.entity.Role;
 import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.components.JwtTokenUtil;
@@ -40,21 +44,32 @@ public class UserService implements IUserService {
     @Autowired
     public UserService(UserMapper userMapper, AuthenticationManager authenticationManager,
                        IRoleRepository roleRepository, UserRepository userRepository,
+<<<<<<< HEAD
                        PasswordEncoder passwordEncoder, JwtTokenUtil jwtTokenUtil,
                        UploadUtils uploadUtils) {
+=======
+                       PasswordEncoder passwordEncoder, JwtTokenUtil jwtTokenUtil) {
+>>>>>>> dev
         this.userMapper = userMapper;
         this.authenticationManager = authenticationManager;
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenUtil = jwtTokenUtil;
+<<<<<<< HEAD
         this.uploadUtils = uploadUtils;
+=======
+>>>>>>> dev
     }
 
     @Override
     public Optional<UserDTO> findById(int id) {
         return userRepository.findById(id)
+<<<<<<< HEAD
                 .map(userMapper::toDTO);
+=======
+                .map(userMapper::toDTO); // ✅ Dùng UserMapper để chuyển đổi
+>>>>>>> dev
     }
 
 
@@ -91,11 +106,14 @@ public class UserService implements IUserService {
         newUser.setPassword(passwordEncoder.encode(userDTO.getPassword())); // Mã hóa mật khẩu
         newUser.setRole(role); // Gán Role
 
+<<<<<<< HEAD
         // Thêm imageUrl nếu có
         if (userDTO.getImageUrl() != null && !userDTO.getImageUrl().isEmpty()) {
             newUser.setImageUrl(userDTO.getImageUrl());
         }
 
+=======
+>>>>>>> dev
         return userRepository.save(newUser);
     }
 
@@ -120,6 +138,7 @@ public class UserService implements IUserService {
     }
 
     @Override
+<<<<<<< HEAD
     public User registerUserWithImage(UserDTO userDTO, MultipartFile image) throws Exception {
         if (image == null || image.isEmpty()) {
             return createUser(userDTO);
@@ -141,6 +160,8 @@ public class UserService implements IUserService {
     }
 
     @Override
+=======
+>>>>>>> dev
     public UserDTO updateUser(int id, User newUser) {
         return userRepository.findById(id)
                 .map(existingUser -> {
@@ -163,6 +184,7 @@ public class UserService implements IUserService {
     }
 
     @Override
+<<<<<<< HEAD
     public UserDTO updateProfileImage(int id, String imageUrl) {
         return userRepository.findById(id)
                 .map(existingUser -> {
@@ -194,12 +216,19 @@ public class UserService implements IUserService {
     }
 
     @Override
+=======
+>>>>>>> dev
     public Optional<UserDTO> findByUserName(String name) {
         return userRepository.findByUserName(name)
                 .map(userMapper::toDTO); // ✅ Dùng Mapper để chuyển đổi Entity → DTO
     }
 
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> dev
     @Override
     public void deleteUser(int id) {
         userRepository.deleteById(id);
