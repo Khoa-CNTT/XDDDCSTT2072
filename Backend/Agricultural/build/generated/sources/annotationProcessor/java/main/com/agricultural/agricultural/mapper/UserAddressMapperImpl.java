@@ -1,14 +1,14 @@
 package com.agricultural.agricultural.mapper;
 
-import com.agricultural.agricultural.domain.entity.User;
-import com.agricultural.agricultural.domain.entity.UserAddress;
 import com.agricultural.agricultural.dto.UserAddressDTO;
+import com.agricultural.agricultural.entity.User;
+import com.agricultural.agricultural.entity.UserAddress;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-04-01T16:21:06+0700",
+    date = "2025-04-03T11:58:08+0700",
     comments = "version: 1.5.5.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-8.12.1.jar, environment: Java 23.0.2 (Oracle Corporation)"
 )
 @Component
