@@ -1,0 +1,52 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3307/Agricultural_Forum?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    mail:
+      host: smtp.gmail.com
+      port: 587
+      username: truyenramos420@gmail.com
+      password: pgbgixaczrpobbrc
+
+      properties:
+        mail:
+          smtp:
+            auth: true
+            starttls:
+              enable: true
+
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true # Giúp SQL dễ đọc hơn
+        use_sql_comments: true # Thêm comment vào query Hibernate
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE # Ghi lại giá trị tham số khi Hibernate chạy query
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG # Ghi lại SQL Hibernate chạy
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE # Log giá trị tham số của query
+
+jwt:
+  secretKey: YourSuperSecretKeyHereMustBeAtLeast32CharactersLong
+  expiration: 3600
+
+api:
+  prefix: api/v1
+
+
+
+
+
