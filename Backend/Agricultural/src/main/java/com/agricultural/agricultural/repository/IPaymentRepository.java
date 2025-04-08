@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PaymentRepository extends JpaRepository<Payment, Integer> {
+public interface IPaymentRepository extends JpaRepository<Payment, Integer> {
     List<Payment> findByOrderId(Integer orderId);
     Optional<Payment> findByPaymentId(String paymentId);
     List<Payment> findByStatus(PaymentStatus status);

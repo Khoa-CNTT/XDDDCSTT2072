@@ -18,20 +18,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements IOrderService {
-    private final OrderRepository orderRepository;
-    private final OrderDetailRepository orderDetailRepository;
-    private final MarketPlaceRepository marketPlaceRepository;
+    private final IOrderRepository orderRepository;
+    private final IOrderDetailRepository orderDetailRepository;
+    private final IMarketPlaceRepository marketPlaceRepository;
     private final OrderMapper orderMapper;
     private final OrderDetailMapper orderDetailMapper;
-    private final OrderTrackingRepository orderTrackingRepository;
-    private final PaymentRepository paymentRepository;
+    private final IOrderTrackingRepository orderTrackingRepository;
+    private final IPaymentRepository paymentRepository;
     private final INotificationService notificationService;
 
     private User getCurrentUser() {

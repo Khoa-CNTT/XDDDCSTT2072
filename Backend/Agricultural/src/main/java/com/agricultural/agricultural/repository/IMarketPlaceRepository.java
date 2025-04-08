@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MarketPlaceRepository extends JpaRepository<MarketPlace, Integer> {
+public interface IMarketPlaceRepository extends JpaRepository<MarketPlace, Integer> {
     Page<MarketPlace> findByUserId(Integer userId, Pageable pageable);
     
     @Query("SELECT m FROM MarketPlace m WHERE " +

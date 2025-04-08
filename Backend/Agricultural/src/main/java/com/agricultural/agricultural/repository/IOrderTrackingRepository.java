@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface OrderTrackingRepository extends JpaRepository<OrderTracking, Integer> {
+public interface IOrderTrackingRepository extends JpaRepository<OrderTracking, Integer> {
     List<OrderTracking> findByOrderIdOrderByTimestampDesc(Integer orderId);
 } 

@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Integer> {
+public interface IOrderRepository extends JpaRepository<Order, Integer> {
     Page<Order> findByBuyerId(Integer buyerId, Pageable pageable);
     List<Order> findByBuyerId(Integer buyerId);
     Page<Order> findBySellerId(Integer sellerId, Pageable pageable);

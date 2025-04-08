@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Integer> {
+public interface INotificationRepository extends JpaRepository<Notification, Integer> {
     List<Notification> findByUserIdOrderByCreatedAtDesc(Integer userId);
     Page<Notification> findByUserIdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
     long countByUserIdAndReadFalse(Integer userId);
