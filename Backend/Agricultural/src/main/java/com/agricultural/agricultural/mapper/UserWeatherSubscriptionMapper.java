@@ -2,34 +2,21 @@ package com.agricultural.agricultural.mapper;
 
 import com.agricultural.agricultural.dto.UserWeatherSubscriptionDTO;
 import com.agricultural.agricultural.entity.UserWeatherSubscription;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class UserWeatherSubscriptionMapper {
+@Mapper(componentModel = "spring")
+public interface UserWeatherSubscriptionMapper {
     
-    public UserWeatherSubscriptionDTO toDTO(UserWeatherSubscription entity) {
-        if (entity == null) {
-            return null;
-        }
-        
-        UserWeatherSubscriptionDTO dto = new UserWeatherSubscriptionDTO();
-        dto.setId(Math.toIntExact(entity.getId()));
-        dto.setUserId(entity.getUser().getId());
-        dto.setUserName(entity.getUser().getUsername());
-        dto.setLocationId((int) entity.getLocation().getId().longValue());
-        dto.setLocationName(entity.getLocation().getName());
-        dto.setCity(entity.getLocation().getCity());
-        dto.setCountry(entity.getLocation().getCountry());
-        dto.setEnableNotifications(entity.getEnableNotifications());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-        
-        return dto;
-    }
+    @Mapping(source = "user.id", target = "userId")
+    @Mapping(source = "user.username", target = "userName")
+    @Mapping(source = "location.id", target = "locationId")
+    @Mapping(source = "location.name", target = "locationName")
+    @Mapping(source = "location.city", target = "city")
+    @Mapping(source = "location.country", target = "country")
+    UserWeatherSubscriptionDTO toDTO(UserWeatherSubscription entity);
     
-    public UserWeatherSubscription toEntity(UserWeatherSubscriptionDTO dto) {
-        // This method is typically not needed for this use case
-        // as we create entities from direct parameters, not from DTOs
-        throw new UnsupportedOperationException("Converting DTO to entity is not supported for UserWeatherSubscription");
-    }
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "location", ignore = true)
+    UserWeatherSubscription toEntity(UserWeatherSubscriptionDTO dto);
 } 
