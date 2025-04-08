@@ -6,7 +6,7 @@ import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.exception.BadRequestException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.MarketPlaceMapper;
-import com.agricultural.agricultural.repository.MarketPlaceRepository;
+import com.agricultural.agricultural.repository.IMarketPlaceRepository;
 import com.agricultural.agricultural.repository.impl.UserRepository;
 import com.agricultural.agricultural.service.IMarketPlaceService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MarketPlaceServiceImpl implements IMarketPlaceService {
-    private final MarketPlaceRepository marketPlaceRepository;
+    private final IMarketPlaceRepository marketPlaceRepository;
     private final UserRepository userRepository;
     private final MarketPlaceMapper marketPlaceMapper;
 

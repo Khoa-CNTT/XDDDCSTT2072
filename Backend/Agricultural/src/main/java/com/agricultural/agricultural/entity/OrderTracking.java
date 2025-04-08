@@ -1,14 +1,12 @@
 package com.agricultural.agricultural.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Builder
 @Table(name = "order_tracking")
 @Getter
 @Setter

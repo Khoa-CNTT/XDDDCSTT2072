@@ -1,7 +1,7 @@
 package com.agricultural.agricultural.service.impl;
 
 import com.agricultural.agricultural.entity.Notification;
-import com.agricultural.agricultural.repository.NotificationRepository;
+import com.agricultural.agricultural.repository.INotificationRepository;
 import com.agricultural.agricultural.service.INotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationServiceImpl implements INotificationService {
-    private final NotificationRepository notificationRepository;
+    private final INotificationRepository notificationRepository;
     
     @Override
     public void sendOrderNotification(Integer userId, String title, String message) {
