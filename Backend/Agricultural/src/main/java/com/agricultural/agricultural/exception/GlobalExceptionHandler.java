@@ -1,5 +1,6 @@
 package com.agricultural.agricultural.exception;
 
+import com.agricultural.agricultural.util.ResponseObject;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,35 +16,46 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ResponseObject> handleEntityNotFoundException(EntityNotFoundException ex) {
+        ResponseObject responseObject = ResponseObject.builder()
+                .status("NOT_FOUND")
+                .message(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(responseObject, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex) {
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(PermissionDenyException.class)
+    public ResponseEntity<ResponseObject> handlePermissionDenyException(PermissionDenyException ex) {
+        ResponseObject responseObject = ResponseObject.builder()
+                .status("FORBIDDEN")
+                .message(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(responseObject, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ResponseObject> handleValidationException(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+        );
+
+        ResponseObject responseObject = ResponseObject.builder()
+                .status("BAD_REQUEST")
+                .message("Dữ liệu không hợp lệ")
+                .data(errors)
+                .build();
+        return new ResponseEntity<>(responseObject, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ResponseObject> handleGeneralException(Exception ex) {
+        ResponseObject responseObject = ResponseObject.builder()
+                .status("ERROR")
+                .message("Đã xảy ra lỗi: " + ex.getMessage())
+                .build();
+        return new ResponseEntity<>(responseObject, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
