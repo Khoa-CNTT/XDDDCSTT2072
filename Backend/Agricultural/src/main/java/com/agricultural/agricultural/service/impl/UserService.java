@@ -1,15 +1,17 @@
 package com.agricultural.agricultural.service.impl;
 
-
+import com.agricultural.agricultural.entity.RefreshToken;
 import com.agricultural.agricultural.entity.Role;
 import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.components.JwtTokenUtil;
+import com.agricultural.agricultural.dto.response.LoginResponse;
 import com.agricultural.agricultural.dto.UserDTO;
 import com.agricultural.agricultural.exception.DataNotFoundException;
 import com.agricultural.agricultural.exception.PermissionDenyException;
 import com.agricultural.agricultural.mapper.UserMapper;
 import com.agricultural.agricultural.repository.IRoleRepository;
 import com.agricultural.agricultural.repository.impl.UserRepository;
+import com.agricultural.agricultural.service.IRefreshTokenService;
 import com.agricultural.agricultural.service.IUserService;
 import com.agricultural.agricultural.util.UploadUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -24,8 +27,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,22 +36,26 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserService implements IUserService {
 
-    AuthenticationManager authenticationManager;
-    IRoleRepository roleRepository;
-    UserRepository userRepository;
-    PasswordEncoder passwordEncoder;
-    JwtTokenUtil jwtTokenUtil;
-    UserMapper userMapper;
-    UploadUtils uploadUtils;
+    @Value("${jwt.expiration:3600}")
+    private long jwtExpiration;
+
+    private final AuthenticationManager authenticationManager;
+    private final IRoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenUtil jwtTokenUtil;
+    private final UserMapper userMapper;
+    private final UploadUtils uploadUtils;
+    private final IRefreshTokenService refreshTokenService;
 
     @Autowired
     public UserService(UserMapper userMapper, AuthenticationManager authenticationManager,
                        IRoleRepository roleRepository, UserRepository userRepository,
                        PasswordEncoder passwordEncoder, JwtTokenUtil jwtTokenUtil,
-                       UploadUtils uploadUtils) {
+                       UploadUtils uploadUtils, IRefreshTokenService refreshTokenService) {
         this.userMapper = userMapper;
         this.authenticationManager = authenticationManager;
         this.roleRepository = roleRepository;
@@ -56,6 +63,7 @@ public class UserService implements IUserService {
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenUtil = jwtTokenUtil;
         this.uploadUtils = uploadUtils;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Override
@@ -83,14 +91,14 @@ public class UserService implements IUserService {
     @Override
     public User createUser(UserDTO userDTO) throws Exception {
         if (userRepository.existsByEmail(userDTO.getEmail())) {
-            throw new DataIntegrityViolationException("Email already exists");
+            throw new DataIntegrityViolationException("Email đã tồn tại");
         }
 
         Role role = roleRepository.findByName("USER")
                 .orElseThrow(() -> new DataNotFoundException("Role not found"));
 
         if (role.getName().equalsIgnoreCase("ADMIN")) {
-            throw new PermissionDenyException("You cannot register an admin account");
+            throw new PermissionDenyException("Bạn không thể đăng ký tài khoản ADMIN");
         }
 
         // Sử dụng Mapper để chuyển đổi DTO -> Entity
@@ -104,26 +112,6 @@ public class UserService implements IUserService {
         }
 
         return userRepository.save(newUser);
-    }
-
-    @Override
-    public String login(String email, String password) throws Exception {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isEmpty()) {
-            throw new DataNotFoundException("Invalid email / password");
-        }
-
-        User existingUser = optionalUser.get();
-        if (!passwordEncoder.matches(password, existingUser.getPassword())) {
-            throw new BadCredentialsException("Wrong email or password");
-        }
-
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                email, password, existingUser.getAuthorities()
-        );
-
-        authenticationManager.authenticate(authenticationToken);
-        return jwtTokenUtil.generateToken(existingUser);
     }
 
     @Override
@@ -148,6 +136,64 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public String login(String email, String password) throws Exception {
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("Sai email hoặc password");
+        }
+
+        User existingUser = optionalUser.get();
+        if (!passwordEncoder.matches(password, existingUser.getPassword())) {
+            throw new BadCredentialsException("Sai email hoặc password");
+        }
+
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                email, password, existingUser.getAuthorities()
+        );
+
+        authenticationManager.authenticate(authenticationToken);
+        return jwtTokenUtil.generateToken(existingUser);
+    }
+
+    @Override
+    public LoginResponse loginWithResponse(String email, String password) throws Exception {
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("Sai email hoặc password");
+        }
+
+        User existingUser = optionalUser.get();
+        if (!passwordEncoder.matches(password, existingUser.getPassword())) {
+            throw new BadCredentialsException("Sai email hoặc password");
+        }
+
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                email, password, existingUser.getAuthorities()
+        );
+
+        authenticationManager.authenticate(authenticationToken);
+
+        // Generate JWT token
+        String accessToken = jwtTokenUtil.generateToken(existingUser);
+
+        // Create refresh token
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(existingUser.getId());
+
+        // Map user to DTO
+        UserDTO userDTO = userMapper.toDTO(existingUser);
+
+        // Create response
+        return LoginResponse.builder()
+                .message("Đăng nhập thành công")
+                .token(accessToken)
+                .refreshToken(refreshToken.getToken())
+                .tokenType("Bearer")
+                .expiresAt(Instant.now().plusSeconds(jwtExpiration))
+                .user(userDTO)
+                .build();
+    }
+
+    @Override
     public UserDTO updateUser(int id, User newUser) {
         return userRepository.findById(id)
                 .map(existingUser -> {
@@ -164,10 +210,16 @@ public class UserService implements IUserService {
                         existingUser.setRole(newUser.getRole());
                     }
 
+                    // Cập nhật imageUrl nếu có
+                    if (newUser.getImageUrl() != null && !newUser.getImageUrl().isEmpty()) {
+                        existingUser.setImageUrl(newUser.getImageUrl());
+                    }
+
                     return userMapper.toDTO(userRepository.save(existingUser));
                 })
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại với id : " + id));
     }
+
 
     @Override
     public UserDTO updateProfileImage(int id, String imageUrl) {
@@ -176,7 +228,7 @@ public class UserService implements IUserService {
                     existingUser.setImageUrl(imageUrl);
                     return userMapper.toDTO(userRepository.save(existingUser));
                 })
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại với id : " + id));
     }
 
 

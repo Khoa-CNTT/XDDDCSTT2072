@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-04-03T11:58:08+0700",
+    date = "2025-04-10T12:47:53+0700",
     comments = "version: 1.5.5.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-8.12.1.jar, environment: Java 23.0.2 (Oracle Corporation)"
 )
 @Component
@@ -19,17 +19,17 @@ public class UserMapperImpl implements UserMapper {
             return null;
         }
 
-        UserDTO userDTO = new UserDTO();
+        UserDTO.UserDTOBuilder userDTO = UserDTO.builder();
 
-        userDTO.setUserName( user.getUsername() );
-        userDTO.setRoleName( mapRoleName( user.getRole() ) );
-        userDTO.setImageUrl( user.getImageUrl() );
-        userDTO.setId( user.getId() );
-        userDTO.setPassword( user.getPassword() );
-        userDTO.setEmail( user.getEmail() );
-        userDTO.setPhone( user.getPhone() );
+        userDTO.userName( user.getUsername() );
+        userDTO.roleName( mapRoleName( user.getRole() ) );
+        userDTO.imageUrl( user.getImageUrl() );
+        userDTO.id( user.getId() );
+        userDTO.email( user.getEmail() );
+        userDTO.password( user.getPassword() );
+        userDTO.phone( user.getPhone() );
 
-        return userDTO;
+        return userDTO.build();
     }
 
     @Override
@@ -40,8 +40,8 @@ public class UserMapperImpl implements UserMapper {
 
         User.UserBuilder user = User.builder();
 
-        user.id( userDTO.getId() );
         user.userName( userDTO.getUserName() );
+        user.id( userDTO.getId() );
         user.password( userDTO.getPassword() );
         user.email( userDTO.getEmail() );
         user.phone( userDTO.getPhone() );

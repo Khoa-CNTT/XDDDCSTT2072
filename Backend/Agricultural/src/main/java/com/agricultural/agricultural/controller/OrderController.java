@@ -1,9 +1,9 @@
 package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.OrderDTO;
-import com.agricultural.agricultural.dto.OrderTrackingResponse;
-import com.agricultural.agricultural.dto.PaymentRequest;
-import com.agricultural.agricultural.dto.PaymentResponse;
+import com.agricultural.agricultural.dto.request.PaymentRequest;
+import com.agricultural.agricultural.dto.response.OrderTrackingResponse;
+import com.agricultural.agricultural.dto.response.PaymentResponse;
 import com.agricultural.agricultural.entity.OrderStatus;
 import com.agricultural.agricultural.service.IOrderService;
 import jakarta.validation.Valid;
