@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.dto;
+package com.agricultural.agricultural.dto.response;
 
 import com.agricultural.agricultural.entity.OrderStatus;
 import lombok.AllArgsConstructor;

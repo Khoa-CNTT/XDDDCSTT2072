@@ -4,28 +4,16 @@ import com.agricultural.agricultural.entity.User;
 import lombok.*;
 
 @Data
-@RequiredArgsConstructor
+@Builder
+@NoArgsConstructor
 @AllArgsConstructor
-@Getter
-
 public class UserDTO {
     private int id;
     private String userName;
-    private String password;
     private String email;
+    private String password;
     private String phone;
-    private String roleName; // Thay vì trả về cả object Role, chỉ lấy role name
+    private String roleName;
     private String imageUrl;
-
-    public UserDTO(User user) {
-        this.id = user.getId();
-        this.userName = user.getUsername();
-        this.password = user.getPassword();
-        this.email = user.getEmail();
-        this.phone = user.getPhone();
-        this.roleName = user.getRole() != null ? user.getRole().getName() : "UNKNOWN"; // Xử lý role null
-    }
-
-
 }
 

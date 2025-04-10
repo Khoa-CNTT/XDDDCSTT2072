@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.dto;
+package com.agricultural.agricultural.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

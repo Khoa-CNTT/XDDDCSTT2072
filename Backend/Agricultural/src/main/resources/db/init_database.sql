@@ -402,7 +402,14 @@ VALUES ('Hà Nội', 'Hanoi', 'VN', 21.0285, 105.8542),
        ('Quy Nhơn', 'Quy Nhon', 'VN', 13.7829, 109.2196),
        ('Buôn Ma Thuột', 'Buon Ma Thuot', 'VN', 12.6682, 108.0377);
 
-
+CREATE TABLE refresh_tokens
+(
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token       VARCHAR(255) NOT NULL UNIQUE,
+    expiry_date TIMESTAMP    NOT NULL,
+    user_id     INT          NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
 
 
 

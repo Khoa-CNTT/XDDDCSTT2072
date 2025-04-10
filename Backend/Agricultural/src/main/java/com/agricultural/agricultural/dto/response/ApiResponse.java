@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.dto;
+package com.agricultural.agricultural.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
