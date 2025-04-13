@@ -1,9 +1,9 @@
-package com.agricultural.agricultural.entity;
+package com.agricultural.agricultural.entity.enumeration;
 
 public enum PaymentMethod {
-    CASH_ON_DELIVERY,
-    CREDIT_CARD,
+    COD,
     BANK_TRANSFER,
+    CREDIT_CARD,
     E_WALLET,
     MOMO,
     ZALOPAY,

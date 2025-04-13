@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.entity;
+package com.agricultural.agricultural.entity.enumeration;
 
 public enum PaymentStatus {
     PENDING,

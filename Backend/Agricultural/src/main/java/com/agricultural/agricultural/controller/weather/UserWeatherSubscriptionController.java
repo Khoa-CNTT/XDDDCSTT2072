@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller;
+package com.agricultural.agricultural.controller.weather;
 
 import com.agricultural.agricultural.dto.UserWeatherSubscriptionDTO;
 import com.agricultural.agricultural.service.IUserWeatherSubscriptionService;

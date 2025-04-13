@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller;
+package com.agricultural.agricultural.controller.forum;
 
 import com.agricultural.agricultural.dto.ForumReplyDTO;
 import com.agricultural.agricultural.dto.request.ForumReplyRequest;

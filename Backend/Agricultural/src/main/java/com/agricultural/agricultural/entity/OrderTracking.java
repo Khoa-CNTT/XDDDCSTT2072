@@ -1,44 +1,50 @@
 package com.agricultural.agricultural.entity;
 
+import com.agricultural.agricultural.entity.enumeration.OrderStatus;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Builder
 @Table(name = "order_tracking")
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderTracking {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
+
     @Column(name = "order_id", nullable = false)
     private Integer orderId;
-    
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(nullable = false)
     private OrderStatus status;
-    
-    @Column(name = "timestamp", nullable = false)
-    private LocalDateTime timestamp;
-    
-    @Column(name = "description")
+
+    @Column(columnDefinition = "TEXT")
     private String description;
-    
+
+    @Column(name = "timestamp")
+    private LocalDateTime timestamp;
+
     @Column(name = "updated_by")
     private Integer updatedBy;
-    
+
     @ManyToOne
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     private Order order;
-    
+
     @PrePersist
     protected void onCreate() {
-        timestamp = LocalDateTime.now();
+        if (timestamp == null) {
+            timestamp = LocalDateTime.now();
+        }
     }
 } 

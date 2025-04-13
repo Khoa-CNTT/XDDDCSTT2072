@@ -4,7 +4,7 @@ import com.agricultural.agricultural.dto.*;
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.response.OrderTrackingResponse;
 import com.agricultural.agricultural.dto.response.PaymentResponse;
-import com.agricultural.agricultural.entity.OrderStatus;
+import com.agricultural.agricultural.entity.enumeration.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -20,14 +20,14 @@ public interface IOrderService {
     void deleteOrder(Integer orderId);
     Page<OrderDTO> getOrdersByBuyerAndStatus(OrderStatus status, Pageable pageable);
     Page<OrderDTO> getOrdersBySellerAndStatus(OrderStatus status, Pageable pageable);
-    
+
     // Phương thức mới cho theo dõi đơn hàng
     OrderTrackingResponse trackOrder(Integer orderId);
-    
+
     // Phương thức mới cho lịch sử đơn hàng
     Map<OrderStatus, List<OrderDTO>> getBuyerOrderHistory();
     Map<OrderStatus, List<OrderDTO>> getSellerOrderHistory();
-    
+
     // Phương thức mới cho thanh toán
     PaymentResponse processPayment(Integer orderId, PaymentRequest paymentRequest);
 } 
