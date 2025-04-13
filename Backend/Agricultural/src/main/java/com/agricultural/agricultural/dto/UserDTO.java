@@ -1,6 +1,5 @@
 package com.agricultural.agricultural.dto;
 
-import com.agricultural.agricultural.entity.User;
 import lombok.*;
 
 @Data
