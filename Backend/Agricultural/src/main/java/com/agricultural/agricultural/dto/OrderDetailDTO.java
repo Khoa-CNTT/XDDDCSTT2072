@@ -1,31 +1,30 @@
 package com.agricultural.agricultural.dto;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import com.agricultural.agricultural.entity.enumeration.OrderStatus;
+import com.agricultural.agricultural.entity.enumeration.ReviewStatus;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderDetailDTO {
     private Integer id;
     private Integer orderId;
-    
-    @NotNull(message = "ProductId không được để trống")
     private Integer productId;
-    
     private String productName;
-    
-    @NotNull(message = "Số lượng không được để trống")
-    @Min(value = 1, message = "Số lượng phải lớn hơn 0")
+    private String productImage;
+    private Integer variantId;
+    private String variantName;
     private Integer quantity;
-    
     private BigDecimal price;
-    private BigDecimal subtotal;
+    private BigDecimal originalPrice;
+    private BigDecimal discountAmount;
+    private OrderStatus status;
+    private ReviewStatus reviewStatus;
 } 

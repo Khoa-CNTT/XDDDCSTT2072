@@ -1,6 +1,6 @@
 package com.agricultural.agricultural.dto.request;
 
-import com.agricultural.agricultural.entity.PaymentMethod;
+import com.agricultural.agricultural.entity.enumeration.PaymentMethod;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

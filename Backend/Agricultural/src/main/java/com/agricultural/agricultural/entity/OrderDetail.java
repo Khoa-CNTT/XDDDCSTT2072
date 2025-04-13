@@ -1,12 +1,13 @@
 package com.agricultural.agricultural.entity;
 
+import com.agricultural.agricultural.entity.enumeration.OrderStatus;
+import com.agricultural.agricultural.entity.enumeration.ReviewStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "order_details")
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class OrderDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,11 +27,47 @@ public class OrderDetail {
     @Column(name = "product_id", nullable = false)
     private Integer productId;
 
-    @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
+    @Column(name = "product_image")
+    private String productImage;
+
+    @Column(name = "variant_id")
+    private Integer variantId;
+
+    @Column(name = "variant_name")
+    private String variantName;
+
+    @Column(name = "original_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal originalPrice;
 
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @Column(name = "quantity", nullable = false)
+    private Integer quantity;
+
+    @Column(name = "total_price", precision = 10, scale = 2)
+    private BigDecimal totalPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    @Builder.Default
+    private OrderStatus status = OrderStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_status")
+    @Builder.Default
+    private ReviewStatus reviewStatus = ReviewStatus.NOT_REVIEWED;
+
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @ManyToOne
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
@@ -38,4 +76,15 @@ public class OrderDetail {
     @ManyToOne
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private MarketPlace product;
+
+    @ManyToOne
+    @JoinColumn(name = "variant_id", insertable = false, updatable = false)
+    private ProductVariant variant;
+
+    @PrePersist
+    @PreUpdate
+    public void calculateTotalPrice() {
+        BigDecimal finalPrice = this.price.subtract(this.discountAmount != null ? this.discountAmount : BigDecimal.ZERO);
+        this.totalPrice = finalPrice.multiply(new BigDecimal(this.quantity));
+    }
 } 

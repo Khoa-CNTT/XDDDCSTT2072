@@ -1,6 +1,6 @@
 package com.agricultural.agricultural.dto.response;
 
-import com.agricultural.agricultural.entity.OrderStatus;
+import com.agricultural.agricultural.entity.enumeration.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

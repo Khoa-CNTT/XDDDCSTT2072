@@ -55,6 +55,7 @@ public class UserRepository {
     }
 
 
-//    public boolean existsById(Integer userId) {
-//    }
+    public boolean existsById(Integer userId) {
+        return userRepository.existsById(userId);
+    }
 }
