@@ -5,6 +5,7 @@ import com.agricultural.agricultural.dto.AgriculturalAdviceDTO;
 import com.agricultural.agricultural.dto.WeatherDataDTO;
 import com.agricultural.agricultural.entity.AgriculturalAdvice;
 import com.agricultural.agricultural.entity.WeatherData;
+import com.agricultural.agricultural.exception.BadRequestException;
 import com.agricultural.agricultural.mapper.AgriculturalAdviceMapper;
 import com.agricultural.agricultural.mapper.WeatherDataMapper;
 import com.agricultural.agricultural.repository.IAgriculturalAdviceRepository;
@@ -41,6 +42,14 @@ public class WeatherService implements IWeatherService {
 
     @Override
     public WeatherDataDTO getCurrentWeather(String city, String country) {
+        if (city == null || city.trim().isEmpty()) {
+            throw new BadRequestException("Tên thành phố không được để trống");
+        }
+        
+        if (country == null || country.trim().isEmpty()) {
+            throw new BadRequestException("Tên quốc gia không được để trống");
+        }
+        
         // Tạo key cho cache
         String cacheKey = city.toLowerCase() + "," + country.toLowerCase();
         
@@ -95,17 +104,29 @@ public class WeatherService implements IWeatherService {
             weatherCache.put(cacheKey, dto);
             return dto;
         } catch (RestClientException e) {
-            log.error("Error fetching weather data from API: " + e.getMessage());
+            log.error("Lỗi khi lấy dữ liệu thời tiết từ API: " + e.getMessage());
             // Nếu không kết nối được API, trả về dữ liệu cũ nhất từ database (nếu có)
             if (recentData.isPresent()) {
                 return weatherDataMapper.toDTO(recentData.get());
             }
-            throw e;
+            throw new BadRequestException("Không thể lấy dữ liệu thời tiết: " + e.getMessage());
         }
     }
 
     @Override
     public List<WeatherDataDTO> getWeatherHistory(String city, String country, LocalDateTime startTime) {
+        if (city == null || city.trim().isEmpty()) {
+            throw new BadRequestException("Tên thành phố không được để trống");
+        }
+        
+        if (country == null || country.trim().isEmpty()) {
+            throw new BadRequestException("Tên quốc gia không được để trống");
+        }
+        
+        if (startTime == null) {
+            startTime = LocalDateTime.now().minusDays(7); // Mặc định lấy 7 ngày gần nhất
+        }
+        
         // API miễn phí không hỗ trợ dữ liệu lịch sử, chỉ trả về từ database
         List<WeatherData> weatherDataList = weatherDataRepository.findRecentWeatherData(city, country, startTime);
         return weatherDataList.stream()
@@ -115,6 +136,14 @@ public class WeatherService implements IWeatherService {
 
     @Override
     public WeatherDataDTO getCurrentWeatherByCoordinates(Double latitude, Double longitude) {
+        if (latitude == null) {
+            throw new BadRequestException("Vĩ độ không được để trống");
+        }
+        
+        if (longitude == null) {
+            throw new BadRequestException("Kinh độ không được để trống");
+        }
+        
         // Tạo key cho cache
         String cacheKey = latitude + "," + longitude;
         
@@ -170,23 +199,43 @@ public class WeatherService implements IWeatherService {
             if (recentData.isPresent()) {
                 return weatherDataMapper.toDTO(recentData.get());
             }
-            throw e;
+            throw new BadRequestException("Không thể lấy dữ liệu thời tiết: " + e.getMessage());
         }
     }
 
     @Override
     public List<String> searchCities(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new BadRequestException("Từ khóa tìm kiếm không được để trống");
+        }
+        
         return weatherDataRepository.findDistinctCitiesByKeyword(keyword);
     }
 
     @Override
     public Optional<AgriculturalAdviceDTO> getLatestAgriculturalAdvice(String city, String country) {
+        if (city == null || city.trim().isEmpty()) {
+            throw new BadRequestException("Tên thành phố không được để trống");
+        }
+        
+        if (country == null || country.trim().isEmpty()) {
+            throw new BadRequestException("Tên quốc gia không được để trống");
+        }
+        
         return agriculturalAdviceRepository.findLatestByLocation(city, country)
                 .map(agriculturalAdviceMapper::toDTO);
     }
 
     @Override
     public List<AgriculturalAdviceDTO> getAgriculturalAdviceHistory(String city, String country) {
+        if (city == null || city.trim().isEmpty()) {
+            throw new BadRequestException("Tên thành phố không được để trống");
+        }
+        
+        if (country == null || country.trim().isEmpty()) {
+            throw new BadRequestException("Tên quốc gia không được để trống");
+        }
+        
         List<AgriculturalAdvice> adviceList = agriculturalAdviceRepository.findByLocation(city, country);
         return adviceList.stream()
                 .map(agriculturalAdviceMapper::toDTO)

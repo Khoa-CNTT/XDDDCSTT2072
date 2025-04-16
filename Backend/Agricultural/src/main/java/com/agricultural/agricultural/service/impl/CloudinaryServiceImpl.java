@@ -1,6 +1,8 @@
 package com.agricultural.agricultural.service.impl;
 
 import com.agricultural.agricultural.config.CloudinaryConfig;
+import com.agricultural.agricultural.exception.BadRequestException;
+import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.service.ICloudinaryService;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
@@ -24,11 +26,26 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
 
     @Override
     public String uploadImage(MultipartFile file, String folder) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File không được để trống");
+        }
         return uploadImage(file, folder, UUID.randomUUID().toString());
     }
 
     @Override
     public String uploadImage(MultipartFile file, String folder, String fileName) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File không được để trống");
+        }
+        
+        if (folder == null || folder.trim().isEmpty()) {
+            throw new BadRequestException("Thư mục không được để trống");
+        }
+        
+        if (fileName == null || fileName.trim().isEmpty()) {
+            throw new BadRequestException("Tên file không được để trống");
+        }
+
         Map<String, Object> params = ObjectUtils.asMap(
                 "public_id", folder + "/" + fileName,
                 "overwrite", true,
@@ -41,19 +58,27 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
 
     @Override
     public Map<String, Object> deleteImage(String publicId) throws IOException {
-        return cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        if (publicId == null || publicId.trim().isEmpty()) {
+            throw new BadRequestException("Public ID không được để trống");
+        }
+        
+        Map<String, Object> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        if (result.get("result").equals("not found")) {
+            throw new ResourceNotFoundException("Không tìm thấy ảnh với public ID: " + publicId);
+        }
+        return result;
     }
 
     @Override
     public String extractPublicIdFromUrl(String cloudinaryUrl) {
         if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
-            return null;
+            throw new BadRequestException("URL không được để trống");
         }
         
         // Cloudinary URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/{public_id}.{format}
         String[] parts = cloudinaryUrl.split("/upload/");
         if (parts.length < 2) {
-            return null;
+            throw new BadRequestException("URL không hợp lệ");
         }
         
         String publicIdWithVersion = parts[1];

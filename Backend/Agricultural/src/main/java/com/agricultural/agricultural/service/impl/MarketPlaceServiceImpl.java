@@ -37,7 +37,7 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         // Lấy thông tin authentication hiện tại
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-
+        
         User user;
         try {
             // Thử tìm theo email thay vì username
@@ -50,20 +50,20 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                 user = allUsers.stream()
                         .filter(u -> u.getUsername().equals(username))
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng"));
             }
         } catch (Exception e) {
             // Xử lý nếu có lỗi khác
-            log.error("Error finding user: {}", e.getMessage());
-            throw new RuntimeException("Error finding user: " + e.getMessage());
+            log.error("Lỗi khi tìm kiếm người dùng: {}", e.getMessage());
+            throw new BadRequestException("Lỗi khi tìm kiếm người dùng: " + e.getMessage());
         }
-
+        
         // Validate thông tin khuyến mãi
         validateSaleInfo(productDTO);
 
         MarketPlace product = marketPlaceMapper.toEntity(productDTO);
         if (product == null) {
-            throw new BadRequestException("Chuyển đổi DTO sang entity thất bại.");
+            throw new BadRequestException("Chuyển đổi DTO sang entity thất bại");
         }
 
         // Thêm giá trị mặc định cho image_url nếu nó null
@@ -108,7 +108,7 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
 
         // Cập nhật entity từ DTO
         marketPlaceMapper.updateEntityFromDTO(productDTO, product);
-
+        
         // Đảm bảo image_url không null sau khi cập nhật
         if (product.getImageUrl() == null) {
             product.setImageUrl("https://res.cloudinary.com/dey5xwdud/image/upload/v1618481241/default-product_ehoouh.jpg");
@@ -131,21 +131,21 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             if (productDTO.getSalePrice().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new BadRequestException("Giá khuyến mãi phải lớn hơn 0");
             }
-
+            
             // Nếu có giá khuyến mãi thì phải có ngày bắt đầu và kết thúc
             if (productDTO.getSaleStartDate() == null) {
                 throw new BadRequestException("Vui lòng cung cấp ngày bắt đầu khuyến mãi");
             }
-
+            
             if (productDTO.getSaleEndDate() == null) {
                 throw new BadRequestException("Vui lòng cung cấp ngày kết thúc khuyến mãi");
             }
-
+            
             // Kiểm tra ngày bắt đầu phải trước ngày kết thúc
             if (productDTO.getSaleStartDate().isAfter(productDTO.getSaleEndDate())) {
                 throw new BadRequestException("Ngày bắt đầu khuyến mãi phải trước ngày kết thúc");
             }
-
+            
             // Kiểm tra giá khuyến mãi phải nhỏ hơn giá gốc
             if (productDTO.getSalePrice().compareTo(productDTO.getPrice()) >= 0) {
                 throw new BadRequestException("Giá khuyến mãi phải nhỏ hơn giá gốc");
@@ -183,11 +183,11 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         if (userId == null) {
             throw new BadRequestException("User ID không được để trống");
         }
-
+        
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
         }
-
+        
         return marketPlaceRepository.findByUserId(userId, pageable)
                 .map(marketPlaceMapper::toDTO);
     }
@@ -232,48 +232,48 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         if (minPrice == null) {
             minPrice = BigDecimal.ZERO;
         }
-
+        
         if (maxPrice == null) {
             maxPrice = new BigDecimal("999999999.99"); // Giá tối đa rất lớn
         }
-
+        
         if (minPrice.compareTo(maxPrice) > 0) {
             throw new BadRequestException("Giá tối thiểu phải nhỏ hơn hoặc bằng giá tối đa");
         }
-
+        
         return marketPlaceRepository.findByPriceRange(minPrice, maxPrice, LocalDateTime.now(), pageable)
                 .map(marketPlaceMapper::toDTO);
     }
-
+    
     @Override
     @Transactional
     public Page<MarketPlaceDTO> getProductsByMinimumRating(BigDecimal minRating, Pageable pageable) {
         if (minRating == null) {
             minRating = BigDecimal.ZERO;
         }
-
+        
         if (minRating.compareTo(BigDecimal.ZERO) < 0 || minRating.compareTo(new BigDecimal("5.0")) > 0) {
             throw new BadRequestException("Xếp hạng tối thiểu phải nằm trong khoảng từ 0 đến 5");
         }
-
+        
         return marketPlaceRepository.findByMinimumRating(minRating, pageable)
                 .map(marketPlaceMapper::toDTO);
     }
-
+    
     @Override
     @Transactional
     public Page<MarketPlaceDTO> getPopularProducts(Pageable pageable) {
         return marketPlaceRepository.findPopularProducts(pageable)
                 .map(marketPlaceMapper::toDTO);
     }
-
+    
     @Override
     @Transactional
     public Page<MarketPlaceDTO> getRecentlyUpdatedProducts(Pageable pageable) {
         return marketPlaceRepository.findRecentlyUpdatedProducts(pageable)
                 .map(marketPlaceMapper::toDTO);
     }
-
+    
     @Override
     @Transactional
     public Page<MarketPlaceDTO> advancedSearch(
@@ -283,11 +283,11 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             String keyword,
             boolean onSaleOnly,
             Pageable pageable) {
-
+        
         if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
             throw new BadRequestException("Giá tối thiểu phải nhỏ hơn hoặc bằng giá tối đa");
         }
-
+        
         return marketPlaceRepository.advancedSearch(
                 categoryId,
                 minPrice,

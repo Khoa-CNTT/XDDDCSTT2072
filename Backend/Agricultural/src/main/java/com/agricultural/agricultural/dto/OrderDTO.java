@@ -3,6 +3,11 @@ package com.agricultural.agricultural.dto;
 import com.agricultural.agricultural.entity.enumeration.OrderStatus;
 import com.agricultural.agricultural.entity.enumeration.PaymentMethod;
 import com.agricultural.agricultural.entity.enumeration.PaymentStatus;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,35 +25,82 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderDTO {
     private Integer id;
+
     private String orderNumber;
+
+    @NotNull(message = "Tổng số lượng sản phẩm không được để trống")
+    @PositiveOrZero(message = "Tổng số lượng sản phẩm không được âm")
     private Integer totalQuantity;
+
+    @NotNull(message = "Tổng tiền hàng không được để trống")
+    @PositiveOrZero(message = "Tổng tiền hàng không được âm")
     private BigDecimal subtotal;
+
+    @PositiveOrZero(message = "Phí vận chuyển không được âm")
     private BigDecimal shippingFee;
+
+    @PositiveOrZero(message = "Thuế không được âm")
     private BigDecimal taxAmount;
+
+    @PositiveOrZero(message = "Giảm giá không được âm")
     private BigDecimal discountAmount;
+
+    @PositiveOrZero(message = "Tổng tiền không được âm")
     private BigDecimal totalAmount;
+
+    @NotNull(message = "ID người mua không được để trống")
     private Integer buyerId;
+
+    @NotNull(message = "ID người bán không được để trống")
     private Integer sellerId;
+
+    @NotNull(message = "Phương thức thanh toán không được để trống")
     private PaymentMethod paymentMethod;
+
     private PaymentStatus paymentStatus;
+
+    @NotBlank(message = "Tên người nhận không được để trống")
     private String shippingName;
+
+    @NotBlank(message = "Số điện thoại người nhận không được để trống")
     private String shippingPhone;
+
+    @NotBlank(message = "Địa chỉ giao hàng không được để trống")
     private String shippingAddress;
+
+    @NotBlank(message = "Thành phố không được để trống")
     private String shippingCity;
+
+    @NotBlank(message = "Quốc gia không được để trống")
     private String shippingCountry;
+
     private String shippingPostalCode;
+
     private String notes;
+
     private String invoiceNumber;
+
     private LocalDate invoiceDate;
+
     private LocalDateTime orderDate;
+
     private LocalDateTime completedDate;
+
     private LocalDateTime cancelledDate;
+
     private String cancellationReason;
+
     private LocalDateTime updatedAt;
+
+    @NotNull(message = "Trạng thái đơn hàng không được để trống")
     private OrderStatus status;
+
     private String buyerName;
+
     private String sellerName;
 
     @Builder.Default
+    @NotEmpty(message = "Chi tiết đơn hàng không được để trống")
+    @Valid
     private List<OrderDetailDTO> orderDetails = new ArrayList<>();
 } 
