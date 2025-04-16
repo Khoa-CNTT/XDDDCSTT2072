@@ -77,6 +77,39 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @PutMapping(value = "/{id}/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateUserWithImage(
+            @PathVariable int id,
+            @Valid @ModelAttribute UserDTO userDTO,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            BindingResult result) {
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(getValidationErrors(result));
+        }
+
+        try {
+            User userToUpdate = userMapper.toEntity(userDTO);
+            
+            // Xử lý upload ảnh nếu có
+            if (image != null && !image.isEmpty()) {
+                // Upload ảnh và cập nhật đường dẫn vào userToUpdate
+                String imageUrl = userService.uploadAndGetImageUrl(image);
+                userToUpdate.setImageUrl(imageUrl);
+            }
+            
+            UserDTO updatedUser = userService.updateUser(id, userToUpdate);
+            return ResponseEntity.ok(updatedUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Không thể upload ảnh: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
 
     @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadProfileImage(

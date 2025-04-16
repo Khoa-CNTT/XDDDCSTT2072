@@ -39,6 +39,8 @@ public interface IUserService {
 
     UserDTO uploadAndUpdateProfileImage(int id, MultipartFile file) throws IOException;
 
+    String uploadAndGetImageUrl(MultipartFile file) throws IOException;
+
     List<UserDTO> getAllUsers();
 
 
