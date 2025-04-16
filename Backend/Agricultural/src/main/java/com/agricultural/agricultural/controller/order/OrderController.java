@@ -1,6 +1,7 @@
 package com.agricultural.agricultural.controller.order;
 
 import com.agricultural.agricultural.dto.OrderDTO;
+import com.agricultural.agricultural.dto.ResponseDTO;
 import com.agricultural.agricultural.dto.response.OrderTrackingResponse;
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.response.PaymentResponse;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,154 +30,101 @@ public class OrderController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody OrderDTO orderDTO) {
-        try {
-            return ResponseEntity.ok(orderService.createOrder(orderDTO));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi tạo đơn hàng: " + e.getMessage());
+    public ResponseEntity<ResponseDTO<OrderDTO>> createOrder(@Valid @RequestBody OrderDTO orderDTO, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            StringBuilder errors = new StringBuilder();
+            bindingResult.getAllErrors().forEach(error ->
+                    errors.append(error.getDefaultMessage()).append(", "));
+            return ResponseEntity.badRequest()
+                    .body(ResponseDTO.error("VALIDATION_ERROR", errors.toString()));
         }
+
+        OrderDTO createdOrder = orderService.createOrder(orderDTO);
+        return ResponseEntity.ok(ResponseDTO.success(createdOrder, "Đơn hàng đã được tạo thành công"));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<OrderDTO> getOrder(@PathVariable Integer id) {
-        try {
-            return ResponseEntity.ok(orderService.getOrderById(id));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi lấy thông tin đơn hàng: " + e.getMessage());
-        }
+    public ResponseEntity<ResponseDTO<OrderDTO>> getOrder(@PathVariable Integer id) {
+        OrderDTO order = orderService.getOrderById(id);
+        return ResponseEntity.ok(ResponseDTO.success(order));
     }
 
     @GetMapping("/buyer")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Page<OrderDTO>> getOrdersByBuyer(Pageable pageable) {
-        try {
-            return ResponseEntity.ok(orderService.getOrdersByBuyer(pageable));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi lấy danh sách đơn hàng của người mua: " + e.getMessage());
-        }
+    public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getOrdersByBuyer(Pageable pageable) {
+        Page<OrderDTO> orders = orderService.getOrdersByBuyer(pageable);
+        return ResponseEntity.ok(ResponseDTO.success(orders));
     }
 
     @GetMapping("/seller")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Page<OrderDTO>> getOrdersBySeller(Pageable pageable) {
-        try {
-            return ResponseEntity.ok(orderService.getOrdersBySeller(pageable));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi lấy danh sách đơn hàng của người bán: " + e.getMessage());
-        }
+    public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getOrdersBySeller(Pageable pageable) {
+        Page<OrderDTO> orders = orderService.getOrdersBySeller(pageable);
+        return ResponseEntity.ok(ResponseDTO.success(orders));
     }
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<OrderDTO> updateOrderStatus(
+    public ResponseEntity<ResponseDTO<OrderDTO>> updateOrderStatus(
             @PathVariable Integer id,
             @RequestParam OrderStatus status) {
-        try {
-            return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi cập nhật trạng thái đơn hàng: " + e.getMessage());
-        }
+        OrderDTO updatedOrder = orderService.updateOrderStatus(id, status);
+        return ResponseEntity.ok(ResponseDTO.success(updatedOrder, "Trạng thái đơn hàng đã được cập nhật"));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Void> deleteOrder(@PathVariable Integer id) {
-        try {
-            orderService.deleteOrder(id);
-            return ResponseEntity.ok().build();
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi xóa đơn hàng: " + e.getMessage());
-        }
+    public ResponseEntity<ResponseDTO<Void>> deleteOrder(@PathVariable Integer id) {
+        orderService.deleteOrder(id);
+        return ResponseEntity.ok(ResponseDTO.success(null, "Đơn hàng đã được xóa thành công"));
     }
 
     @GetMapping("/buyer/status")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Page<OrderDTO>> getOrdersByBuyerAndStatus(
+    public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getOrdersByBuyerAndStatus(
             @RequestParam OrderStatus status,
             Pageable pageable) {
-        try {
-            return ResponseEntity.ok(orderService.getOrdersByBuyerAndStatus(status, pageable));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi lấy danh sách đơn hàng theo trạng thái của người mua: " + e.getMessage());
-        }
+        Page<OrderDTO> orders = orderService.getOrdersByBuyerAndStatus(status, pageable);
+        return ResponseEntity.ok(ResponseDTO.success(orders));
     }
 
     @GetMapping("/seller/status")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Page<OrderDTO>> getOrdersBySellerAndStatus(
+    public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getOrdersBySellerAndStatus(
             @RequestParam OrderStatus status,
             Pageable pageable) {
-        try {
-            return ResponseEntity.ok(orderService.getOrdersBySellerAndStatus(status, pageable));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi lấy danh sách đơn hàng theo trạng thái của người bán: " + e.getMessage());
-        }
+        Page<OrderDTO> orders = orderService.getOrdersBySellerAndStatus(status, pageable);
+        return ResponseEntity.ok(ResponseDTO.success(orders));
     }
 
     @GetMapping("/tracking/{id}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<OrderTrackingResponse> trackOrder(@PathVariable Integer id) {
-        try {
-            return ResponseEntity.ok(orderService.trackOrder(id));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi theo dõi đơn hàng: " + e.getMessage());
-        }
+    public ResponseEntity<ResponseDTO<OrderTrackingResponse>> trackOrder(@PathVariable Integer id) {
+        OrderTrackingResponse tracking = orderService.trackOrder(id);
+        return ResponseEntity.ok(ResponseDTO.success(tracking));
     }
 
     @GetMapping("/history/buyer")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Map<OrderStatus, List<OrderDTO>>> getBuyerOrderHistory() {
-        try {
-            return ResponseEntity.ok(orderService.getBuyerOrderHistory());
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi lấy lịch sử đơn hàng của người mua: " + e.getMessage());
-        }
+    public ResponseEntity<ResponseDTO<Map<OrderStatus, List<OrderDTO>>>> getBuyerOrderHistory() {
+        Map<OrderStatus, List<OrderDTO>> history = orderService.getBuyerOrderHistory();
+        return ResponseEntity.ok(ResponseDTO.success(history));
     }
 
     @GetMapping("/history/seller")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Map<OrderStatus, List<OrderDTO>>> getSellerOrderHistory() {
-        try {
-            return ResponseEntity.ok(orderService.getSellerOrderHistory());
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi lấy lịch sử đơn hàng của người bán: " + e.getMessage());
-        }
+    public ResponseEntity<ResponseDTO<Map<OrderStatus, List<OrderDTO>>>> getSellerOrderHistory() {
+        Map<OrderStatus, List<OrderDTO>> history = orderService.getSellerOrderHistory();
+        return ResponseEntity.ok(ResponseDTO.success(history));
     }
 
     @PostMapping("/{id}/payment")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<PaymentResponse> processPayment(
+    public ResponseEntity<ResponseDTO<PaymentResponse>> processPayment(
             @PathVariable Integer id,
             @Valid @RequestBody PaymentRequest paymentRequest) {
-        try {
-            return ResponseEntity.ok(orderService.processPayment(id, paymentRequest));
-        } catch (BadRequestException | ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi xử lý thanh toán: " + e.getMessage());
-        }
+        PaymentResponse paymentResponse = orderService.processPayment(id, paymentRequest);
+        return ResponseEntity.ok(ResponseDTO.success(paymentResponse, "Thanh toán đã được xử lý"));
     }
 } 

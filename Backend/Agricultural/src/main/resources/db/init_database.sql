@@ -809,3 +809,58 @@ SET SQL_SAFE_UPDATES = 0;
 -- Cập nhật các giỏ hàng hiện tại để đảm bảo chúng không bị xóa
 UPDATE cart SET deleted = FALSE WHERE deleted IS NULL;
 
+-- update lần 3
+
+-- Nếu cần, chạy script này để loại bỏ GENERATED COLUMN
+ALTER TABLE cart_items
+DROP COLUMN total_price;
+
+ALTER TABLE cart_items
+    ADD COLUMN total_price DECIMAL(10,2);
+
+-- 1. Sửa đổi cột total_amount không còn là generated column
+ALTER TABLE orders MODIFY COLUMN total_amount DECIMAL(10,2) NULL;
+
+-- 2. Tạo trigger để tự động tính total_amount khi thêm mới đơn hàng
+DELIMITER //
+CREATE TRIGGER before_orders_insert
+    BEFORE INSERT ON orders FOR EACH ROW
+BEGIN
+    SET NEW.total_amount = NEW.subtotal + IFNULL(NEW.shipping_fee, 0) + IFNULL(NEW.tax_amount, 0) - IFNULL(NEW.discount_amount, 0);
+END //
+DELIMITER ;
+
+-- 3. Tạo trigger để tự động cập nhật total_amount khi sửa đơn hàng
+DELIMITER //
+CREATE TRIGGER before_orders_update
+    BEFORE UPDATE ON orders FOR EACH ROW
+BEGIN
+    SET NEW.total_amount = NEW.subtotal + IFNULL(NEW.shipping_fee, 0) + IFNULL(NEW.tax_amount, 0) - IFNULL(NEW.discount_amount, 0);
+END //
+DELIMITER ;
+
+-- 1. Sửa đổi cột total_price không còn là generated column
+ALTER TABLE order_details MODIFY COLUMN total_price DECIMAL(10,2) NULL;
+
+-- 2. Tạo trigger để tự động tính total_price khi thêm mới chi tiết đơn hàng
+DELIMITER //
+CREATE TRIGGER before_order_details_insert
+    BEFORE INSERT ON order_details FOR EACH ROW
+BEGIN
+    SET NEW.total_price = NEW.price * NEW.quantity - IFNULL(NEW.discount_amount, 0);
+END //
+DELIMITER ;
+
+-- 3. Tạo trigger để tự động cập nhật total_price khi sửa chi tiết đơn hàng
+DELIMITER //
+CREATE TRIGGER before_order_details_update
+    BEFORE UPDATE ON order_details FOR EACH ROW
+BEGIN
+    SET NEW.total_price = NEW.price * NEW.quantity - IFNULL(NEW.discount_amount, 0);
+END //
+DELIMITER ;
+
+
+
+
+

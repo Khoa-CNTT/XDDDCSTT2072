@@ -28,11 +28,9 @@ public class OrderDTO {
 
     private String orderNumber;
 
-    @NotNull(message = "Tổng số lượng sản phẩm không được để trống")
     @PositiveOrZero(message = "Tổng số lượng sản phẩm không được âm")
     private Integer totalQuantity;
 
-    @NotNull(message = "Tổng tiền hàng không được để trống")
     @PositiveOrZero(message = "Tổng tiền hàng không được âm")
     private BigDecimal subtotal;
 
@@ -48,30 +46,23 @@ public class OrderDTO {
     @PositiveOrZero(message = "Tổng tiền không được âm")
     private BigDecimal totalAmount;
 
-    @NotNull(message = "ID người mua không được để trống")
     private Integer buyerId;
 
-    @NotNull(message = "ID người bán không được để trống")
     private Integer sellerId;
 
-    @NotNull(message = "Phương thức thanh toán không được để trống")
     private PaymentMethod paymentMethod;
 
     private PaymentStatus paymentStatus;
 
-    @NotBlank(message = "Tên người nhận không được để trống")
     private String shippingName;
 
-    @NotBlank(message = "Số điện thoại người nhận không được để trống")
     private String shippingPhone;
 
     @NotBlank(message = "Địa chỉ giao hàng không được để trống")
     private String shippingAddress;
 
-    @NotBlank(message = "Thành phố không được để trống")
     private String shippingCity;
 
-    @NotBlank(message = "Quốc gia không được để trống")
     private String shippingCountry;
 
     private String shippingPostalCode;
@@ -92,7 +83,6 @@ public class OrderDTO {
 
     private LocalDateTime updatedAt;
 
-    @NotNull(message = "Trạng thái đơn hàng không được để trống")
     private OrderStatus status;
 
     private String buyerName;

@@ -84,7 +84,19 @@ public class OrderDetail {
     @PrePersist
     @PreUpdate
     public void calculateTotalPrice() {
-        BigDecimal finalPrice = this.price.subtract(this.discountAmount != null ? this.discountAmount : BigDecimal.ZERO);
+        if (this.price == null) {
+            this.price = BigDecimal.ZERO;
+        }
+
+        if (this.quantity == null) {
+            this.quantity = 0;
+        }
+
+        if (this.discountAmount == null) {
+            this.discountAmount = BigDecimal.ZERO;
+        }
+
+        BigDecimal finalPrice = this.price.subtract(this.discountAmount);
         this.totalPrice = finalPrice.multiply(new BigDecimal(this.quantity));
     }
 } 

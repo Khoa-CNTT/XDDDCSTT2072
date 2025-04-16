@@ -155,16 +155,40 @@ public class Order {
         this.totalQuantity = 0;
         this.subtotal = BigDecimal.ZERO;
 
-        for (OrderDetail detail : orderDetails) {
-            this.totalQuantity += detail.getQuantity();
-            this.subtotal = this.subtotal.add(detail.getTotalPrice());
+        // Kiểm tra null cho orderDetails
+        if (orderDetails != null && !orderDetails.isEmpty()) {
+            for (OrderDetail detail : orderDetails) {
+                if (detail.getQuantity() != null) {
+                    this.totalQuantity += detail.getQuantity();
+                }
+
+                // Kiểm tra null cho totalPrice
+                if (detail.getTotalPrice() != null) {
+                    this.subtotal = this.subtotal.add(detail.getTotalPrice());
+                } else {
+                    // Tính toán tại chỗ nếu totalPrice chưa được tính
+                    if (detail.getPrice() != null && detail.getQuantity() != null) {
+                        BigDecimal finalPrice = detail.getPrice();
+                        if (detail.getDiscountAmount() != null) {
+                            finalPrice = finalPrice.subtract(detail.getDiscountAmount());
+                        }
+                        BigDecimal detailTotal = finalPrice.multiply(new BigDecimal(detail.getQuantity()));
+                        this.subtotal = this.subtotal.add(detailTotal);
+                    }
+                }
+            }
         }
 
-        // Tính tổng giá trị đơn hàng
+        // Khởi tạo giá trị mặc định nếu cần
+        if (this.shippingFee == null) this.shippingFee = BigDecimal.ZERO;
+        if (this.taxAmount == null) this.taxAmount = BigDecimal.ZERO;
+        if (this.discountAmount == null) this.discountAmount = BigDecimal.ZERO;
+
+        // Tính tổng giá trị đơn hàng với các giá trị đã được kiểm tra null
         this.totalAmount = this.subtotal
-                .add(this.shippingFee != null ? this.shippingFee : BigDecimal.ZERO)
-                .add(this.taxAmount != null ? this.taxAmount : BigDecimal.ZERO)
-                .subtract(this.discountAmount != null ? this.discountAmount : BigDecimal.ZERO);
+                .add(this.shippingFee)
+                .add(this.taxAmount)
+                .subtract(this.discountAmount);
     }
 
     // Phương thức để tạo mã đơn hàng mới
