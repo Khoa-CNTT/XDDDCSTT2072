@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.util;
+package com.agricultural.agricultural.utils;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;

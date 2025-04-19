@@ -1,11 +1,11 @@
 package com.agricultural.agricultural.service.impl;
 
+import com.agricultural.agricultural.components.JwtTokenUtil;
+import com.agricultural.agricultural.dto.UserDTO;
+import com.agricultural.agricultural.dto.response.LoginResponse;
 import com.agricultural.agricultural.entity.RefreshToken;
 import com.agricultural.agricultural.entity.Role;
 import com.agricultural.agricultural.entity.User;
-import com.agricultural.agricultural.components.JwtTokenUtil;
-import com.agricultural.agricultural.dto.response.LoginResponse;
-import com.agricultural.agricultural.dto.UserDTO;
 import com.agricultural.agricultural.exception.BusinessException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.UserMapper;
@@ -13,20 +13,20 @@ import com.agricultural.agricultural.repository.IRoleRepository;
 import com.agricultural.agricultural.repository.impl.UserRepository;
 import com.agricultural.agricultural.service.IRefreshTokenService;
 import com.agricultural.agricultural.service.IUserService;
-import com.agricultural.agricultural.util.UploadUtils;
+import com.agricultural.agricultural.utils.UploadUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;

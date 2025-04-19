@@ -1,20 +1,19 @@
 package com.agricultural.agricultural.service.impl;
 
-import com.agricultural.agricultural.dto.*;
+import com.agricultural.agricultural.dto.OrderDTO;
+import com.agricultural.agricultural.dto.OrderDetailDTO;
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.response.OrderTrackingResponse;
 import com.agricultural.agricultural.dto.response.PaymentResponse;
 import com.agricultural.agricultural.dto.response.PaymentUrlResponse;
 import com.agricultural.agricultural.entity.*;
 import com.agricultural.agricultural.entity.enumeration.OrderStatus;
-import com.agricultural.agricultural.entity.enumeration.PaymentMethod;
 import com.agricultural.agricultural.entity.enumeration.PaymentStatus;
 import com.agricultural.agricultural.exception.BadRequestException;
 import com.agricultural.agricultural.exception.BusinessException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
-import com.agricultural.agricultural.mapper.OrderMapper;
 import com.agricultural.agricultural.mapper.OrderDetailMapper;
-import com.agricultural.agricultural.mapper.OrderTrackingMapper;
+import com.agricultural.agricultural.mapper.OrderMapper;
 import com.agricultural.agricultural.repository.*;
 import com.agricultural.agricultural.service.INotificationService;
 import com.agricultural.agricultural.service.IOrderService;
@@ -34,7 +33,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.agricultural.agricultural.entity.enumeration.PaymentMethod.COD;
-import static com.agricultural.agricultural.entity.enumeration.PaymentMethod.CREDIT_CARD;
 
 @Service
 @RequiredArgsConstructor
