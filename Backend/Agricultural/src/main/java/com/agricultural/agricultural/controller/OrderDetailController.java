@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.order;
+package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.OrderDetailDTO;
 import com.agricultural.agricultural.entity.enumeration.OrderStatus;

@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.forum;
+package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.ForumReplyDTO;
 import com.agricultural.agricultural.dto.request.ForumReplyRequest;
@@ -18,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController

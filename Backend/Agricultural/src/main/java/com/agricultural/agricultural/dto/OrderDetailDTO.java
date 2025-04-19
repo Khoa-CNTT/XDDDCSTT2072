@@ -20,35 +20,35 @@ import java.math.BigDecimal;
 public class OrderDetailDTO {
     private Integer id;
     private Integer orderId;
-
+    
     @NotNull(message = "ID sản phẩm không được để trống")
     private Integer productId;
-
+    
     @NotBlank(message = "Tên sản phẩm không được để trống")
     private String productName;
-
+    
     private String productImage;
-
+    
     private Integer variantId;
-
+    
     private String variantName;
-
+    
     @NotNull(message = "Số lượng không được để trống")
     @Min(value = 1, message = "Số lượng phải lớn hơn 0")
     private Integer quantity;
-
+    
     @NotNull(message = "Giá không được để trống")
     @PositiveOrZero(message = "Giá không được âm")
     private BigDecimal price;
-
+    
     @PositiveOrZero(message = "Giá gốc không được âm")
     private BigDecimal originalPrice;
-
+    
     @PositiveOrZero(message = "Giảm giá không được âm")
     private BigDecimal discountAmount;
-
+    
     @NotNull(message = "Trạng thái không được để trống")
     private OrderStatus status;
-
+    
     private ReviewStatus reviewStatus;
 } 

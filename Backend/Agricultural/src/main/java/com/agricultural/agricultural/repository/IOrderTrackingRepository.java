@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface IOrderTrackingRepository extends JpaRepository<OrderTracking, Integer> {
     List<OrderTracking> findByOrderIdOrderByTimestampDesc(Integer orderId);
-
+    
     @Modifying
     @Transactional
     @Query("DELETE FROM OrderTracking ot WHERE ot.orderId = :orderId")

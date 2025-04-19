@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.cart;
+package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.CartDTO;
 import com.agricultural.agricultural.dto.CartItemDTO;

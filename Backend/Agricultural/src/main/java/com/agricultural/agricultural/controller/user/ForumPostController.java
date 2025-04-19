@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.forum;
+package com.agricultural.agricultural.controller.user;
 
 import com.agricultural.agricultural.dto.ForumPostDTO;
 import com.agricultural.agricultural.service.impl.ForumPostService;

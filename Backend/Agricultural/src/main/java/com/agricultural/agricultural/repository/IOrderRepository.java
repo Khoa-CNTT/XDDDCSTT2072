@@ -24,19 +24,19 @@ public interface IOrderRepository extends JpaRepository<Order, Integer> {
     Page<Order> findBySellerIdAndStatus(Integer sellerId, OrderStatus status, Pageable pageable);
 
     @Query("SELECT DISTINCT o FROM Order o " +
-            "LEFT JOIN FETCH o.buyer " +
-            "LEFT JOIN FETCH o.seller " +
-            "LEFT JOIN FETCH o.orderDetails od " +
-            "LEFT JOIN FETCH od.product " +
-            "WHERE o.id = :orderId")
+           "LEFT JOIN FETCH o.buyer " +
+           "LEFT JOIN FETCH o.seller " +
+           "LEFT JOIN FETCH o.orderDetails od " +
+           "LEFT JOIN FETCH od.product " +
+           "WHERE o.id = :orderId")
     Optional<Order> findOrderWithDetails(@Param("orderId") Integer orderId);
 
     @Query("SELECT o FROM Order o WHERE o.orderDate BETWEEN :startDate AND :endDate")
     List<Order> findByDateRange(LocalDateTime startDate, LocalDateTime endDate);
-
+    
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
     Long countByStatus(OrderStatus status);
-
+    
     @Query("SELECT o FROM Order o WHERE o.buyerId = :userId AND o.status = :status")
     List<Order> findByUserIdAndStatus(Integer userId, OrderStatus status);
 } 

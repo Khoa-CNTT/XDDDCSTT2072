@@ -1,11 +1,11 @@
 package com.agricultural.agricultural.service.impl;
 
-import com.agricultural.agricultural.components.JwtTokenUtil;
-import com.agricultural.agricultural.dto.UserDTO;
-import com.agricultural.agricultural.dto.response.LoginResponse;
 import com.agricultural.agricultural.entity.RefreshToken;
 import com.agricultural.agricultural.entity.Role;
 import com.agricultural.agricultural.entity.User;
+import com.agricultural.agricultural.components.JwtTokenUtil;
+import com.agricultural.agricultural.dto.response.LoginResponse;
+import com.agricultural.agricultural.dto.UserDTO;
 import com.agricultural.agricultural.exception.BusinessException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.UserMapper;
@@ -20,13 +20,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -202,7 +202,6 @@ public class UserService implements IUserService {
                     existingUser.setEmail(newUser.getEmail());
                     existingUser.setPhone(newUser.getPhone());
 
-                    // Luôn mã hoá mật khẩu nếu có thay đổi
                     if (newUser.getPassword() != null && !newUser.getPassword().isEmpty()) {
                         existingUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
                     }
@@ -270,22 +269,5 @@ public class UserService implements IUserService {
                 .stream()
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public String uploadAndGetImageUrl(MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Vui lòng chọn file ảnh");
-        }
-
-        // Kiểm tra định dạng file
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("Chỉ chấp nhận file ảnh");
-        }
-
-        // Upload ảnh lên Cloudinary và trả về URL
-        Map uploadResult = uploadUtils.uploadImage(file);
-        return (String) uploadResult.get("secure_url");
     }
 }

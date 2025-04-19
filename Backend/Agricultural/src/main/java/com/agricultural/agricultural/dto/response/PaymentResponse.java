@@ -1,26 +1,25 @@
 package com.agricultural.agricultural.dto.response;
 
-import com.agricultural.agricultural.entity.enumeration.PaymentMethod;
-import com.agricultural.agricultural.entity.enumeration.PaymentStatus;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentResponse {
-    private String paymentId;
-    private Integer orderId;
-    private BigDecimal amount;
-    private PaymentMethod paymentMethod;
-    private PaymentStatus status;
-    private LocalDateTime paymentDate;
-    private String transactionId;
+    private boolean success;
     private String message;
-} 
+    private Long orderId;
+    private Long amount;
+    private String paymentMethod;
+    private String transactionId;
+    private String redirectUrl; // thêm để redirect online payment
+    private LocalDateTime timestamp;
+    private Map<String, Object> additionalInfo; // Thêm thông tin bổ sung
+}

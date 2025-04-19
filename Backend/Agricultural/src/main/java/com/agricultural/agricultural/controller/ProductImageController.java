@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.product;
+package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.ProductImageDTO;
 import com.agricultural.agricultural.service.IProductImageService;
@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.IOException;
 import java.util.Arrays;

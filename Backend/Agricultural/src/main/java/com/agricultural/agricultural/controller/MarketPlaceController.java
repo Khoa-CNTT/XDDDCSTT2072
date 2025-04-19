@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.product;
+package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import com.agricultural.agricultural.exception.BadRequestException;
@@ -84,7 +84,7 @@ public class MarketPlaceController {
 
     @GetMapping("/top-rated")
     public ResponseEntity<Page<MarketPlaceDTO>> getProductsByMinimumRating(
-            @RequestParam(required = false, defaultValue = "4.0") BigDecimal minRating,
+            @RequestParam(required = false, defaultValue = "4.0") BigDecimal minRating, 
             Pageable pageable) {
         Page<MarketPlaceDTO> products = marketPlaceService.getProductsByMinimumRating(minRating, pageable);
         return ResponseEntity.ok(products);
@@ -117,10 +117,10 @@ public class MarketPlaceController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "false") boolean onSaleOnly,
             Pageable pageable) {
-
+        
         Page<MarketPlaceDTO> products = marketPlaceService.advancedSearch(
                 categoryId, minPrice, maxPrice, keyword, onSaleOnly, pageable);
-
+        
         return ResponseEntity.ok(products);
     }
 }

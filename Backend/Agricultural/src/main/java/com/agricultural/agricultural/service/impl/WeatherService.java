@@ -6,6 +6,7 @@ import com.agricultural.agricultural.dto.WeatherDataDTO;
 import com.agricultural.agricultural.entity.AgriculturalAdvice;
 import com.agricultural.agricultural.entity.WeatherData;
 import com.agricultural.agricultural.exception.BadRequestException;
+import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.AgriculturalAdviceMapper;
 import com.agricultural.agricultural.mapper.WeatherDataMapper;
 import com.agricultural.agricultural.repository.IAgriculturalAdviceRepository;

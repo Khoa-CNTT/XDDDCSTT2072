@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.transaction.annotation.Transactional;
 
 @Configuration
 @EnableWebSecurity
@@ -23,6 +24,7 @@ public class SecurityConfig  {
     private final UserRepository userRepository;
 
     @Bean
+    @Transactional(readOnly = true)
     public UserDetailsService userDetailsService() {
         return email -> (org.springframework.security.core.userdetails.UserDetails) userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
