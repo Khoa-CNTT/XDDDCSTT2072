@@ -3,6 +3,7 @@ package com.agricultural.agricultural.mapper;
 import com.agricultural.agricultural.dto.WeatherDataDTO;
 import com.agricultural.agricultural.entity.WeatherData;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface WeatherDataMapper {

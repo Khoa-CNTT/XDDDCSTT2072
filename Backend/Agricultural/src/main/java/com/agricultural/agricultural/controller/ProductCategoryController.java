@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.product;
+package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.ProductCategoryDTO;
 import com.agricultural.agricultural.service.IProductCategoryService;

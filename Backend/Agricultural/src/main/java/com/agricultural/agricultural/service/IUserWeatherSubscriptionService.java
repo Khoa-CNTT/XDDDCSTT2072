@@ -1,10 +1,8 @@
 package com.agricultural.agricultural.service;
 
 import com.agricultural.agricultural.dto.UserWeatherSubscriptionDTO;
-
 import java.util.List;
 import java.util.Optional;
-
 
 public interface IUserWeatherSubscriptionService {
     

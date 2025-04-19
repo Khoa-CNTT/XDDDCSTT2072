@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.order;
+package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.OrderTrackingDTO;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;

@@ -17,14 +17,14 @@ import java.util.List;
 @AllArgsConstructor
 public class ProductCategoryDTO {
     private Integer id;
-
+    
     @NotBlank(message = "Tên danh mục không được để trống")
     @Size(max = 100, message = "Tên danh mục không được vượt quá 100 ký tự")
     private String name;
-
+    
     @Size(max = 500, message = "Mô tả không được vượt quá 500 ký tự")
     private String description;
-
+    
     private Integer parentId;
     private String parentName;
     private String imageUrl;
@@ -32,7 +32,7 @@ public class ProductCategoryDTO {
     private Integer displayOrder;
     private LocalDateTime createdAt;
     private Long productCount;
-
+    
     @Builder.Default
     private List<ProductCategoryDTO> children = new ArrayList<>();
 } 

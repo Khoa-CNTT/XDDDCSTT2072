@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ResponseDTO.error("BUSINESS_ERROR", ex.getMessage()));
     }
-
+    
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ResponseDTO<Void>> handleBadRequestException(BadRequestException ex) {
         logger.warn("Bad request exception: {}", ex.getMessage());

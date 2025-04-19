@@ -13,7 +13,7 @@ public interface UserMapper {
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
     @Mapping(source = "username", target = "userName") // ✅ Chắc chắn ánh xạ userName
-    @Mapping(source = "role", target = "roleName", qualifiedByName = "mapRoleName")
+    @Mapping(source = "role", target = "roleName", qualifiedByName = "mapRoleName") // ✅ Sửa lại
     @Mapping(source = "imageUrl", target = "imageUrl")
     @Mapping(target = "password", ignore = true)
     UserDTO toDTO(User user);

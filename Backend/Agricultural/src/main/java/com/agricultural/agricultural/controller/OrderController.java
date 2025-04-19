@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.controller.order;
+package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.OrderDTO;
 import com.agricultural.agricultural.dto.ResponseDTO;
@@ -6,8 +6,6 @@ import com.agricultural.agricultural.dto.response.OrderTrackingResponse;
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.response.PaymentResponse;
 import com.agricultural.agricultural.entity.enumeration.OrderStatus;
-import com.agricultural.agricultural.exception.BadRequestException;
-import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.service.IOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,12 +31,12 @@ public class OrderController {
     public ResponseEntity<ResponseDTO<OrderDTO>> createOrder(@Valid @RequestBody OrderDTO orderDTO, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             StringBuilder errors = new StringBuilder();
-            bindingResult.getAllErrors().forEach(error ->
-                    errors.append(error.getDefaultMessage()).append(", "));
+            bindingResult.getAllErrors().forEach(error -> 
+                errors.append(error.getDefaultMessage()).append(", "));
             return ResponseEntity.badRequest()
-                    .body(ResponseDTO.error("VALIDATION_ERROR", errors.toString()));
+                .body(ResponseDTO.error("VALIDATION_ERROR", errors.toString()));
         }
-
+        
         OrderDTO createdOrder = orderService.createOrder(orderDTO);
         return ResponseEntity.ok(ResponseDTO.success(createdOrder, "Đơn hàng đã được tạo thành công"));
     }

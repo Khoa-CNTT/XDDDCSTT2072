@@ -57,6 +57,23 @@ openweather:
   api-key: 44343ee37d40a01a662d7c5d7bfdb418
   api-url: https://api.openweathermap.org/data/2.5
 
+# Cấu hình VNPAY
+vnpay:
+  tmn-code: T4A9FEAR
+  hash-secret: 98344NMN3SQ9PXJECUJEZG6EMSM8X1F9
+  url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  return-url: ${app.backend-url}/api/v1/payment/vnpay-return
+  ipn-url: ${app.backend-url}/api/v1/payment/vnpay-ipn
+  version: 2.1.0
+  command: pay
+  currency-code: VND
+  locale: vn
+
+app:
+  frontend-url: http://localhost:3000
+  backend-url: https://6435-42-112-56-163.ngrok-free.app
+  payment:
+    method: VNPAY # Phương thức thanh toán mặc định
 
 
 
