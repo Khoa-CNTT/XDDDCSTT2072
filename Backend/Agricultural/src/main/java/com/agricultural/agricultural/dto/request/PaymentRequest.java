@@ -22,6 +22,7 @@ public class PaymentRequest {
     private Long amount;
     
     private String description;
+    private String returnUrl;
     // Thông tin bổ sung
     private String buyerName;
     private String buyerEmail;

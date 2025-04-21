@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.util;
+package com.agricultural.agricultural.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

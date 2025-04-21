@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.util;
+package com.agricultural.agricultural.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

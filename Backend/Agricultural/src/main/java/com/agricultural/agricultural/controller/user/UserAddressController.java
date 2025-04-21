@@ -2,7 +2,7 @@ package com.agricultural.agricultural.controller.user;
 
 import com.agricultural.agricultural.dto.UserAddressDTO;
 import com.agricultural.agricultural.service.IUserAddressService;
-import com.agricultural.agricultural.util.SecurityUtils;
+import com.agricultural.agricultural.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

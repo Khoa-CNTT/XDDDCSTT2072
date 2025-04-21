@@ -2,7 +2,6 @@ package com.agricultural.agricultural.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
 

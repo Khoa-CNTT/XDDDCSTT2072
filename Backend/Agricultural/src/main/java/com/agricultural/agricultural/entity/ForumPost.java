@@ -2,11 +2,12 @@ package com.agricultural.agricultural.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-//import java.security.Timestamp;
-import java.sql.Time;
 import java.sql.Timestamp;
 
 @Entity

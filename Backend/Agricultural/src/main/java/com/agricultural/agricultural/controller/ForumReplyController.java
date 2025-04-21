@@ -5,7 +5,7 @@ import com.agricultural.agricultural.dto.request.ForumReplyRequest;
 import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.exception.PermissionDenyException;
 import com.agricultural.agricultural.service.IForumReplyService;
-import com.agricultural.agricultural.util.ResponseObject;
+import com.agricultural.agricultural.utils.ResponseObject;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,7 +18,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController

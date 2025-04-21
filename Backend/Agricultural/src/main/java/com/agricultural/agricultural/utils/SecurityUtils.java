@@ -1,8 +1,8 @@
-package com.agricultural.agricultural.util;
+package com.agricultural.agricultural.utils;
 
+import com.agricultural.agricultural.entity.User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import com.agricultural.agricultural.entity.User;
 import org.springframework.transaction.annotation.Transactional;
 
 public class SecurityUtils {

@@ -3,9 +3,7 @@ package com.agricultural.agricultural.service.impl;
 import com.agricultural.agricultural.config.VNPAYConfig;
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.request.RefundRequest;
-import com.agricultural.agricultural.dto.response.PaymentDTO;
-import com.agricultural.agricultural.dto.response.PaymentResponse;
-import com.agricultural.agricultural.dto.response.PaymentUrlResponse;
+import com.agricultural.agricultural.dto.response.*;
 import com.agricultural.agricultural.entity.Order;
 import com.agricultural.agricultural.entity.Payment;
 import com.agricultural.agricultural.entity.User;
@@ -17,14 +15,17 @@ import com.agricultural.agricultural.repository.IOrderRepository;
 import com.agricultural.agricultural.repository.IPaymentRepository;
 import com.agricultural.agricultural.repository.IUserRepository;
 import com.agricultural.agricultural.service.IPaymentService;
-import com.agricultural.agricultural.util.VNPayUtils;
+import com.agricultural.agricultural.utils.QRCodeUtils;
+import com.agricultural.agricultural.utils.VNPayUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -38,6 +39,7 @@ public class PaymentServiceImpl implements IPaymentService {
     private final IUserRepository userRepository;
     private final VNPAYConfig vnPayConfig;
     private final VNPayUtils vnPayUtils;
+    private final QRCodeUtils qrCodeUtils;
 
     @Value("${app.backend-url:http://localhost:8080}")
     private String backendBaseUrl;
@@ -513,5 +515,105 @@ public class PaymentServiceImpl implements IPaymentService {
             log.error("Lỗi khi xử lý IPN từ VNPAY: {}", e.getMessage());
             throw new BadRequestException("Lỗi khi xử lý IPN: " + e.getMessage());
         }
+    }
+
+    /**
+     * Tạo thông tin thanh toán QR cho VNPAY
+     * @param paymentRequest Yêu cầu thanh toán
+     * @return PaymentQRDTO chứa thông tin QR và thông tin thanh toán
+     */
+    @Override
+    public PaymentQRDTO createPaymentQRCode(PaymentRequest paymentRequest) {
+        log.info("Tạo mã QR thanh toán cho đơn hàng ID: {}", paymentRequest.getOrderId());
+        
+        try {
+            // Validate input
+            if (paymentRequest.getOrderId() == null) {
+                throw new BadRequestException("Order ID is required");
+            }
+            if (paymentRequest.getAmount() == null || paymentRequest.getAmount() <= 0) {
+                throw new BadRequestException("Amount must be greater than 0");
+            }
+            
+            Order order = orderRepository.findById(Math.toIntExact(paymentRequest.getOrderId()))
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+            
+            // Lấy thông tin người dùng hiện tại
+            Integer currentUserId = getCurrentUserId();
+            if (currentUserId == null) {
+                // Nếu không có người dùng hiện tại, thử lấy từ order
+                currentUserId = order.getBuyerId();
+                
+                // Nếu vẫn không có, báo lỗi
+                if (currentUserId == null) {
+                    throw new BadRequestException("Không thể xác định người dùng thực hiện thanh toán");
+                }
+            }
+            
+            // Create a payment record
+            Payment payment = new Payment();
+            payment.setOrderId(order.getId());
+            payment.setAmount(paymentRequest.getAmount());
+            payment.setDescription(paymentRequest.getDescription());
+            payment.setPaymentMethod("VNPAY");
+            payment.setStatus(PaymentStatus.PENDING);
+            payment.setTransactionId(UUID.randomUUID().toString());
+            payment.setUserId(currentUserId); // Thiết lập userId
+            payment.setPaymentId("PAY" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 8));
+            payment = paymentRepository.save(payment);
+            
+            // Chuẩn bị thông tin
+            String returnUrl = paymentRequest.getReturnUrl() != null ? 
+                    paymentRequest.getReturnUrl() : backendBaseUrl + "/api/v1/payment/vnpay-return";
+            String ipAddress = paymentRequest.getClientIp() != null ? 
+                    paymentRequest.getClientIp() : "127.0.0.1";
+            
+            // Generate payment URL
+            String paymentUrl = vnPayUtils.createPaymentUrl(
+                    Long.valueOf(order.getId()),
+                    paymentRequest.getAmount(),
+                    paymentRequest.getDescription(),
+                    returnUrl,
+                    ipAddress
+            );
+            
+            // Generate QR code from payment URL
+            String qrCodeBase64 = qrCodeUtils.generateQRCode(paymentUrl);
+            
+            // Create response DTO
+            PaymentQRDTO responseDTO = PaymentQRDTO.builder()
+                    .qrCodeBase64(qrCodeBase64)
+                    .paymentUrl(paymentUrl)
+                    .orderInfo(paymentRequest.getDescription())
+                    .amount(Double.valueOf(paymentRequest.getAmount()))
+                    .transactionRef(payment.getTransactionId())
+                    .expireTime(LocalDateTime.now().plusMinutes(15))
+                    .build();
+            
+            log.info("Mã QR thanh toán được tạo thành công cho giao dịch: {}", payment.getTransactionId());
+            return responseDTO;
+            
+        } catch (Exception e) {
+            log.error("Lỗi khi tạo mã QR thanh toán: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Page<PaymentViewResponse> getPaymentHistory(Integer pageNo, Integer pageSize, Long userId) {
+        // Triển khai sau khi đã định nghĩa class PaymentViewResponse
+        throw new UnsupportedOperationException("Method not implemented yet");
+    }
+
+    @Override
+    public PaymentResponse processVNPayReturn(Map<String, String> params) {
+        // Chuyển hướng về phương thức processVnpayReturn
+        return processVnpayReturn(params);
+    }
+    
+    @Override
+    public PaymentResponse processVNPayIPN(Map<String, String> params) {
+        // Chuyển hướng về phương thức processVnpayIpn
+        return processVnpayIpn(params);
     }
 }
