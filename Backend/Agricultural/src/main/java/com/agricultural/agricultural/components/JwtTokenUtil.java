@@ -1,7 +1,7 @@
 package com.agricultural.agricultural.components;
 
 import com.agricultural.agricultural.entity.User;
-import com.agricultural.agricultural.exception.InvalidParamException;
+import com.agricultural.agricultural.exception.BadRequestException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
@@ -28,20 +28,19 @@ public class JwtTokenUtil {
 
     @Value("${jwt.expiration}")
     private static final long expiration = 3600; // Token có hạn 1 giờ (3600 giây)
+    
+    @Value("${jwt.refreshExpiration:604800}") // 7 ngày mặc định
+    private long refreshExpiration; 
 
     private static Key signInKey;
-
-
 
     @PostConstruct
     public void init() {
         signInKey = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-
     private Key getSignInKey() {
         byte[] bytes = Decoders.BASE64.decode(secretKey);
-        //Keys.hmacShaKeyFor(Decoders.BASE64.decode("TaqlmGv1iEDMRiFp/pHuID1+T84IABfuA0xXh4GhiUI="));
         return Keys.hmacShaKeyFor(bytes);
     }
 
@@ -67,9 +66,21 @@ public class JwtTokenUtil {
                     .compact();
             return token;
         }catch (Exception e) {
-            //you can "inject" Logger, instead System.out.println
-            throw new InvalidParamException("Cannot create jwt token, error: "+e.getMessage());
-            //return null;
+            throw new BadRequestException("Không thể tạo JWT token, lỗi: " + e.getMessage());
+        }
+    }
+    
+    // Tạo refresh token mới
+    public String generateRefreshToken(User user) throws Exception {
+        try {
+            return Jwts.builder()
+                    .setSubject(user.getEmail())
+                    .setIssuedAt(new Date())
+                    .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration * 1000L))
+                    .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                    .compact();
+        } catch (Exception e) {
+            throw new BadRequestException("Không thể tạo refresh token, lỗi: " + e.getMessage());
         }
     }
 
@@ -102,7 +113,6 @@ public class JwtTokenUtil {
     public String extractPhoneNumber(String token) {
         return extractClaim(token, Claims::getSubject);
     }
-
 
     public boolean validateToken(String token, String email) {
         String extractedEmail = extractEmail(token); // Gọi extractEmail và lưu kết quả

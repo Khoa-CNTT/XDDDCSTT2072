@@ -2,10 +2,11 @@ package com.agricultural.agricultural.service.impl;
 
 import com.agricultural.agricultural.entity.PasswordResetToken;
 import com.agricultural.agricultural.entity.User;
+import com.agricultural.agricultural.exception.BadRequestException;
+import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.repository.IPasswordResetTokenRepository;
 import com.agricultural.agricultural.repository.IUserRepository;
 import com.agricultural.agricultural.service.IPasswordResetService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,8 +25,12 @@ public class PasswordResetService implements IPasswordResetService {
 
     @Override
     public void sendPasswordResetEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new BadRequestException("Email không được để trống");
+        }
+        
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Email không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với email: " + email));
 
         // Tạo token reset password
         String token = UUID.randomUUID().toString();
@@ -45,11 +50,19 @@ public class PasswordResetService implements IPasswordResetService {
 
     @Override
     public boolean resetPassword(String token, String newPassword) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new BadRequestException("Token không được để trống");
+        }
+        
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new BadRequestException("Mật khẩu mới không được để trống");
+        }
+        
         PasswordResetToken resetToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new EntityNotFoundException("Token không hợp lệ"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy token đặt lại mật khẩu"));
 
         if (resetToken.getExpiryDate().before(new Date())) {
-            throw new IllegalStateException("Token đã hết hạn");
+            throw new BadRequestException("Token đã hết hạn");
         }
 
         // ✅ Mã hóa mật khẩu trước khi lưu vào database

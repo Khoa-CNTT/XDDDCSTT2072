@@ -13,10 +13,10 @@ public interface OrderTrackingMapper {
     OrderTrackingMapper INSTANCE = Mappers.getMapper(OrderTrackingMapper.class);
 
     OrderTrackingDTO toDTO(OrderTracking entity);
-
+    
     List<OrderTrackingDTO> toDTOList(List<OrderTracking> entities);
-
+    
     OrderTracking toEntity(OrderTrackingDTO dto);
-
+    
     void updateEntityFromDTO(OrderTrackingDTO dto, @MappingTarget OrderTracking entity);
 } 

@@ -10,12 +10,15 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface IPaymentRepository extends JpaRepository<Payment, Integer> {
-    List<Payment> findByOrderId(Integer orderId);
-    Optional<Payment> findByPaymentId(String paymentId);
+public interface IPaymentRepository extends JpaRepository<Payment, Long> {
+    List<Payment> findByOrderId(Long orderId);
+    Optional<Payment> findByOrderIdOrderByCreatedAtDesc(Integer orderId);
+    List<Payment> findAllByOrderIdOrderByCreatedAtDesc(Integer orderId);
+    Optional<Payment> findByTransactionId(String transactionId);
     List<Payment> findByStatus(PaymentStatus status);
-    Optional<Payment> findTopByOrderIdOrderByPaymentDateDesc(Integer orderId);
 
-    @Query("SELECT p FROM Payment p WHERE p.userId = :userId ORDER BY p.paymentDate DESC")
-    List<Payment> findByUserId(Integer userId);
+    @Query("SELECT p FROM Payment p WHERE p.userId = :userId ORDER BY p.createdAt DESC")
+    List<Payment> findByUserId(Long userId);
+
+    Optional<Payment> findByPaymentId(String paymentId);
 } 

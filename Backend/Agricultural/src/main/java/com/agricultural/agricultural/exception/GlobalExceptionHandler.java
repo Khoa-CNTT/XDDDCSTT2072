@@ -1,71 +1,84 @@
 package com.agricultural.agricultural.exception;
 
-import com.agricultural.agricultural.util.ResponseObject;
-import jakarta.validation.ConstraintViolationException;
+import com.agricultural.agricultural.dto.ResponseDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ResponseObject> handleEntityNotFoundException(EntityNotFoundException ex) {
-        ResponseObject responseObject = ResponseObject.builder()
-                .status("NOT_FOUND")
-                .message(ex.getMessage())
-                .build();
-        return new ResponseEntity<>(responseObject, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(PermissionDenyException.class)
-    public ResponseEntity<ResponseObject> handlePermissionDenyException(PermissionDenyException ex) {
-        ResponseObject responseObject = ResponseObject.builder()
-                .status("FORBIDDEN")
-                .message(ex.getMessage())
-                .build();
-        return new ResponseEntity<>(responseObject, HttpStatus.FORBIDDEN);
-    }
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ResponseObject> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ResponseDTO<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+        logger.warn("Validation error: {}", errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseDTO.error("VALIDATION_ERROR", "Dữ liệu không hợp lệ"));
+    }
 
-        ResponseObject responseObject = ResponseObject.builder()
-                .status("BAD_REQUEST")
-                .message("Dữ liệu không hợp lệ")
-                .data(errors)
-                .build();
-        return new ResponseEntity<>(responseObject, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ResponseDTO<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        logger.warn("Resource not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ResponseDTO.error("NOT_FOUND", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ResponseDTO<Void>> handleBusinessException(BusinessException ex) {
+        logger.warn("Business exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseDTO.error("BUSINESS_ERROR", ex.getMessage()));
+    }
+    
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ResponseDTO<Void>> handleBadRequestException(BadRequestException ex) {
+        logger.warn("Bad request exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseDTO.error("BAD_REQUEST", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ResponseDTO<Void>> handleAccessDeniedException(AccessDeniedException ex) {
+        logger.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ResponseDTO.error("ACCESS_DENIED", "Bạn không có quyền truy cập tài nguyên này"));
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ResponseDTO<Void>> handleBadCredentialsException(BadCredentialsException ex) {
+        logger.warn("Bad credentials: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ResponseDTO.error("BAD_CREDENTIALS", "Tên đăng nhập hoặc mật khẩu không chính xác"));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ResponseDTO<Void>> handleAuthenticationException(AuthenticationException ex) {
+        logger.warn("Authentication error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ResponseDTO.error("AUTHENTICATION_ERROR", "Xác thực thất bại"));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ResponseObject> handleGeneralException(Exception ex) {
-        ResponseObject responseObject = ResponseObject.builder()
-                .status("ERROR")
-                .message("Đã xảy ra lỗi: " + ex.getMessage())
-                .build();
-        return new ResponseEntity<>(responseObject, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, String>> handleConstraintViolationException(ConstraintViolationException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getConstraintViolations().forEach(violation -> {
-            String fieldName = violation.getPropertyPath().toString();
-            String errorMessage = violation.getMessage();
-            errors.put(fieldName, errorMessage);
-        });
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ResponseDTO<Void>> handleGlobalException(Exception ex) {
+        logger.error("Unexpected error", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ResponseDTO.error("INTERNAL_SERVER_ERROR", "Có lỗi xảy ra, vui lòng thử lại sau"));
     }
 }

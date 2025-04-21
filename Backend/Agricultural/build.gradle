@@ -27,30 +27,45 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	
+
 	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-	
+
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-	
+
 	// MapStruct
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
 	// Cloudinary
-	implementation 'com.cloudinary:cloudinary-http44:1.33.0'
-	
+	implementation 'com.cloudinary:cloudinary-http44:1.34.0'
+
+	// ZXing for QR Code generation
+	implementation 'com.google.zxing:core:3.5.2'
+	implementation 'com.google.zxing:javase:3.5.2'
+
+	// Momo Payment API
+	implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+	implementation 'commons-codec:commons-codec:1.16.0'
+
 	// Database
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	
+
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'  // Thêm vào phần dependencies
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+	// Springdoc OpenAPI
+	implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+	implementation 'com.google.code.gson:gson:2.10.1'
 }
 
 tasks.named('test') {

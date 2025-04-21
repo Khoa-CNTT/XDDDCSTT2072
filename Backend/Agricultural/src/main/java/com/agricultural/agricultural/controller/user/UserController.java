@@ -127,7 +127,7 @@ public class UserController {
             @Valid @ModelAttribute UserDTO userDTO,
             @RequestPart(value = "image", required = false) MultipartFile image,
             BindingResult result) {
-
+        
         if (result.hasErrors()) {
             return ResponseEntity.badRequest().body(getValidationErrors(result));
         }
@@ -154,16 +154,16 @@ public class UserController {
 
         try {
             LoginResponse loginResponse = userService.loginWithResponse(
-                    userLoginDTO.getEmail(),
-                    userLoginDTO.getPassword()
+                userLoginDTO.getEmail(), 
+                userLoginDTO.getPassword()
             );
             return ResponseEntity.ok(loginResponse);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    ErrorResponse.builder()
-                            .error(true)
-                            .message(e.getMessage())
-                            .build()
+                ErrorResponse.builder()
+                    .error(true)
+                    .message(e.getMessage())
+                    .build()
             );
         }
     }

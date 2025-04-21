@@ -1,8 +1,8 @@
 package com.agricultural.agricultural.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.GrantedAuthority;
@@ -13,6 +13,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Thông tin người dùng - Lưu trữ thông tin người dùng trong hệ thống
+ * Kế thừa từ UserDetails của Spring Security để hỗ trợ xác thực và phân quyền
+ */
 @Builder
 @Entity
 @Table(name = "users")
@@ -21,6 +25,7 @@ import java.util.List;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "authorities"})
 @AllArgsConstructor
 public class User extends BaseEntity implements UserDetails {
 
@@ -28,31 +33,48 @@ public class User extends BaseEntity implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    /**
+     * Tên đăng nhập của người dùng
+     */
     @Column(name = "username", nullable = false, length = 50)
-    @NotBlank(message = "Username không được để trống") // Không để trống hoặc chỉ chứa khoảng trắng
-    @Size(min = 3, max = 50, message = "Username phải từ 3 đến 50 ký tự")
     private String userName;
 
-    @Column(nullable = false)
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
+    /**
+     * Mật khẩu đã được mã hóa của người dùng
+     */
+    @Column(nullable = false, length = 255)
     private String password;
 
-    @Column(name = "email", nullable = false, unique = true)
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ") // Kiểm tra định dạng email
+    /**
+     * Địa chỉ email của người dùng, phải là duy nhất trong hệ thống
+     */
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    @Pattern(regexp = "^(\\+?\\d{1,3})?\\d{10}$", message = "Số điện thoại không hợp lệ") // Hỗ trợ số điện thoại quốc tế
+    /**
+     * Số điện thoại của người dùng, hỗ trợ cả định dạng quốc tế
+     */
+    @Column(length = 20)
     private String phone;
 
-    @Column(name = "image_url")
+    /**
+     * URL ảnh đại diện của người dùng
+     */
+    @Column(name = "image_url", length = 255)
     private String imageUrl;
 
+    /**
+     * Vai trò của người dùng trong hệ thống (ADMIN, USER, SELLER,...)
+     */
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id" , referencedColumnName = "id")
+    @JoinColumn(name = "role_id", referencedColumnName = "id")
+    @JsonIgnoreProperties({"users", "hibernateLazyInitializer", "handler"})
     private Role role;
 
+    /**
+     * Lấy danh sách quyền của người dùng
+     * @return Danh sách các quyền (GrantedAuthority) của người dùng
+     */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<SimpleGrantedAuthority> authorityList = new ArrayList<>();
@@ -60,26 +82,46 @@ public class User extends BaseEntity implements UserDetails {
         return authorityList;
     }
 
+    /**
+     * Lấy tên đăng nhập của người dùng
+     * @return Tên đăng nhập
+     */
     @Override
     public String getUsername() {
         return this.userName;
     }
 
+    /**
+     * Kiểm tra xem tài khoản có hết hạn không
+     * @return true nếu tài khoản chưa hết hạn
+     */
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
 
+    /**
+     * Kiểm tra xem tài khoản có bị khóa không
+     * @return true nếu tài khoản không bị khóa
+     */
     @Override
     public boolean isAccountNonLocked() {
         return true;
     }
 
+    /**
+     * Kiểm tra xem thông tin xác thực (mật khẩu) có hết hạn không
+     * @return true nếu thông tin xác thực chưa hết hạn
+     */
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
+    /**
+     * Kiểm tra xem tài khoản có được kích hoạt không
+     * @return true nếu tài khoản đã được kích hoạt
+     */
     @Override
     public boolean isEnabled() {
         return true;

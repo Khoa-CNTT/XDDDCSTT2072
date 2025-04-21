@@ -10,7 +10,7 @@ import com.agricultural.agricultural.exception.TokenRefreshException;
 import com.agricultural.agricultural.service.IPasswordResetService;
 import com.agricultural.agricultural.service.IRefreshTokenService;
 import com.agricultural.agricultural.service.IUserService;
-import com.agricultural.agricultural.util.ResponseObject;
+import com.agricultural.agricultural.utils.ResponseObject;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,29 +1,31 @@
 package com.agricultural.agricultural.dto.request;
 
-import com.agricultural.agricultural.entity.enumeration.PaymentMethod;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
+@Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class PaymentRequest {
+    @NotNull(message = "Mã đơn hàng không được để trống")
+    private Long orderId;
     @NotNull(message = "Phương thức thanh toán không được để trống")
-    private PaymentMethod paymentMethod;
+    private String paymentMethod;
     
-    // Thông tin thẻ (chỉ cần nếu phương thức là CREDIT_CARD)
-    private String cardNumber;
-    private String cardHolderName;
-    private String expiryDate;
-    private String cvv;
+    @NotNull(message = "Số tiền thanh toán không được để trống")
+    @Positive(message = "Số tiền thanh toán phải lớn hơn 0")
+    private Long amount;
     
-    // Thông tin ví điện tử (chỉ cần nếu phương thức là E_WALLET)
-    private String walletId;
-    
-    // Ghi chú thanh toán
-    private String paymentNote;
+    private String description;
+    private String returnUrl;
+    // Thông tin bổ sung
+    private String buyerName;
+    private String buyerEmail;
+    private String buyerPhone;
+    private String clientIp; // Địa chỉ IP của người dùng, cần thiết cho VNPAY
 } 

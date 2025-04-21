@@ -11,11 +11,11 @@ import java.util.List;
 
 @Repository
 public interface INotificationRepository extends JpaRepository<Notification, Integer> {
-
+    
     List<Notification> findByUserIdOrderByCreatedAtDesc(Integer userId);
-
+    
     Page<Notification> findByUserId(Integer userId, Pageable pageable);
-
+    
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.read = false")
     Long countUnreadByUserId(Integer userId);
 } 

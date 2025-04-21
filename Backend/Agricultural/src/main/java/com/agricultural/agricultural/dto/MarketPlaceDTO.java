@@ -25,7 +25,7 @@ public class MarketPlaceDTO {
 
     @Size(max = 1000, message = "Mô tả không được vượt quá 1000 ký tự")
     private String description;
-
+    
     @Size(max = 500, message = "Mô tả ngắn không được vượt quá 500 ký tự")
     private String shortDescription;
 
@@ -37,47 +37,47 @@ public class MarketPlaceDTO {
     @DecimalMin(value = "0.0", inclusive = false, message = "Giá phải lớn hơn 0")
     @Digits(integer = 10, fraction = 2, message = "Giá không hợp lệ")
     private BigDecimal price;
-
+    
     @DecimalMin(value = "0.0", inclusive = false, message = "Giá khuyến mãi phải lớn hơn 0")
     @Digits(integer = 10, fraction = 2, message = "Giá khuyến mãi không hợp lệ")
     private BigDecimal salePrice;
-
+    
     private LocalDateTime saleStartDate;
-
+    
     private LocalDateTime saleEndDate;
-
+    
     // Ảnh đại diện chính của sản phẩm
     private String imageUrl;
-
+    
     private String sku;
-
+    
     private Integer categoryId;
-
+    
     private Double weight;
-
+    
     private String dimensions;
-
+    
     private String sellerName;
     private Double averageRating;
     private int totalFeedbacks;
-
+    
     // Bổ sung thuộc tính trạng thái sale
     private boolean onSale;
-
+    
     // Giá hiện tại (sau khi áp dụng sale nếu có)
     private BigDecimal currentPrice;
-
+    
     // Danh sách ảnh sản phẩm
     @Builder.Default
     private List<ProductImageDTO> images = new ArrayList<>();
-
+    
     // Ảnh đầu tiên trong danh sách hoặc ảnh đại diện
     public String getMainImageUrl() {
         // Nếu có imageUrl thì trả về
         if (imageUrl != null && !imageUrl.isEmpty()) {
             return imageUrl;
         }
-
+        
         // Nếu có danh sách ảnh, tìm ảnh chính hoặc lấy ảnh đầu tiên
         if (images != null && !images.isEmpty()) {
             // Tìm ảnh chính (isPrimary = true)
@@ -86,18 +86,18 @@ public class MarketPlaceDTO {
                     return image.getImageUrl();
                 }
             }
-
+            
             // Nếu không có ảnh chính, lấy ảnh đầu tiên
             return images.get(0).getImageUrl();
         }
-
+        
         // Không có ảnh nào
         return null;
     }
-
+    
     // Phương thức kiểm tra xem sản phẩm có ảnh không
     public boolean hasImages() {
-        return (imageUrl != null && !imageUrl.isEmpty()) ||
-                (images != null && !images.isEmpty());
+        return (imageUrl != null && !imageUrl.isEmpty()) || 
+               (images != null && !images.isEmpty());
     }
 }
