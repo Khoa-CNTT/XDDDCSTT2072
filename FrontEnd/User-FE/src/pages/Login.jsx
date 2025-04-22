@@ -1,9 +1,46 @@
-import React from "react"; // eslint-disable-line no-unused-vars
+import React, { useState } from "react"; // eslint-disable-line no-unused-vars
 import backgroundImage from "../assets/page-signup-signin/sign-in.jpg";
 import { FaFacebook, FaGoogle } from "react-icons/fa";
 import Input from "../components/shared/Input";
-
-const LoginPage = () => {
+import axiosInstance from "../services/api/axios";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "react-toastify";
+const login = async ({ email, password }) => {
+  try {
+    const res = await axiosInstance.post("/users/login", {
+      email,
+      password,
+    });
+    toast.success("Login successfully");
+    return res;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { mutate, isPending } = useMutation({
+    mutationFn: login,
+    onError: (error) => {
+      if (error.response.data.email) {
+        toast.error(error.response.data.email);
+        return;
+      }
+      if (error.response.data.password) {
+        toast.error(error.response.data.password);
+        return;
+      }
+      if (error.response.data.error) {
+        toast.error(error.response.data.message);
+      }
+    },
+  });
+  const handleLogin = (e) => {
+    e.preventDefault();
+    mutate({ email, password });
+  };
   return (
     <div
       className="min-h-screen flex items-center justify-center relative p-4"
@@ -27,14 +64,29 @@ const LoginPage = () => {
             LOGO
           </div>
           <h2 className="text-2xl font-bold text-center mb-6">Sign In</h2>
-          <form className="space-y-4 w-full max-w-sm">
-            <Input type="email" placeholder="Email"/>
-            <Input type="password" placeholder="Password"/>
+          <form onSubmit={handleLogin} className="space-y-4 w-full max-w-sm">
+            <Input
+              type="email"
+              placeholder="Email"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <Input
+              type="password"
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition duration-300"
+              onClick={handleLogin}
+              className={`w-full p-3 rounded-md transition duration-300 ${
+                isPending
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
             >
-              Sign In
+              {isPending ? "Loading..." : "Sign In"}
             </button>
           </form>
           <div className="text-center text-sm text-gray-600 mt-3">
@@ -60,4 +112,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default Login;
