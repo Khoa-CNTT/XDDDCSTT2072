@@ -1,6 +1,7 @@
 import React from "react"; // eslint-disable-line no-unused-vars
-import Header from "../components/Header";
+
 import TeamMembers from "../components/TeamMembers";
+import Header from "../layout/Header";
 
 const AboutUs = () => {
   return (

@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import Header from "../components/Header";
+import { useState } from "react";
 import PostInput from "../components/PostInput";
 import instagramImages from "../assets/images/instagram.jpg";
 import fbImages from "../assets/images/fb.jpg";
 import twiterImages from "../assets/images/twiter.jpg";
 import avatarImages from "../assets/images/avatar.jpg";
 import { FaThumbsUp, FaCommentAlt, FaShare } from "react-icons/fa";
+import Header from "../layout/Header";
 
 const posts = [
   {

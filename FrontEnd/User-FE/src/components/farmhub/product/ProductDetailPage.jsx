@@ -1,4 +1,3 @@
-import React from "react";
 import ProductImageGallery from "./ProductImageGallery";
 import ProductInfo from "./ProductInfo";
 import ProductDescription from "./ProductDescription";
@@ -13,7 +12,6 @@ const ProductDetailPage = () => {
           <ProductImageGallery />
           <ProductInfo />
         </div>
-
         <ShopInfo />
         <ProductDescription />
         <ProductReview />

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import Header from "../components/Header";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/solid";
 import { motion, AnimatePresence } from "framer-motion";
+import Header from "../layout/Header";
 
 function ChatAI() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
