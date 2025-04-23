@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FaBell, FaShoppingCart, FaUserCircle, FaBars } from "react-icons/fa";
 import { IoIosSearch } from "react-icons/io";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import list from "../data/list.js";
+import useAuth from "@/hooks/useAuth.js";
+import { toast } from "react-toastify";
 
 const Header = () => {
+  const { setAuth } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
   const [underlineStyle, setUnderlineStyle] = useState({});
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -14,7 +17,7 @@ const Header = () => {
   const menuRef = useRef([]);
   const dropdownRef = useRef(null);
   const location = useLocation();
-
+  const navigate = useNavigate();
   // Đặt menu active theo URL
   useEffect(() => {
     const index = list.findIndex((item) => item.path === location.pathname);
@@ -44,10 +47,7 @@ const Header = () => {
   // Click ngoài dropdown thì đóng
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
     };
@@ -58,6 +58,7 @@ const Header = () => {
   }, []);
 
   const toggleDarkMode = () => {
+    console.log("test");
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
     if (newMode) {
@@ -68,7 +69,13 @@ const Header = () => {
       localStorage.setItem("theme", "light");
     }
   };
-
+  // handle logout
+  const handleLogout = () => {
+    console.log("Hello");
+    setAuth({});
+    navigate("/account/login", { replace: true });
+    toast.success("Logout successFully");
+  };
   return (
     <div className="w-full bg-lime-500 px-4 md:px-8 py-3 shadow-md rounded-b-2xl dark:bg-gray-900 transition-colors duration-300">
       <div className="flex justify-between items-center">
@@ -113,7 +120,9 @@ const Header = () => {
             type="text"
             placeholder="Search"
             className={`w-full pl-9 pr-4 py-2 rounded-full bg-green-100 focus:outline-none ${
-              isSearchActive ? "transition-all duration-300 transform scale-105" : ""
+              isSearchActive
+                ? "transition-all duration-300 transform scale-105"
+                : ""
             }`}
             onFocus={() => setIsSearchActive(true)}
             onBlur={() => setIsSearchActive(false)}
@@ -155,9 +164,18 @@ const Header = () => {
                 className="absolute right-0 mt-2 bg-white dark:bg-gray-700 border shadow-lg rounded-lg w-40 p-2 z-50 text-black dark:text-white"
               >
                 <ul>
-                  <li className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">👤 Profile</li>
-                  <li className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">⚙️ Settings</li>
-                  <li className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">🚪 Logout</li>
+                  <li className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                    👤 Profile
+                  </li>
+                  <li className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                    ⚙️ Settings
+                  </li>
+                  <li
+                    onClick={handleLogout}
+                    className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    🚪 Logout
+                  </li>
                   <li
                     onClick={toggleDarkMode}
                     className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -196,9 +214,18 @@ const Header = () => {
           </ul>
           <div className="mt-4 border-t pt-2">
             <ul className="space-y-2 text-sm">
-              <li className="py-1 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded">👤 Profile</li>
-              <li className="py-1 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded">⚙️ Settings</li>
-              <li className="py-1 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded">🚪 Logout</li>
+              <li className="py-1 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded">
+                👤 Profile
+              </li>
+              <li className="py-1 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded">
+                ⚙️ Settings
+              </li>
+              <li
+                onClick={handleLogout}
+                className="py-1 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
+              >
+                🚪 Logout
+              </li>
               <li
                 onClick={toggleDarkMode}
                 className="py-1 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
