@@ -1,10 +1,13 @@
-import React, { useState } from "react"; // eslint-disable-line no-unused-vars
+import React, { useEffect, useState } from "react"; // eslint-disable-line no-unused-vars
 import backgroundImage from "../assets/page-signup-signin/sign-in.jpg";
 import { FaFacebook, FaGoogle } from "react-icons/fa";
 import Input from "../components/shared/Input";
 import axiosInstance from "../services/api/axios";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import useAuth from "../hooks/useAuth";
+import { useNavigate, useLocation } from "react-router";
+
 const login = async ({ email, password }) => {
   try {
     const res = await axiosInstance.post("/users/login", {
@@ -12,35 +15,62 @@ const login = async ({ email, password }) => {
       password,
     });
     toast.success("Login successfully");
-    return res;
+    return res.data;
   } catch (error) {
     console.log(error);
     throw error;
   }
 };
+
 const Login = () => {
+  const { setAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  // Get the intended destination from the location state
+  const from = location.state?.from?.pathname || "/home";
+  useEffect(() => {
+    const sessionAuth = sessionStorage.getItem("auth");
+    if (sessionAuth) {
+      navigate(from, { replace: true });
+    }
+  }, [from, navigate]);
+
   const { mutate, isPending } = useMutation({
     mutationFn: login,
+    onSuccess: (data) => {
+      const accessToken = data.token;
+      const user = data.user;
+      const roleName = data.user.roleName;
+      const authData = { accessToken, user, roleName };
+      setAuth(authData);
+      sessionStorage.setItem("auth", JSON.stringify(authData));
+      // Navigate to the intended destination or home
+      navigate(from, { replace: true });
+    },
     onError: (error) => {
-      if (error.response.data.email) {
+      if (error.response?.data?.email) {
         toast.error(error.response.data.email);
         return;
       }
-      if (error.response.data.password) {
+      if (error.response?.data?.password) {
         toast.error(error.response.data.password);
         return;
       }
-      if (error.response.data.error) {
+      if (error.response?.data?.error) {
         toast.error(error.response.data.message);
       }
     },
   });
+
   const handleLogin = (e) => {
     e.preventDefault();
     mutate({ email, password });
+    setEmail("");
+    setPassword("");
   };
+
   return (
     <div
       className="min-h-screen flex items-center justify-center relative p-4"
@@ -63,18 +93,22 @@ const Login = () => {
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg mb-4">
             LOGO
           </div>
-          <h2 className="text-2xl font-bold text-center mb-6">Sign In</h2>
+          <h2 className="text-2xl font-bold text-center mb-6 text-black">
+            Sign In
+          </h2>
           <form onSubmit={handleLogin} className="space-y-4 w-full max-w-sm">
             <Input
               type="email"
               placeholder="Email"
               onChange={(e) => setEmail(e.target.value)}
+              value={email}
             />
 
             <Input
               type="password"
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
+              value={password}
             />
 
             <button
