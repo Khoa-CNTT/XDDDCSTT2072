@@ -3,8 +3,10 @@ import backgroundImage from "../assets/page-signup-signin/sign-in.jpg";
 import { FaFacebook, FaGoogle } from "react-icons/fa";
 import Input from "../components/shared/Input";
 import axios from "axios";
+import { Link, useNavigate } from "react-router";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [formValues, setFormValues] = useState({
     email: "",
     password: "",
@@ -58,6 +60,7 @@ const LoginPage = () => {
           setFormValues({ email: "", password: "" });
           setErrors({});
           localStorage.setItem("loginInfo",JSON.stringify(response.data))
+          navigate("/");
         })
         .catch((error) => {
           console.log("API error:", error); 
@@ -126,8 +129,9 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="text-center text-sm text-gray-600 mt-3">Quên mật khẩu?</div>
-
+          <Link to="/forgot-password" className="text-blue-500 hover:underline text-sm">
+            Quên mật khẩu?
+          </Link>
           <div className="flex items-center justify-center mt-3">
             <p className="text-gray-600 text-sm mr-2">Or Login With</p>
             <div className="flex space-x-4">
@@ -138,7 +142,7 @@ const LoginPage = () => {
 
           <p className="text-center text-gray-500 mt-3 text-sm">
             Bạn chưa có tài khoản?{" "}
-            <a href="#" className="text-blue-500 hover:underline">
+            <a href="#" className="text-blue-500 hover:underline" onClick={() => navigate('/register')}>
               Đăng Ký
             </a>
           </p>
