@@ -1,22 +1,42 @@
-import React, { useState } from "react"; // eslint-disable-line no-unused-vars
+import React, { useState, useEffect } from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { motion } from "framer-motion";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import backgroundImage from "../assets/page-signup-signin/sign-in.jpg";
+import axios from "axios";
+import Header from "../layout/Header";
+import Footer from "../layout/Footer";
 
 const slides = [{ image: backgroundImage }, { image: backgroundImage }];
 
-// Dữ liệu demo nhiều hơn để test
-const allProducts = Array.from({ length: 30 }, (_, i) => ({
-  name: `Cà Phê Số ${i + 1}`,
-  price: `${(i + 1) * 10}.000 VNĐ`,
-  image: `https://via.placeholder.com/150?text=Coffee+${i + 1}`,
-}));
-
 function FarmHub() {
+  const [products, setProducts] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:8080/api/v1/marketplace/products")
+      .then((response) => {
+        console.log("Dữ liệu API:", response);
+        if (response.data && Array.isArray(response.data.content)) {
+          setProducts(response.data.content);
+        } else {
+          console.error("Dữ liệu không đúng định dạng");
+        }
+      })
+      .catch((error) => {
+        console.error("Lỗi khi tải sản phẩm:", error);
+      });
+  }, []);
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 12);
+  };
+
+  const visibleProducts = products.slice(0, visibleCount);
+  const showLoadMore = visibleCount < products.length;
+
   const settings = {
     dots: true,
     infinite: true,
@@ -29,30 +49,23 @@ function FarmHub() {
   };
 
   const productVariants = {
-    hidden: { opacity: 0, y: 50 },
+    hidden: { opacity: 0, y: 30 },
     visible: (i) => ({
       opacity: 1,
       y: 0,
       transition: {
-        delay: i * 0.1,
-        duration: 0.5,
+        delay: i * 0.05,
+        duration: 0.3,
       },
     }),
   };
-
-  const [visibleCount, setVisibleCount] = useState(7);
-
-  const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + 7);
-  };
-
-  const visibleProducts = allProducts.slice(0, visibleCount);
-  const showLoadMore = visibleCount < allProducts.length;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <div className="flex-1">
         <Header />
+
+        {/* Slider */}
         <div className="w-full">
           <Slider {...settings}>
             {slides.map((slide, index) => (
@@ -66,6 +79,8 @@ function FarmHub() {
             ))}
           </Slider>
         </div>
+
+        {/* Giới thiệu */}
         <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-md mt-4 p-4">
           <div className="text-center px-5">
             <h1 className="font-bold italic py-4 cursor-pointer text-2xl text-orange-600">
@@ -81,49 +96,51 @@ function FarmHub() {
             </p>
           </div>
 
-          {/* Product Type */}
+          {/* Tiêu đề sản phẩm */}
           <h1 className="font-bold italic px-5 py-4 cursor-pointer text-xl text-orange-600">
             Product Type
           </h1>
 
-          {/* Hiển thị sản phẩm theo từng nhóm 7 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 px-5 py-4">
+          {/* Danh sách sản phẩm */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 px-4 py-6 cursor-pointer">
             {visibleProducts.map((product, index) => (
               <motion.div
-                key={index}
-                className="border border-orange-200 rounded-lg p-4 text-center shadow-sm hover:shadow-lg hover:scale-105 hover:border-orange-400 transition-all duration-300 bg-white"
+                key={product.id}
+                className="border border-orange-200 rounded-lg p-2 text-center shadow-sm hover:shadow-md hover:scale-105 hover:border-orange-400 transition-all duration-300 bg-white"
                 variants={productVariants}
                 initial="hidden"
                 animate="visible"
                 custom={index}
               >
                 <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded mb-4"
+                  src={product.imageUrl}
+                  alt={product.productName}
+                  className="w-full h-40 object-cover rounded mb-2"
                 />
-                <h3 className="text-lg font-medium text-gray-800">
-                  {product.name}
+                <h3 className="text-sm font-medium text-gray-800 line-clamp-2 h-10 overflow-hidden">
+                  {product.productName}
                 </h3>
-                <p className="text-orange-600 font-semibold">{product.price}</p>
+                <p className="text-orange-600 font-semibold text-sm">
+                  {product.onSale
+                    ? `${product.salePrice.toLocaleString()} VNĐ`
+                    : `${product.price.toLocaleString()} VNĐ`}
+                </p>
               </motion.div>
             ))}
 
-            {/* Khối Xem thêm */}
+            {/* Xem thêm */}
             {showLoadMore && (
               <motion.div
-                className="border border-orange-200 rounded-lg p-4 text-center bg-gray-100 hover:shadow-lg hover:scale-105 hover:border-orange-400 transition-all duration-300 cursor-pointer"
+                className="border border-orange-200 rounded-lg p-2 text-center bg-gray-100 hover:shadow-md hover:scale-105 hover:border-orange-400 transition-all duration-300 cursor-pointer flex items-center justify-center"
                 variants={productVariants}
                 initial="hidden"
                 animate="visible"
                 custom={visibleProducts.length}
                 onClick={handleLoadMore}
               >
-                <div className="flex items-center justify-center h-48">
-                  <p className="text-gray-600 text-lg font-medium hover:text-orange-500 transition-all duration-300">
-                    Xem thêm...
-                  </p>
-                </div>
+                <p className="text-gray-600 text-sm font-medium hover:text-orange-500 transition-all duration-300">
+                  Xem thêm...
+                </p>
               </motion.div>
             )}
           </div>

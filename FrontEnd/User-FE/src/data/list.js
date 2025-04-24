@@ -1,6 +1,6 @@
 // src/data/list.js
 const list = [
-    { name: "Home", path: "/" },
+    { name: "Home", path: "/home" },
     { name: "FarmHub", path: "/farmhub" },
     { name: "ChatAI", path: "/chat-ai" },
     { name: "News", path: "/news" },

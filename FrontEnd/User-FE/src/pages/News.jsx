@@ -1,4 +1,5 @@
-import Header from "../components/Header";
+import Header from "../layout/Header";
+
 
 function New() {
     return (
