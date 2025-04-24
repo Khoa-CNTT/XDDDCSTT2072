@@ -1,11 +1,14 @@
 /* eslint-disable react/prop-types */
 
-const Input = ({ type, placeholder, ...rest }) => {
+const Input = ({ type, placeholder,  ...rest, name, value, onChange }) => {
   return (
     <input
       type={type}
+      name={name}
       placeholder={placeholder}
-      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+      value={value}          
+      onChange={onChange}
+      className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       {...rest}
     />
   );
