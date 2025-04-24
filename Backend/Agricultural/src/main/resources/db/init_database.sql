@@ -904,3 +904,45 @@ CREATE INDEX idx_flash_sale_status ON flash_sales(status, start_time, end_time);
 CREATE INDEX idx_flash_sale_time ON flash_sales(start_time, end_time);
 CREATE INDEX idx_flash_sale_items_product ON flash_sale_items(product_id);
 CREATE INDEX idx_flash_sale_items_flash_sale ON flash_sale_items(flash_sale_id);
+
+
+--UPDATE LAN 5
+-- Tạo bảng user_product_interactions để lưu trữ tương tác người dùng-sản phẩm
+CREATE TABLE IF NOT EXISTS user_product_interactions (
+                                                         id INT AUTO_INCREMENT PRIMARY KEY,
+                                                         user_id INT NOT NULL,
+                                                         product_id INT NOT NULL,
+                                                         type VARCHAR(20) NOT NULL,
+    interaction_score INT NOT NULL DEFAULT 1,
+    interaction_count INT NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_interaction_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_interaction_product FOREIGN KEY (product_id) REFERENCES market_place(id) ON DELETE CASCADE,
+    CONSTRAINT check_interaction_type CHECK (type IN ('VIEW', 'CART', 'WISHLIST', 'PURCHASE', 'REVIEW')),
+    INDEX idx_user_product_type (user_id, product_id, type),
+    INDEX idx_product_type (product_id, type),
+    INDEX idx_updated_at (updated_at)
+    );
+
+-- Tạo bảng product_relationships để lưu trữ mối quan hệ giữa các sản phẩm
+CREATE TABLE IF NOT EXISTS product_relationships (
+                                                     id INT AUTO_INCREMENT PRIMARY KEY,
+                                                     source_product_id INT NOT NULL,
+                                                     target_product_id INT NOT NULL,
+                                                     relationship_type VARCHAR(20) NOT NULL,
+    strength_score FLOAT NOT NULL DEFAULT 0.0,
+    occurrence_count INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_relationship_source FOREIGN KEY (source_product_id) REFERENCES market_place(id) ON DELETE CASCADE,
+    CONSTRAINT fk_relationship_target FOREIGN KEY (target_product_id) REFERENCES market_place(id) ON DELETE CASCADE,
+    CONSTRAINT uq_product_relationship UNIQUE (source_product_id, target_product_id, relationship_type),
+    CONSTRAINT check_relationship_type CHECK (relationship_type IN ('SIMILAR', 'BOUGHT_TOGETHER', 'VIEWED_TOGETHER')),
+    CONSTRAINT check_different_products CHECK (source_product_id <> target_product_id),
+    CONSTRAINT check_strength_score CHECK (strength_score BETWEEN 0 AND 1),
+    INDEX idx_source_type (source_product_id, relationship_type),
+    INDEX idx_target_product (target_product_id)
+    );
