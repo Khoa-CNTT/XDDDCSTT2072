@@ -3,10 +3,10 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { motion } from "framer-motion";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 import backgroundImage from "../assets/page-signup-signin/sign-in.jpg";
 import axios from "axios";
+import Header from "../layout/Header";
+import Footer from "../layout/Footer";
 
 const slides = [{ image: backgroundImage }, { image: backgroundImage }];
 

@@ -1,74 +1,76 @@
-import React, { useState } from "react"; // eslint-disable-line no-unused-vars
+import React, { useEffect, useState } from "react"; // eslint-disable-line no-unused-vars
 import backgroundImage from "../assets/page-signup-signin/sign-in.jpg";
 import { FaFacebook, FaGoogle } from "react-icons/fa";
 import Input from "../components/shared/Input";
-import axios from "axios";
-import { Link, useNavigate } from "react-router";
+import axiosInstance from "../services/api/axios";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "react-toastify";
+import useAuth from "../hooks/useAuth";
+import { useNavigate, useLocation } from "react-router";
 
-const LoginPage = () => {
+const login = async ({ email, password }) => {
+  try {
+    const res = await axiosInstance.post("/users/login", {
+      email,
+      password,
+    });
+    toast.success("Login successfully");
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+const Login = () => {
+  const { setAuth } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const [formValues, setFormValues] = useState({
-    email: "",
-    password: "",
+  const location = useLocation();
+  // Get the intended destination from the location state
+  const from = location.state?.from?.pathname || "/home";
+  useEffect(() => {
+    const sessionAuth = sessionStorage.getItem("auth");
+    if (sessionAuth) {
+      navigate(from, { replace: true });
+    }
+  }, [from, navigate]);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: login,
+    onSuccess: (data) => {
+      const accessToken = data.token;
+      const user = data.user;
+      const roleName = data.user.roleName;
+      const authData = { accessToken, user, roleName };
+      setAuth(authData);
+      sessionStorage.setItem("auth", JSON.stringify(authData));
+      // Navigate to the intended destination or home
+      navigate(from, { replace: true });
+    },
+    onError: (error) => {
+      if (error.response?.data?.email) {
+        toast.error(error.response.data.email);
+        return;
+      }
+      if (error.response?.data?.password) {
+        toast.error(error.response.data.password);
+        return;
+      }
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.message);
+      }
+    },
   });
-  const [error, setErrors] = useState({});
-  const [loginError, setLoginError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormValues((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const validate = () => {
-    let err = {};
-    let isValid = true;
-
-    if (!formValues.email || formValues.email.trim() === "") {
-      err.email = "Vui lòng nhập Email.";
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formValues.email)) {
-      err.email = "Email không hợp lệ.";
-      isValid = false;
-    }
-
-    if (!formValues.password || formValues.password.trim() === "") {
-      err.password = "Vui lòng nhập mật khẩu.";
-      isValid = false;
-    } else if(formValues.password.length <6 ){
-      err.password = "Mật khẩu phải từ 6 kí tự"
-      isValid = false;
-    }
-
-    setErrors(err);
-    return isValid;
-  };
-
-  const handleSubmit = (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
-    setLoginError('');
-    setSuccess('');
-  
-    if (validate()) {
-      axios.post("http://localhost:8080/api/v1/users/login", {
-        email: formValues.email,
-        password: formValues.password
-      })
-        .then((response) => {
-          console.log("API response:", response); 
-          setSuccess("Đăng nhập thành công!");
-          setFormValues({ email: "", password: "" });
-          setErrors({});
-          localStorage.setItem("loginInfo",JSON.stringify(response.data))
-          navigate("/");
-        })
-        .catch((error) => {
-          console.log("API error:", error); 
-          setLoginError("Email hoặc mật khẩu không đúng!");
-        });
-    }
+    mutate({ email, password });
+    setEmail("");
+    setPassword("");
   };
-  
+
   return (
     <div
       className="min-h-screen flex items-center justify-center relative p-4"
@@ -87,51 +89,43 @@ const LoginPage = () => {
             className="w-full h-full object-cover"
           />
         </div>
-
         <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col items-center">
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg mb-4">
             LOGO
           </div>
-          <h2 className="text-2xl font-bold text-center mb-6">Sign In</h2>
+          <h2 className="text-2xl font-bold text-center mb-6 text-black">
+            Sign In
+          </h2>
+          <form onSubmit={handleLogin} className="space-y-4 w-full max-w-sm">
+            <Input
+              type="email"
+              placeholder="Email"
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
+            />
 
-          {loginError && <div className="text-red-500 text-sm mb-2">{loginError}</div>}
-          {success && <div className="text-green-500 text-sm mb-2">{success}</div>}
-
-          <form className="space-y-4 w-full max-w-sm" onSubmit={handleSubmit} noValidate>
-            <div>
-              <Input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formValues.email}
-                onChange={handleChange}
-              />
-              {error.email && <div className="text-red-500 text-sm mt-1">{error.email}</div>}
-            </div>
-
-            <div>
-              <Input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formValues.password}
-                onChange={handleChange}
-                autoComplete="off"
-              />
-              {error.password && <div className="text-red-500 text-sm mt-1">{error.password}</div>}
-            </div>
+            <Input
+              type="password"
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
+            />
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition duration-300"
+              onClick={handleLogin}
+              className={`w-full p-3 rounded-md transition duration-300 ${
+                isPending
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
             >
-              Sign In
+              {isPending ? "Loading..." : "Sign In"}
             </button>
           </form>
-
-          <Link to="/forgot-password" className="text-blue-500 hover:underline text-sm">
+          <div className="text-center text-sm text-gray-600 mt-3">
             Quên mật khẩu?
-          </Link>
+          </div>
           <div className="flex items-center justify-center mt-3">
             <p className="text-gray-600 text-sm mr-2">Or Login With</p>
             <div className="flex space-x-4">
@@ -142,7 +136,7 @@ const LoginPage = () => {
 
           <p className="text-center text-gray-500 mt-3 text-sm">
             Bạn chưa có tài khoản?{" "}
-            <a href="#" className="text-blue-500 hover:underline" onClick={() => navigate('/register')}>
+            <a href="#" className="text-blue-500 hover:underline">
               Đăng Ký
             </a>
           </p>
@@ -152,4 +146,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default Login;

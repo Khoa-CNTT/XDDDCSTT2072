@@ -1,6 +1,6 @@
 import imgCafe from "../assets/images/cafe.jpg";
-import Footer from "../components/Footer";
-import Header from "../components/Header";
+import Footer from "../layout/Footer";
+import Header from "../layout/Header";
 
 function Cart() {
   return (

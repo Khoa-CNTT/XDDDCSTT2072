@@ -4,7 +4,7 @@ import smallImage from '../assets/page-signup-signin/sign-up.jpg';
 import axios from 'axios';
 import { useNavigate } from 'react-router';
 
-const SignupForm = () => {
+const Register = () => {
   const navigate = useNavigate();
   const [formValues, setFormValues] = useState({
     userName: '',   
@@ -192,4 +192,4 @@ const SignupForm = () => {
   );
 };
 
-export default SignupForm;
+export default Register;
