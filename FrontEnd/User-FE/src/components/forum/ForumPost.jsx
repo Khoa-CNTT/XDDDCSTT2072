@@ -28,6 +28,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import { toast } from "react-toastify";
+import CommentInput from "./CommentInput";
+import CommentList from "./CommentList";
 
 const ForumPost = ({ post, isOwner }) => {
   const axiosPrivate = useAxiosPrivate();
@@ -35,6 +37,8 @@ const ForumPost = ({ post, isOwner }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  console.log(post);
 
   // Get user data
   const { data: user } = useQuery({
@@ -46,6 +50,15 @@ const ForumPost = ({ post, isOwner }) => {
     enabled: !!post.userId,
   });
 
+  // count reply
+  const {data: countTotal} = useQuery({
+    queryKey: ["counCommenttPost", post.id],
+    queryFn: async () => {
+      const response = await axiosPrivate.get(`forum/replies/post/${post?.id}/count`);
+      return response.data
+    }
+  })
+  
   // Delete post mutation
   const { mutate: deletePost, isPending: isDeleting } = useMutation({
     mutationFn: async () => {
@@ -144,8 +157,12 @@ const ForumPost = ({ post, isOwner }) => {
             <Button variant="ghost" className="flex items-center gap-2">
               <FaThumbsUp /> Like
             </Button>
-            <Button variant="ghost" className="flex items-center gap-2">
-              <FaCommentAlt /> Comment
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2"
+              onClick={() => setShowComments((prev) => !prev)}
+            >
+              <FaCommentAlt /> Comment ({countTotal?.data?.totalCount})
             </Button>
             <Button variant="ghost" className="flex items-center gap-2">
               <FaShare /> Share
@@ -157,6 +174,12 @@ const ForumPost = ({ post, isOwner }) => {
             </Button>
           )}
         </CardFooter>
+        {showComments && (
+          <div className="mt-2 px-4 pb-4">
+            <CommentInput postId={post.id} />
+            <CommentList postId={post.id} />
+          </div>
+        )}
       </Card>
 
       {/* Delete Confirmation Dialog */}
