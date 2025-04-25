@@ -9,23 +9,30 @@ import smallImage from "../assets/page-signup-signin/sign-up.jpg";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
+import { useState } from "react";
 
-const formSchema = z.object({
-  userName: z.string().min(3, "UserName must to have at least 3 characters"),
-  email: z.string().email("Email is not valid"),
-  phone: z
-    .string()
-    .regex(/^[0-9]{10}$/, "Phone number is not valid. Please enter 10 characters"),
-  password: z.string().min(6, "Password must to have at least 6 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Password isn't matched",
-  path: ["confirmPassword"],
-});
+const formSchema = z
+  .object({
+    userName: z.string().min(3, "UserName must to have at least 3 characters"),
+    email: z.string().email("Email is not valid"),
+    phone: z
+      .string()
+      .regex(
+        /^[0-9]{10}$/,
+        "Phone number is not valid. Please enter 10 characters"
+      ),
+    password: z.string().min(6, "Password must to have at least 6 characters"),
+    confirmPassword: z.string(),
+    image: z.any().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password isn't matched",
+    path: ["confirmPassword"],
+  });
 
 const Register = () => {
   const navigate = useNavigate();
-
+  const [previewImage, setPreviewImage] = useState(null);
   const {
     register,
     handleSubmit,
@@ -34,27 +41,55 @@ const Register = () => {
   } = useForm({
     resolver: zodResolver(formSchema),
   });
+  console.log(errors);
+  // const { ref: avatarRef, ...rest } = register("image");
 
   const mutation = useMutation({
     mutationFn: async (formData) => {
-      return await axios.post("http://localhost:8080/api/v1/users/register-with-image", formData);
+      return await axios.post(
+        "http://localhost:8080/api/v1/users/register-with-image",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log(data);
       toast.success("Đăng ký thành công!");
       reset();
       navigate("/account/login");
     },
     onError: (error) => {
-      console.log(error);
       toast.error(error.response.data);
-    }
+    },
   });
 
+  // handle file change
+  // const handleFileChange = (e) => {
+  //   const file = e.target.files?.[0];
+  //   // console.log(file);
+  //   if (file) {
+  //     setPreviewImage(URL.createObjectURL(file));
+  //   }
+  //   avatarRef.onChange(e);
+  // };
+
   const onSubmit = (data) => {
+    console.log(data);
+
     const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
+    formData.append("userName", data.userName);
+    formData.append("email", data.email);
+    formData.append("phone", data.phone);
+    formData.append("password", data.password);
+    // formData.append("confirmPassword", data.confirmPassword);
+    if (data.image && data.image[0]) {
+      formData.append("image", data.image[0]);
+    }
+    console.log("image to upload:", data.image[0]);
     mutation.mutate(formData);
   };
 
@@ -88,7 +123,9 @@ const Register = () => {
             <div>
               <Input placeholder="Username" {...register("userName")} />
               {errors.userName && (
-                <p className="text-red-500 text-sm">{errors.userName.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.userName.message}
+                </p>
               )}
             </div>
             <div>
@@ -104,9 +141,15 @@ const Register = () => {
               )}
             </div>
             <div>
-              <Input placeholder="Password" type="password" {...register("password")} />
+              <Input
+                placeholder="Password"
+                type="password"
+                {...register("password")}
+              />
               {errors.password && (
-                <p className="text-red-500 text-sm">{errors.password.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.password.message}
+                </p>
               )}
             </div>
             <div>
@@ -116,22 +159,71 @@ const Register = () => {
                 {...register("confirmPassword")}
               />
               {errors.confirmPassword && (
-                <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={mutation.isLoading}>
-              {mutation.isLoading ? "Đang xử lý..." : "Xác nhận"}
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                id="file-input"
+                {...register("image", {
+                  onChange: (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setPreviewImage(URL.createObjectURL(file));
+                    }
+                  },
+                })}
+                className="hidden"
+                accept="image/*"
+              />
+              <label htmlFor="file-input">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="max-w-[200px]"
+                  onClick={() => document.getElementById("file-input")?.click()}
+                >
+                  {previewImage ? "Change Avatar" : "Select Avatar"}
+                </Button>
+              </label>
+              {previewImage && (
+                <div className="mt-2">
+                  <img
+                    src={previewImage}
+                    alt="Avatar Preview"
+                    className="w-20 h-20 rounded-full object-cover border"
+                  />
+                </div>
+              )}
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={mutation.isLoading}
+            >
+              {mutation.isLoading ? "Loading..." : "Submit"}
             </Button>
           </form>
 
           <p
             className="text-center text-gray-500 mt-4 text-sm cursor-pointer"
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/account/login")}
           >
-            Bạn đã có tài khoản? <span className="text-blue-500 hover:underline">Đăng nhập</span>
+            Bạn đã có tài khoản?{" "}
+            <span className="text-blue-500 hover:underline">Đăng nhập</span>
           </p>
           <p className="text-center text-gray-500 text-sm">
-            Bằng cách đăng ký, bạn đồng ý với <span className="text-blue-500 hover:underline">Điều khoản sử dụng</span> và <span className="text-blue-500 hover:underline">Chính sách bảo mật</span>
+            Bằng cách đăng ký, bạn đồng ý với{" "}
+            <span className="text-blue-500 hover:underline">
+              Điều khoản sử dụng
+            </span>{" "}
+            và{" "}
+            <span className="text-blue-500 hover:underline">
+              Chính sách bảo mật
+            </span>
           </p>
         </div>
       </div>
