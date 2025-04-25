@@ -1,7 +1,6 @@
 package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.ProductCategoryDTO;
-import com.agricultural.agricultural.service.ICloudinaryService;
 import com.agricultural.agricultural.service.IProductCategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ import java.util.List;
 public class ProductCategoryController {
 
     private final IProductCategoryService productCategoryService;
-    private final ICloudinaryService cloudinaryService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductCategoryDTO> createCategory(
@@ -33,21 +31,10 @@ public class ProductCategoryController {
             @RequestParam(value = "displayOrder", required = false) Integer displayOrder,
             @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
 
-        ProductCategoryDTO categoryDTO = ProductCategoryDTO.builder()
-                .name(name)
-                .description(description)
-                .parentId(parentId)
-                .isActive(isActive == null ? true : isActive)
-                .displayOrder(displayOrder)
-                .build();
+        // Gọi service để xử lý tạo danh mục với ảnh
+        ProductCategoryDTO createdCategory = productCategoryService.createCategoryWithImage(
+                name, description, parentId, isActive, displayOrder, image);
 
-        // Xử lý upload ảnh nếu có
-        if (image != null && !image.isEmpty()) {
-            String imageUrl = cloudinaryService.uploadImage(image, "product-categories");
-            categoryDTO.setImageUrl(imageUrl);
-        }
-
-        ProductCategoryDTO createdCategory = productCategoryService.createCategory(categoryDTO);
         return new ResponseEntity<>(createdCategory, HttpStatus.CREATED);
     }
 
@@ -61,58 +48,16 @@ public class ProductCategoryController {
             @RequestParam(value = "displayOrder", required = false) Integer displayOrder,
             @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
 
-        // Lấy thông tin danh mục hiện tại để giữ các giá trị không thay đổi
-        ProductCategoryDTO existingCategory = productCategoryService.getCategory(id);
+        // Gọi service để xử lý cập nhật danh mục với ảnh
+        ProductCategoryDTO updatedCategory = productCategoryService.updateCategoryWithImage(
+                id, name, description, parentId, isActive, displayOrder, image);
 
-        ProductCategoryDTO categoryDTO = ProductCategoryDTO.builder()
-                .id(id)
-                .name(name != null ? name : existingCategory.getName())
-                .description(description != null ? description : existingCategory.getDescription())
-                .parentId(parentId != null ? parentId : existingCategory.getParentId())
-                .isActive(isActive != null ? isActive : existingCategory.getIsActive())
-                .displayOrder(displayOrder != null ? displayOrder : existingCategory.getDisplayOrder())
-                .imageUrl(existingCategory.getImageUrl()) // Giữ lại URL ảnh hiện tại
-                .build();
-
-        // Xử lý upload ảnh mới nếu có
-        if (image != null && !image.isEmpty()) {
-            // Xóa ảnh cũ nếu có
-            if (existingCategory.getImageUrl() != null && !existingCategory.getImageUrl().isEmpty()) {
-                try {
-                    String publicId = cloudinaryService.extractPublicIdFromUrl(existingCategory.getImageUrl());
-                    cloudinaryService.deleteImage(publicId);
-                } catch (Exception e) {
-                    // Bỏ qua lỗi khi xóa ảnh cũ
-                }
-            }
-
-            // Upload ảnh mới
-            String imageUrl = cloudinaryService.uploadImage(image, "product-categories");
-            categoryDTO.setImageUrl(imageUrl);
-        }
-
-        ProductCategoryDTO updatedCategory = productCategoryService.updateCategory(id, categoryDTO);
         return ResponseEntity.ok(updatedCategory);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
-        // Lấy thông tin danh mục để xóa ảnh
-        ProductCategoryDTO category = productCategoryService.getCategory(id);
-
-        // Xóa danh mục
         productCategoryService.deleteCategory(id);
-
-        // Xóa ảnh từ Cloudinary nếu có
-        if (category.getImageUrl() != null && !category.getImageUrl().isEmpty()) {
-            try {
-                String publicId = cloudinaryService.extractPublicIdFromUrl(category.getImageUrl());
-                cloudinaryService.deleteImage(publicId);
-            } catch (Exception e) {
-                // Bỏ qua lỗi khi xóa ảnh
-            }
-        }
-
         return ResponseEntity.noContent().build();
     }
 
