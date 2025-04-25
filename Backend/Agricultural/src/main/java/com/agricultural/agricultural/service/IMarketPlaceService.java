@@ -3,8 +3,13 @@ package com.agricultural.agricultural.service;
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public interface IMarketPlaceService {
     MarketPlaceDTO createProduct(MarketPlaceDTO productDTO);
@@ -21,12 +26,82 @@ public interface IMarketPlaceService {
     Page<MarketPlaceDTO> getPopularProducts(Pageable pageable);
     Page<MarketPlaceDTO> getRecentlyUpdatedProducts(Pageable pageable);
     Page<MarketPlaceDTO> advancedSearch(
-        Integer categoryId,
-        BigDecimal minPrice,
-        BigDecimal maxPrice,
-        String keyword,
-        boolean onSaleOnly,
-        Pageable pageable
+            Integer categoryId,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String keyword,
+            boolean onSaleOnly,
+            Pageable pageable
     );
     Page<MarketPlaceDTO> getProductsByUser(Integer userId, Pageable pageable);
+
+    /**
+     * Tạo sản phẩm mới từ form-data với hình ảnh
+     *
+     * @param productName Tên sản phẩm
+     * @param description Mô tả chi tiết
+     * @param shortDescription Mô tả ngắn
+     * @param quantity Số lượng
+     * @param price Giá
+     * @param salePrice Giá khuyến mãi
+     * @param saleStartDate Ngày bắt đầu khuyến mãi
+     * @param saleEndDate Ngày kết thúc khuyến mãi
+     * @param categoryId ID danh mục
+     * @param sku Mã SKU
+     * @param weight Cân nặng
+     * @param dimensions Kích thước
+     * @param image File ảnh
+     * @return Sản phẩm đã tạo
+     * @throws IOException Nếu có lỗi khi xử lý ảnh
+     */
+    MarketPlaceDTO createProductWithImage(
+            String productName,
+            String description,
+            String shortDescription,
+            int quantity,
+            BigDecimal price,
+            BigDecimal salePrice,
+            LocalDateTime saleStartDate,
+            LocalDateTime saleEndDate,
+            Integer categoryId,
+            String sku,
+            Double weight,
+            String dimensions,
+            MultipartFile image) throws IOException;
+
+    /**
+     * Cập nhật sản phẩm từ form-data với hình ảnh
+     *
+     * @param id ID sản phẩm cần cập nhật
+     * @param productName Tên sản phẩm
+     * @param description Mô tả chi tiết
+     * @param shortDescription Mô tả ngắn
+     * @param quantity Số lượng
+     * @param price Giá
+     * @param salePrice Giá khuyến mãi
+     * @param saleStartDate Ngày bắt đầu khuyến mãi
+     * @param saleEndDate Ngày kết thúc khuyến mãi
+     * @param categoryId ID danh mục
+     * @param sku Mã SKU
+     * @param weight Cân nặng
+     * @param dimensions Kích thước
+     * @param image File ảnh mới
+     * @return Sản phẩm đã cập nhật
+     * @throws IOException Nếu có lỗi khi xử lý ảnh
+     */
+    MarketPlaceDTO updateProductWithImage(
+            Integer id,
+            String productName,
+            String description,
+            String shortDescription,
+            Integer quantity,
+            BigDecimal price,
+            BigDecimal salePrice,
+            LocalDateTime saleStartDate,
+            LocalDateTime saleEndDate,
+            Integer categoryId,
+            String sku,
+            Double weight,
+            String dimensions,
+            MultipartFile image) throws IOException;
 } 
