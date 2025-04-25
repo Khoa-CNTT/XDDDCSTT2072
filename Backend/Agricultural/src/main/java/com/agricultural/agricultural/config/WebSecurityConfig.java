@@ -12,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 @Configuration
 @EnableWebSecurity
@@ -20,7 +21,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 public class WebSecurityConfig {
     private final JwtTokenFilter jwtTokenFilter;
 
-    @Override
     public void addCorsMappings(CorsRegistry registry) {
         // Enable CORS for specific endpoints or all endpoints
         registry.addMapping("/**")
