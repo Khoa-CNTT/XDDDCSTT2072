@@ -1,11 +1,11 @@
 package com.agricultural.agricultural.entity;
 
 import com.agricultural.agricultural.enums.FlashSaleStatus;
-import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;

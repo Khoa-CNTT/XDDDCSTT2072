@@ -1,11 +1,10 @@
 package com.agricultural.agricultural.service.impl;
-
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import com.agricultural.agricultural.entity.MarketPlace;
 import com.agricultural.agricultural.entity.ProductRelationship;
-import com.agricultural.agricultural.entity.ProductRelationship.RelationshipType;
 import com.agricultural.agricultural.entity.UserProductInteraction;
 import com.agricultural.agricultural.entity.UserProductInteraction.InteractionType;
+import com.agricultural.agricultural.entity.ProductRelationship.RelationshipType;
 import com.agricultural.agricultural.mapper.MarketPlaceMapper;
 import com.agricultural.agricultural.repository.IMarketPlaceRepository;
 import com.agricultural.agricultural.repository.IProductRelationshipRepository;

@@ -57,6 +57,15 @@ public class JwtTokenUtil {
         Map<String, Object> claims = new HashMap<>();
         //this.generateSecretKey();
         claims.put("mail", user.getEmail());
+        
+        // Thêm role vào token
+        claims.put("role", user.getRole().getRoleName());
+        
+        // Thêm dòng debug
+        System.out.println("===== JWT TOKEN DEBUG =====");
+        System.out.println("USER: " + user.getEmail());
+        System.out.println("ROLE: " + user.getRole().getRoleName());
+        
         try {
             String token = Jwts.builder()
                     .setClaims(claims) //how to extract claims from this ?
@@ -115,8 +124,25 @@ public class JwtTokenUtil {
     }
 
     public boolean validateToken(String token, String email) {
-        String extractedEmail = extractEmail(token); // Gọi extractEmail và lưu kết quả
-        return extractedEmail != null && extractedEmail.equals(email) && !isTokenExpired(token);
+        try {
+            String extractedEmail = extractEmail(token); // Gọi extractEmail và lưu kết quả
+            
+            // Thêm log để debug
+            System.out.println("===== VALIDATE TOKEN DEBUG =====");
+            System.out.println("Token: " + token.substring(0, 20) + "...");
+            System.out.println("Email from token: " + extractedEmail);
+            System.out.println("Email to compare: " + email);
+            
+            // Hiển thị thêm thông tin về claims trong token
+            Claims claims = extractAllClaims(token);
+            System.out.println("Token Claims: " + claims);
+            System.out.println("Role in token: " + claims.get("role"));
+            
+            return extractedEmail != null && extractedEmail.equals(email) && !isTokenExpired(token);
+        } catch (Exception e) {
+            System.out.println("Error validating token: " + e.getMessage());
+            return false;
+        }
     }
 
     public boolean isTokenExpired(String token) {

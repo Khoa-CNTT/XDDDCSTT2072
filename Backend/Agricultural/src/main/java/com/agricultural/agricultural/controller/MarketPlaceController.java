@@ -38,12 +38,12 @@ public class MarketPlaceController {
             @RequestParam(value = "weight", required = false) Double weight,
             @RequestParam(value = "dimensions", required = false) String dimensions,
             @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
-
+        
         // Gọi service để xử lý tạo sản phẩm với ảnh
         MarketPlaceDTO createdProduct = marketPlaceService.createProductWithImage(
                 productName, description, shortDescription, quantity, price, salePrice,
                 saleStartDate, saleEndDate, categoryId, sku, weight, dimensions, image);
-
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
     }
 
@@ -63,12 +63,12 @@ public class MarketPlaceController {
             @RequestParam(value = "weight", required = false) Double weight,
             @RequestParam(value = "dimensions", required = false) String dimensions,
             @RequestParam(value = "image", required = false) MultipartFile image) throws IOException, BadRequestException {
-
+        
         // Gọi service để xử lý cập nhật sản phẩm với ảnh
         MarketPlaceDTO updatedProduct = marketPlaceService.updateProductWithImage(
                 id, productName, description, shortDescription, quantity, price, salePrice,
                 saleStartDate, saleEndDate, categoryId, sku, weight, dimensions, image);
-
+        
         return ResponseEntity.ok(updatedProduct);
     }
 
@@ -126,7 +126,7 @@ public class MarketPlaceController {
 
     @GetMapping("/top-rated")
     public ResponseEntity<Page<MarketPlaceDTO>> getProductsByMinimumRating(
-            @RequestParam(required = false, defaultValue = "4.0") BigDecimal minRating,
+            @RequestParam(required = false, defaultValue = "4.0") BigDecimal minRating, 
             Pageable pageable) {
         Page<MarketPlaceDTO> products = marketPlaceService.getProductsByMinimumRating(minRating, pageable);
         return ResponseEntity.ok(products);
@@ -159,10 +159,10 @@ public class MarketPlaceController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "false") boolean onSaleOnly,
             Pageable pageable) {
-
+        
         Page<MarketPlaceDTO> products = marketPlaceService.advancedSearch(
                 categoryId, minPrice, maxPrice, keyword, onSaleOnly, pageable);
-
+        
         return ResponseEntity.ok(products);
     }
 }

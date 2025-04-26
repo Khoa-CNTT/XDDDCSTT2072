@@ -75,6 +75,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     User userDetails = (User) userDetailsService.loadUserByUsername(email);
                     
                     if (jwtTokenUtil.validateToken(token, userDetails.getEmail())) {
+                        // DEBUG ROLE
+                        System.out.println("===== JWT FILTER DEBUG =====");
+                        System.out.println("EMAIL: " + email);
+                        System.out.println("USER ROLE: " + userDetails.getRole().getRoleName());
+                        System.out.println("USER AUTHORITIES: " + userDetails.getAuthorities());
+                        
                         // Chỉ sử dụng các thuộc tính eager của User, không truy cập các thuộc tính lazy
                         UsernamePasswordAuthenticationToken authenticationToken =
                                 new UsernamePasswordAuthenticationToken(

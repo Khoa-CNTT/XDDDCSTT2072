@@ -6,6 +6,8 @@ import com.agricultural.agricultural.dto.response.OrderTrackingResponse;
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.response.PaymentResponse;
 import com.agricultural.agricultural.entity.enumeration.OrderStatus;
+import com.agricultural.agricultural.exception.BadRequestException;
+import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.service.IOrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,7 @@ public class OrderController {
     private final IOrderService orderService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<OrderDTO>> createOrder(@Valid @RequestBody OrderDTO orderDTO, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             StringBuilder errors = new StringBuilder();
@@ -42,28 +44,28 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<OrderDTO>> getOrder(@PathVariable Integer id) {
         OrderDTO order = orderService.getOrderById(id);
         return ResponseEntity.ok(ResponseDTO.success(order));
     }
 
     @GetMapping("/buyer")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getOrdersByBuyer(Pageable pageable) {
         Page<OrderDTO> orders = orderService.getOrdersByBuyer(pageable);
         return ResponseEntity.ok(ResponseDTO.success(orders));
     }
 
     @GetMapping("/seller")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getOrdersBySeller(Pageable pageable) {
         Page<OrderDTO> orders = orderService.getOrdersBySeller(pageable);
         return ResponseEntity.ok(ResponseDTO.success(orders));
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<OrderDTO>> updateOrderStatus(
             @PathVariable Integer id,
             @RequestParam OrderStatus status) {
@@ -72,14 +74,14 @@ public class OrderController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<Void>> deleteOrder(@PathVariable Integer id) {
         orderService.deleteOrder(id);
         return ResponseEntity.ok(ResponseDTO.success(null, "Đơn hàng đã được xóa thành công"));
     }
 
     @GetMapping("/buyer/status")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getOrdersByBuyerAndStatus(
             @RequestParam OrderStatus status,
             Pageable pageable) {
@@ -88,7 +90,7 @@ public class OrderController {
     }
 
     @GetMapping("/seller/status")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getOrdersBySellerAndStatus(
             @RequestParam OrderStatus status,
             Pageable pageable) {
@@ -97,28 +99,28 @@ public class OrderController {
     }
 
     @GetMapping("/tracking/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<OrderTrackingResponse>> trackOrder(@PathVariable Integer id) {
         OrderTrackingResponse tracking = orderService.trackOrder(id);
         return ResponseEntity.ok(ResponseDTO.success(tracking));
     }
 
     @GetMapping("/history/buyer")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<Map<OrderStatus, List<OrderDTO>>>> getBuyerOrderHistory() {
         Map<OrderStatus, List<OrderDTO>> history = orderService.getBuyerOrderHistory();
         return ResponseEntity.ok(ResponseDTO.success(history));
     }
 
     @GetMapping("/history/seller")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<Map<OrderStatus, List<OrderDTO>>>> getSellerOrderHistory() {
         Map<OrderStatus, List<OrderDTO>> history = orderService.getSellerOrderHistory();
         return ResponseEntity.ok(ResponseDTO.success(history));
     }
 
     @PostMapping("/{id}/payment")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<PaymentResponse>> processPayment(
             @PathVariable Integer id,
             @Valid @RequestBody PaymentRequest paymentRequest) {

@@ -111,7 +111,7 @@ public class UserWeatherSubscriptionController {
      * Chỉ Admin mới có quyền truy cập
      */
     @GetMapping("/users/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_Admin')")
+    @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> getUserSubscriptions(@PathVariable String userId) {
         try {
             Integer userIdInt = Integer.parseInt(userId);
@@ -130,7 +130,7 @@ public class UserWeatherSubscriptionController {
      * Chỉ Admin mới có quyền truy cập
      */
     @GetMapping("/users/{userId}/locations/{locationId}")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_Admin')")
+    @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> getUserSubscription(
             @PathVariable String userId,
             @PathVariable String locationId) {
@@ -154,7 +154,7 @@ public class UserWeatherSubscriptionController {
      * Chỉ Admin mới có quyền truy cập
      */
     @PatchMapping("/users/{userId}/locations/{locationId}/notifications")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_Admin')")
+    @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> updateUserNotificationStatus(
             @PathVariable String userId,
             @PathVariable String locationId,
@@ -178,7 +178,7 @@ public class UserWeatherSubscriptionController {
      * Chỉ Admin mới có quyền truy cập
      */
     @DeleteMapping("/users/{userId}/locations/{locationId}")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_Admin')")
+    @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> unsubscribeUserFromLocation(
             @PathVariable String userId,
             @PathVariable String locationId) {
@@ -201,7 +201,7 @@ public class UserWeatherSubscriptionController {
      * Chỉ Admin mới có quyền truy cập
      */
     @GetMapping("/active-notifications")
-    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_Admin')")
+    @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<List<UserWeatherSubscriptionDTO>> getActiveNotificationSubscriptions() {
         return ResponseEntity.ok(subscriptionService.getActiveNotificationSubscriptions());
     }

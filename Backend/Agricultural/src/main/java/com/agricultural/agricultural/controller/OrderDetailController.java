@@ -20,7 +20,7 @@ public class OrderDetailController {
     private final IOrderDetailService orderDetailService;
     
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<OrderDetailDTO> getOrderDetail(@PathVariable Integer id) {
         try {
             return ResponseEntity.ok(orderDetailService.getOrderDetailById(id));
@@ -32,7 +32,7 @@ public class OrderDetailController {
     }
     
     @GetMapping("/order/{orderId}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<List<OrderDetailDTO>> getOrderDetailsByOrder(@PathVariable Integer orderId) {
         try {
             return ResponseEntity.ok(orderDetailService.getOrderDetailsByOrderId(orderId));
@@ -42,7 +42,7 @@ public class OrderDetailController {
     }
     
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<OrderDetailDTO> updateOrderDetail(
             @PathVariable Integer id,
             @RequestBody OrderDetailDTO orderDetailDTO) {
@@ -56,7 +56,7 @@ public class OrderDetailController {
     }
     
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<OrderDetailDTO> updateOrderDetailStatus(
             @PathVariable Integer id,
             @RequestParam OrderStatus status) {
@@ -70,7 +70,7 @@ public class OrderDetailController {
     }
     
     @PutMapping("/{id}/review-status")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<OrderDetailDTO> updateReviewStatus(
             @PathVariable Integer id,
             @RequestParam ReviewStatus reviewStatus) {
@@ -84,7 +84,7 @@ public class OrderDetailController {
     }
     
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<Void> deleteOrderDetail(@PathVariable Integer id) {
         try {
             orderDetailService.deleteOrderDetail(id);
