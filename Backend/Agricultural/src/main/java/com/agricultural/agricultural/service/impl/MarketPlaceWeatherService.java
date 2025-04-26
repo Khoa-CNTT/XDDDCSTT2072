@@ -2,8 +2,6 @@ package com.agricultural.agricultural.service.impl;
 
 import com.agricultural.agricultural.dto.AgriculturalAdviceDTO;
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
-import com.agricultural.agricultural.dto.SeasonalRecommendationDTO;
-import com.agricultural.agricultural.dto.SeasonalRecommendationDTO.RecommendationType;
 import com.agricultural.agricultural.dto.WeatherDataDTO;
 import com.agricultural.agricultural.entity.MarketPlace;
 import com.agricultural.agricultural.entity.ProductCategory;
@@ -24,6 +22,9 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.agricultural.agricultural.dto.SeasonalRecommendationDTO;
+import com.agricultural.agricultural.dto.SeasonalRecommendationDTO.RecommendationType;
 
 @Service
 @RequiredArgsConstructor

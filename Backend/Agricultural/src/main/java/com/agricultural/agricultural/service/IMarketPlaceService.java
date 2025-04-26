@@ -26,18 +26,18 @@ public interface IMarketPlaceService {
     Page<MarketPlaceDTO> getPopularProducts(Pageable pageable);
     Page<MarketPlaceDTO> getRecentlyUpdatedProducts(Pageable pageable);
     Page<MarketPlaceDTO> advancedSearch(
-            Integer categoryId,
-            BigDecimal minPrice,
-            BigDecimal maxPrice,
-            String keyword,
-            boolean onSaleOnly,
-            Pageable pageable
+        Integer categoryId,
+        BigDecimal minPrice,
+        BigDecimal maxPrice,
+        String keyword,
+        boolean onSaleOnly,
+        Pageable pageable
     );
     Page<MarketPlaceDTO> getProductsByUser(Integer userId, Pageable pageable);
-
+    
     /**
      * Tạo sản phẩm mới từ form-data với hình ảnh
-     *
+     * 
      * @param productName Tên sản phẩm
      * @param description Mô tả chi tiết
      * @param shortDescription Mô tả ngắn
@@ -68,10 +68,10 @@ public interface IMarketPlaceService {
             Double weight,
             String dimensions,
             MultipartFile image) throws IOException;
-
+    
     /**
      * Cập nhật sản phẩm từ form-data với hình ảnh
-     *
+     * 
      * @param id ID sản phẩm cần cập nhật
      * @param productName Tên sản phẩm
      * @param description Mô tả chi tiết

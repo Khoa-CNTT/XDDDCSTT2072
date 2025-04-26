@@ -53,13 +53,13 @@ public class Order {
     
     @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
-    
+
     @Column(name = "buyer_id", nullable = false)
     private Integer buyerId;
 
     @Column(name = "seller_id", nullable = false)
     private Integer sellerId;
-    
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method")
     @Builder.Default
@@ -202,11 +202,11 @@ public class Order {
         String randomPart = String.format("%06d", new java.util.Random().nextInt(1000000));
         return "OR" + datePart + randomPart;
     }
-    
+
     @PrePersist
     protected void onCreate() {
         if (orderDate == null) {
-            orderDate = LocalDateTime.now();
+        orderDate = LocalDateTime.now();
         }
         
         if (orderNumber == null || orderNumber.isEmpty()) {

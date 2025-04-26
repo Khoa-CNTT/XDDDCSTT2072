@@ -946,3 +946,9 @@ CREATE TABLE IF NOT EXISTS product_relationships (
     INDEX idx_source_type (source_product_id, relationship_type),
     INDEX idx_target_product (target_product_id)
     );
+
+SET SQL_SAFE_UPDATES = 0;
+
+UPDATE feedback SET status = 'PENDING' WHERE status = 'pending';
+UPDATE feedback SET status = 'APPROVED' WHERE status = 'approved';
+UPDATE feedback SET status = 'REJECTED' WHERE status = 'rejected';

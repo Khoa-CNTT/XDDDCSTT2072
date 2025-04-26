@@ -6,6 +6,7 @@ import com.agricultural.agricultural.dto.WeatherDataDTO;
 import com.agricultural.agricultural.entity.AgriculturalAdvice;
 import com.agricultural.agricultural.entity.WeatherData;
 import com.agricultural.agricultural.exception.BadRequestException;
+import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.AgriculturalAdviceMapper;
 import com.agricultural.agricultural.mapper.WeatherDataMapper;
 import com.agricultural.agricultural.repository.IAgriculturalAdviceRepository;
@@ -383,11 +384,11 @@ public class WeatherService implements IWeatherService {
         
         // Tạo hoạt động đề xuất
         StringBuilder activities = new StringBuilder();
-        if (advice.getIsSuitableForPlanting()) {
+        if (Boolean.TRUE.equals(advice.getIsSuitableForPlanting())) {
             activities.append("Trồng cây mới. ");
         }
         
-        if (advice.getIsSuitableForHarvesting()) {
+        if (Boolean.TRUE.equals(advice.getIsSuitableForHarvesting())) {
             activities.append("Thu hoạch nông sản. ");
         }
         

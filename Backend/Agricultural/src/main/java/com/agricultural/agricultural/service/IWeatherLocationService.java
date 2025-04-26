@@ -1,7 +1,6 @@
 package com.agricultural.agricultural.service;
 
 import com.agricultural.agricultural.dto.WeatherMonitoredLocationDTO;
-
 import java.util.List;
 import java.util.Optional;
 

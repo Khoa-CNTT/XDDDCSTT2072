@@ -2,10 +2,7 @@ package com.agricultural.agricultural.dto.response;
 
 import com.agricultural.agricultural.dto.UserDTO;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 
