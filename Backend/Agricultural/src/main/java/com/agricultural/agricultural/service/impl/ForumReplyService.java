@@ -12,6 +12,8 @@ import com.agricultural.agricultural.repository.IForumPostRepository;
 import com.agricultural.agricultural.repository.IForumReplyRepository;
 import com.agricultural.agricultural.repository.IUserRepository;
 import com.agricultural.agricultural.service.IForumReplyService;
+import com.agricultural.agricultural.service.INotificationService;
+import com.agricultural.agricultural.dto.NotificationDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,7 @@ public class ForumReplyService implements IForumReplyService {
     private final IForumPostRepository postRepository;
     private final IUserRepository userRepository;
     private final ForumReplyMapper replyMapper;
+    private final INotificationService notificationService;
 
     @Override
     public List<ForumReplyDTO> getRootRepliesByPostId(Integer postId) {
@@ -127,6 +130,18 @@ public class ForumReplyService implements IForumReplyService {
 
         // Lưu reply vào database
         ForumReply savedReply = replyRepository.save(reply);
+
+        // Gửi thông báo realtime cho chủ bài viết nếu người trả lời khác chủ bài
+        if (post.getUser().getId() != userId) {
+            NotificationDTO notification = NotificationDTO.builder()
+                    .userId(post.getUser().getId())
+                    .title("Có phản hồi mới trên bài viết của bạn")
+                    .message(user.getUsername() + " đã phản hồi bài viết của bạn: " + post.getTitle())
+                    .type("FORUM_REPLY")
+                    .redirectUrl("/forum/posts/" + post.getId())
+                    .build();
+            notificationService.sendRealTimeNotification(notification);
+        }
 
         // Trả về DTO
         return replyMapper.toDTO(savedReply);

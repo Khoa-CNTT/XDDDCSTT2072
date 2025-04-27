@@ -13,6 +13,8 @@ import com.agricultural.agricultural.service.IProductRecommendationService;
 import com.agricultural.agricultural.service.recommendation.CollaborativeFilter;
 import com.agricultural.agricultural.service.recommendation.ContentBasedFilter;
 import com.agricultural.agricultural.service.recommendation.SeasonalAnalyzer;
+import com.agricultural.agricultural.dto.NotificationDTO;
+import com.agricultural.agricultural.service.INotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -38,6 +40,7 @@ public class ProductRecommendationServiceImpl implements IProductRecommendationS
     private final CollaborativeFilter collaborativeFilter;
     private final ContentBasedFilter contentBasedFilter;
     private final SeasonalAnalyzer seasonalAnalyzer;
+    private final INotificationService notificationService;
     
     // Điểm số tương tác
     private static final Map<InteractionType, Integer> INTERACTION_SCORES = Map.of(
@@ -83,6 +86,17 @@ public class ProductRecommendationServiceImpl implements IProductRecommendationS
         }
         
         recommendedProductIds.removeAll(interactedProductIds);
+        
+        if (!recommendedProductIds.isEmpty()) {
+            NotificationDTO notification = NotificationDTO.builder()
+                .userId(userId)
+                .title("Có sản phẩm mới phù hợp với bạn!")
+                .message("Hệ thống vừa tìm thấy sản phẩm mới phù hợp với bạn. Hãy xem ngay mục gợi ý!")
+                .type("PRODUCT_RECOMMENDATION")
+                .redirectUrl("/recommendations")
+                .build();
+            notificationService.sendRealTimeNotification(notification);
+        }
         
         if (recommendedProductIds.isEmpty()) {
             log.info("Không tìm được gợi ý cho người dùng ID: {}. Trả về sản phẩm phổ biến", userId);

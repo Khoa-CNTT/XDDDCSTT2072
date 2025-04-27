@@ -7,18 +7,16 @@ import com.agricultural.agricultural.dto.response.PaymentResponse;
 import com.agricultural.agricultural.dto.response.PaymentUrlResponse;
 import com.agricultural.agricultural.entity.*;
 import com.agricultural.agricultural.entity.enumeration.OrderStatus;
-import com.agricultural.agricultural.entity.enumeration.PaymentMethod;
 import com.agricultural.agricultural.entity.enumeration.PaymentStatus;
 import com.agricultural.agricultural.exception.BadRequestException;
 import com.agricultural.agricultural.exception.BusinessException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.OrderMapper;
 import com.agricultural.agricultural.mapper.OrderDetailMapper;
-import com.agricultural.agricultural.mapper.OrderTrackingMapper;
 import com.agricultural.agricultural.repository.*;
-import com.agricultural.agricultural.service.INotificationService;
 import com.agricultural.agricultural.service.IOrderService;
 import com.agricultural.agricultural.service.IPaymentService;
+import com.agricultural.agricultural.service.INotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,7 +32,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.agricultural.agricultural.entity.enumeration.PaymentMethod.COD;
-import static com.agricultural.agricultural.entity.enumeration.PaymentMethod.CREDIT_CARD;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +46,7 @@ public class OrderServiceImpl implements IOrderService {
     private final IPaymentRepository paymentRepository;
     private final INotificationService notificationService;
     private final IPaymentService paymentService;
+    private final NotificationServiceImpl realTimeNotificationService;
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -419,6 +417,17 @@ public class OrderServiceImpl implements IOrderService {
             
             // Lưu đơn hàng đã cập nhật
             Order updatedOrder = orderRepository.save(order);
+            
+            // Gửi thông báo realtime cho người dùng
+            NotificationDTO notification = NotificationDTO.builder()
+                    .userId(order.getBuyerId())
+                    .title("Cập nhật đơn hàng #" + order.getOrderNumber())
+                    .message("Đơn hàng #" + order.getOrderNumber() + " của bạn đã được cập nhật sang trạng thái: " + newStatus.name())
+                    .type("ORDER_STATUS")
+                    .redirectUrl("/orders/" + order.getId())
+                    .build();
+            
+            realTimeNotificationService.sendRealTimeNotification(notification);
             
             // Trả về DTO của đơn hàng
             return orderMapper.toDTO(updatedOrder);

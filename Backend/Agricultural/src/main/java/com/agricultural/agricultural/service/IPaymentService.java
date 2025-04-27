@@ -103,4 +103,6 @@ public interface IPaymentService {
      * @return Thông tin mã QR thanh toán
      */
     PaymentQRDTO createPaymentQRCode(PaymentRequest paymentRequest);
+
+    void handlePaymentCallback(Integer orderId, boolean paymentSuccessful);
 } 
