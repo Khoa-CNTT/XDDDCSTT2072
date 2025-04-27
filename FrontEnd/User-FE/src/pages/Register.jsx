@@ -63,6 +63,7 @@ const Register = () => {
       navigate("/account/login");
     },
     onError: (error) => {
+      console.log(error);
       toast.error(error.response.data);
     },
   });
