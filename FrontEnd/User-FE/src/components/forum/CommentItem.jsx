@@ -1,21 +1,15 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import useAxiosPrivate from "@/hooks/useAxiosPrivate";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify";
 import useAuth from "@/hooks/useAuth";
 import { FaEdit, FaReply, FaThumbsUp } from "react-icons/fa";
-import { Input } from "../ui/input";
 import { renderContentWithTag, timeAgo } from "@/lib/utils";
+import { useCommentActions } from "@/hooks/useCommentActions";
 
 const CommentItem = ({ comment, postId }) => {
-  console.log(comment);
-    
   const { auth } = useAuth();
-  const axiosPrivate = useAxiosPrivate();
-  const queryClient = useQueryClient();
-
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const [isReplying, setIsReplying] = useState(false);
@@ -26,6 +20,10 @@ const CommentItem = ({ comment, postId }) => {
     timeAgo(new Date(comment.updatedAt))
   );
 
+  const { updateMutation, likeMutation, replyMutation, childRepliesQuery } =
+    useCommentActions(comment, postId);
+  const { data: childReplies } = childRepliesQuery;
+
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeAgoDisplay(timeAgo(new Date(comment.updatedAt)));
@@ -33,81 +31,30 @@ const CommentItem = ({ comment, postId }) => {
     return () => clearInterval(interval);
   }, [comment.updatedAt]);
 
-  // updateReply
-  const { mutate: updateReply, isPending: isUpdating } = useMutation({
-    mutationFn: async () => {
-      const res = await axiosPrivate.put(`/forum/replies/${comment.id}`, {
-        content: editedContent,
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success("Comment updated");
-      queryClient.invalidateQueries(["comments", postId]);
-      setIsEditing(false);
-    },
-    onError: () => {
-      toast.error("Failed to update comment");
-    },
-  });
+  const handleSave = () => {
+    updateMutation.mutate(editedContent, {
+      onSuccess: () => {
+        toast.success("Comment updated");
+        setIsEditing(false);
+      },
+      onError: () => {
+        toast.error("Failed to update comment");
+      },
+    });
+  };
 
-  //like Reply
-//   const { mutate: likeReply } = useMutation({
-//     mutationFn: async () => {
-//       await axiosPrivate.post(`/forum/replies/${comment.id}/like`);
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries(["comments", postId]);
-//     },
-//   });
-
-
-
-  // create Reply
-  const { mutate: createReply } = useMutation({
-    mutationFn: async () => {
-      return await axiosPrivate.post(`/forum/replies`, {
-        postId,
-        parentId: comment.parentId || comment.id, 
-        content: replyContent,
-      });
-    },
-    onSuccess: () => {
-      toast.success("Reply posted");
-      setReplyContent("");
-      setIsReplying(false);
-      queryClient.invalidateQueries(["childReplies", comment.parentId || comment.id]);
-    },
-    onError: () => {
-      toast.error("Failed to post reply");
-    },
-  });
-
-  // get childReplies
-  const { data: childReplies } = useQuery({
-    queryKey: ["childReplies", comment.id],
-    queryFn: async () => {
-      const res = await axiosPrivate.get(`/forum/replies/parent/${comment.id}`);
-      return res.data;
-    },
-    // enabled: showReplies,
-  });
-  console.log(childReplies);
-
-  // handle like
-  const { mutate: likeReply } = useMutation({
-    mutationFn: async () => {
-      await axiosPrivate.post(`/forum/replies/${comment.id}/like`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["comments", postId]);
-    },
-  });
-
-  const handleSave = () => updateReply();
   const handlePostReply = () => {
     if (replyContent.trim()) {
-      createReply();
+      replyMutation.mutate(replyContent, {
+        onSuccess: () => {
+          toast.success("Reply posted");
+          setReplyContent("");
+          setIsReplying(false);
+        },
+        onError: () => {
+          toast.error("Failed to post reply");
+        },
+      });
     } else {
       toast.error("Reply cannot be empty");
     }
@@ -139,7 +86,7 @@ const CommentItem = ({ comment, postId }) => {
                     <Button
                       size="sm"
                       onClick={handleSave}
-                      disabled={isUpdating}
+                      disabled={updateMutation.isPending}
                     >
                       Save
                     </Button>
@@ -168,8 +115,9 @@ const CommentItem = ({ comment, postId }) => {
           </div>
         </div>
       </div>
+
       <div className="flex gap-3 ml-10">
-        <Button variant="ghost" size="sm" onClick={() => likeReply()}>
+        <Button variant="ghost" size="sm" onClick={() => likeMutation.mutate()}>
           <FaThumbsUp className="mr-1" /> Like
         </Button>
         <Button
@@ -190,7 +138,7 @@ const CommentItem = ({ comment, postId }) => {
             onClick={() => setShowReplies(!showReplies)}
           >
             {showReplies ? "Hide Replies" : "Show Replies"} (
-            {childReplies?.data.totalElements})
+            {childRepliesQuery.data?.data.data.totalElements || 0})
           </Button>
         )}
       </div>
@@ -208,12 +156,12 @@ const CommentItem = ({ comment, postId }) => {
         </div>
       )}
 
-      {showReplies && childReplies && (
+      {showReplies && childReplies.data && (
         <div className="ml-10 mt-2 space-y-2">
-          {childReplies?.data.content.length === 0 ? (
+          {childReplies?.data?.data.content?.length === 0 ? (
             <p className="text-xs text-gray-500 ml-2">No replies yet.</p>
           ) : (
-            childReplies.data.content.map((reply) => (
+            childReplies.data.data.content.map((reply) => (
               <CommentItem key={reply.id} comment={reply} postId={postId} />
             ))
           )}

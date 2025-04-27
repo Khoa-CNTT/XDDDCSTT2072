@@ -61,6 +61,9 @@ const Login = () => {
       if (error.response?.data?.error) {
         toast.error(error.response.data.message);
       }
+      if (error.message) {
+        toast.error(error.message)
+      }
     },
   });
 
