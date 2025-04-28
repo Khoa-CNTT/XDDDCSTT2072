@@ -6,7 +6,7 @@ const RequireAuth = ({ allowedRoles }) => {
   const { auth } = useAuth();
   const location = useLocation();
   console.log(auth);
-  const isAuthorized = auth?.user?.roleName && allowedRoles.includes(auth?.user?.roleName);
+  const isAuthorized = auth?.user?.roleName && allowedRoles.includes(auth?.user?.roleName?.toLowerCase());
   return isAuthorized ? (
     <Outlet />
   ) : (

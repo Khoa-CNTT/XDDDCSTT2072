@@ -12,42 +12,48 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
-public class WebSecurityConfig {
+public class WebSecurityConfig implements WebMvcConfigurer {
+
     private final JwtTokenFilter jwtTokenFilter;
+
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // Enable CORS for specific endpoints or all endpoints
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173") // Allow the frontend to access the backend
-                .allowedMethods(HttpMethod.GET.name(), HttpMethod.POST.name(), HttpMethod.PUT.name(), HttpMethod.DELETE.name()) // Allowed HTTP methods
-                .allowedHeaders("*") // Allow all headers
-                .allowCredentials(true); // Allow credentials (cookies, headers, etc.)
+                .allowedOrigins("http://localhost:5173") // Allow frontend
+                .allowedMethods(HttpMethod.GET.name(), HttpMethod.POST.name(), HttpMethod.PUT.name(), HttpMethod.DELETE.name())
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 
+    // ✅ Cấu hình bảo mật Spring Security
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable) // Disable CSRF protection for testing
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless sessions (no session management)
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
-                        // ✅ Cho phép API đăng nhập/đăng ký không cần token, chỉ định nhiều pattern để phủ hết các trường hợp
                         .requestMatchers("/api/v1/users/login", "/api/v1/users/register",
-                                        "/api/users/login", "/api/users/register").permitAll()
-                        .requestMatchers("/api/v1/forum/**").authenticated() // ✅ Yêu cầu đăng nhập với API forum
-                        .requestMatchers("/api/v1/orders/**").authenticated() // Yêu cầu xác thực cho API orders
-                        .requestMatchers("/api/v1/weather/locations", "/api/v1/weather/locations/*").permitAll() // Cho phép xem thông tin địa điểm 
-                        .requestMatchers("/api/v1/weather-subscriptions/**").authenticated() // Yêu cầu xác thực cho đăng ký thời tiết
-                        .requestMatchers("/api/v1/user-addresses/**").authenticated() // Yêu cầu xác thực cho địa chỉ người dùng
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // Chỉ Admin mới có quyền truy cập API admin
-                        .anyRequest().permitAll() // Các API khác được phép truy cập công khai (cân nhắc thay đổi nếu cần bảo mật hơn)
+                                "/api/users/login", "/api/users/register").permitAll()
+                        .requestMatchers("/api/v1/forum/**").authenticated()
+                        .requestMatchers("/api/v1/orders/**").authenticated()
+                        .requestMatchers("/api/v1/weather/locations", "/api/v1/weather/locations/*").permitAll()
+                        .requestMatchers("/api/v1/weather-subscriptions/**").authenticated()
+                        .requestMatchers("/api/v1/user-addresses/**").authenticated()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/marketplace/product/**").authenticated()
+                        .requestMatchers("/api/v1/cart/**").authenticated()
+
+                        .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class) // Add JWT filter
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 }

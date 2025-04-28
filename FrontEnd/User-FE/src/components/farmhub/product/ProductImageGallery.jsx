@@ -1,34 +1,40 @@
 import React, { useState } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-const images = [
-    "https://tse4.mm.bing.net/th?id=OIP.4pT5JDhr9VGx2hX9R_9_6wHaEK&pid=Api&P=0&h=220",
-    "https://elead.com.vn/wp-content/uploads/2022/10/cay-tieu-8.jpg",
-    "https://cdn.abphotos.link/photos/resized/1024x/3057-1633065230-foodland.png",
-    "https://shidai.thoidai.com.vn/stores/news_dataimages/thuyntm/102022/17/12/croped/5506_cay-ho-tieu2.jpg",
-  ];
-
-const ProductImageGallery = () => {
+const ProductImageGallery = ({ product }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  if (!product) return null;
+
+  let gallery = [];
+
+  if (product.images && product.images.length > 0) {
+    gallery = product.images;
+  } else if (product.mainImageUrl) {
+    gallery = [product.mainImageUrl];
+  } else if (product.imageUrl) {
+    gallery = [product.imageUrl];
+  }
+
+  if (gallery.length === 0) return <div className="text-center">Không có ảnh sản phẩm</div>;
+
   const prevImage = () => {
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? gallery.length - 1 : prev - 1));
   };
 
   const nextImage = () => {
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === gallery.length - 1 ? 0 : prev + 1));
   };
 
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-full max-w-[500px] h-[400px]">
         <img
-          src={images[currentIndex]}
-          alt={`Main ${currentIndex}`}
+          src={gallery[currentIndex]}
+          alt={`Ảnh ${currentIndex + 1}`}
           className="w-full h-full object-cover rounded-xl border"
         />
 
-        {/* Nút trái */}
         <button
           onClick={prevImage}
           className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white border shadow p-2 rounded-full hover:bg-gray-100"
@@ -36,7 +42,6 @@ const ProductImageGallery = () => {
           <FaChevronLeft size={20} />
         </button>
 
-        {/* Nút phải */}
         <button
           onClick={nextImage}
           className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white border shadow p-2 rounded-full hover:bg-gray-100"
@@ -45,9 +50,8 @@ const ProductImageGallery = () => {
         </button>
       </div>
 
-      {/* Thumbnail list */}
       <div className="flex gap-2 mt-4">
-        {images.map((img, idx) => (
+        {gallery.map((img, idx) => (
           <img
             key={idx}
             src={img}
