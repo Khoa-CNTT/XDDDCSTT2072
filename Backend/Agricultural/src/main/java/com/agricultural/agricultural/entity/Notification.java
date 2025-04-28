@@ -34,6 +34,12 @@ public class Notification {
     @Column(name = "is_read", nullable = false)
     private Boolean read;
     
+    @Column(name = "notification_type", nullable = true)
+    private String type;
+    
+    @Column(name = "redirect_url", nullable = true)
+    private String redirectUrl;
+    
     @ManyToOne
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;

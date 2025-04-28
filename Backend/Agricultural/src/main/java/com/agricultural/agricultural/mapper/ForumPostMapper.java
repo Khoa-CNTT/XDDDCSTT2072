@@ -1,10 +1,10 @@
 package com.agricultural.agricultural.mapper;
 
-import com.agricultural.agricultural.dto.ForumPostDTO;
-import com.agricultural.agricultural.entity.ForumPost;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
+import com.agricultural.agricultural.dto.ForumPostDTO;
+import com.agricultural.agricultural.entity.ForumPost;
 
 @Mapper
 public interface ForumPostMapper {

@@ -7,12 +7,15 @@ import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.ProductCategoryMapper;
 import com.agricultural.agricultural.repository.IProductCategoryRepository;
 import com.agricultural.agricultural.service.IProductCategoryService;
+import com.agricultural.agricultural.service.ICloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +26,7 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
     
     private final IProductCategoryRepository productCategoryRepository;
     private final ProductCategoryMapper productCategoryMapper;
+    private final ICloudinaryService cloudinaryService;
 
     @Override
     @Transactional
@@ -92,6 +96,9 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
         ProductCategory category = productCategoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + id));
         
+        // Lấy URL ảnh
+        String imageUrl = category.getImageUrl();
+        
         // Kiểm tra có sản phẩm trong danh mục không
         long productCount = productCategoryRepository.countProductsByCategoryId(id);
         if (productCount > 0) {
@@ -106,6 +113,16 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
         
         // Xóa danh mục
         productCategoryRepository.delete(category);
+        
+        // Xóa ảnh từ Cloudinary nếu có
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            try {
+                String publicId = cloudinaryService.extractPublicIdFromUrl(imageUrl);
+                cloudinaryService.deleteImage(publicId);
+            } catch (Exception e) {
+                // Bỏ qua lỗi khi xóa ảnh
+            }
+        }
     }
 
     @Override
@@ -240,5 +257,80 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
         }
         
         return false;
+    }
+
+    @Override
+    @Transactional
+    public ProductCategoryDTO createCategoryWithImage(
+            String name,
+            String description,
+            Integer parentId,
+            Boolean isActive,
+            Integer displayOrder,
+            MultipartFile image) throws IOException {
+        
+        // Tạo DTO từ dữ liệu form
+        ProductCategoryDTO categoryDTO = ProductCategoryDTO.builder()
+                .name(name)
+                .description(description)
+                .parentId(parentId)
+                .isActive(isActive == null ? true : isActive)
+                .displayOrder(displayOrder)
+                .build();
+        
+        // Upload ảnh lên Cloudinary nếu có
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImage(image, "product-categories");
+            categoryDTO.setImageUrl(imageUrl);
+        }
+        
+        // Gọi phương thức createCategory để tạo danh mục
+        return createCategory(categoryDTO);
+    }
+    
+    @Override
+    @Transactional
+    public ProductCategoryDTO updateCategoryWithImage(
+            Integer id,
+            String name,
+            String description,
+            Integer parentId,
+            Boolean isActive,
+            Integer displayOrder,
+            MultipartFile image) throws IOException {
+        
+        // Lấy thông tin danh mục hiện tại
+        ProductCategoryDTO existingCategory = getCategory(id);
+        
+        // Tạo DTO mới với các giá trị được cập nhật
+        ProductCategoryDTO categoryDTO = ProductCategoryDTO.builder()
+                .id(id)
+                .name(name != null ? name : existingCategory.getName())
+                .description(description != null ? description : existingCategory.getDescription())
+                .parentId(parentId != null ? parentId : existingCategory.getParentId())
+                .isActive(isActive != null ? isActive : existingCategory.getIsActive())
+                .displayOrder(displayOrder != null ? displayOrder : existingCategory.getDisplayOrder())
+                .imageUrl(existingCategory.getImageUrl()) // Giữ lại URL ảnh hiện tại
+                .build();
+        
+        // Upload ảnh mới nếu có
+        if (image != null && !image.isEmpty()) {
+            // Xóa ảnh cũ nếu có
+            if (existingCategory.getImageUrl() != null && !existingCategory.getImageUrl().isEmpty()) {
+                try {
+                    String publicId = cloudinaryService.extractPublicIdFromUrl(existingCategory.getImageUrl());
+                    cloudinaryService.deleteImage(publicId);
+                } catch (Exception e) {
+                    // Bỏ qua lỗi khi xóa ảnh cũ
+                }
+            }
+            
+            // Upload ảnh mới
+            String imageUrl = cloudinaryService.uploadImage(image, "product-categories");
+            categoryDTO.setImageUrl(imageUrl);
+        }
+        
+        // Gọi phương thức updateCategory để cập nhật danh mục
+        return updateCategory(id, categoryDTO);
     }
 } 

@@ -10,12 +10,16 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface IProductCategoryRepository extends JpaRepository<ProductCategory, Integer> {
     
     // Tìm danh mục theo tên
     Optional<ProductCategory> findByName(String name);
+    
+    // Tìm danh mục theo danh sách tên
+    List<ProductCategory> findByNameIn(Set<String> names);
     
     // Tìm danh mục con
     List<ProductCategory> findByParentId(Integer parentId);

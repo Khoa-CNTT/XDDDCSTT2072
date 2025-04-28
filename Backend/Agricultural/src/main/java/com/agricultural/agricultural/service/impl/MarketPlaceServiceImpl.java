@@ -2,13 +2,16 @@ package com.agricultural.agricultural.service.impl;
 
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import com.agricultural.agricultural.entity.MarketPlace;
+import com.agricultural.agricultural.entity.ProductCategory;
 import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.exception.BadRequestException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.MarketPlaceMapper;
 import com.agricultural.agricultural.repository.IMarketPlaceRepository;
+import com.agricultural.agricultural.repository.IProductCategoryRepository;
 import com.agricultural.agricultural.repository.impl.UserRepository;
 import com.agricultural.agricultural.service.IMarketPlaceService;
+import com.agricultural.agricultural.service.ICloudinaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,27 +20,30 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.io.IOException;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MarketPlaceServiceImpl implements IMarketPlaceService {
     private final IMarketPlaceRepository marketPlaceRepository;
+    private final IProductCategoryRepository productCategoryRepository;
     private final UserRepository userRepository;
     private final MarketPlaceMapper marketPlaceMapper;
+    private final ICloudinaryService cloudinaryService;
 
 
-    @Override
     public MarketPlaceDTO createProduct(MarketPlaceDTO productDTO) {
         // Lấy thông tin authentication hiện tại
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        
+
         User user;
         try {
             // Thử tìm theo email thay vì username
@@ -57,7 +63,7 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             log.error("Lỗi khi tìm kiếm người dùng: {}", e.getMessage());
             throw new BadRequestException("Lỗi khi tìm kiếm người dùng: " + e.getMessage());
         }
-        
+
         // Validate thông tin khuyến mãi
         validateSaleInfo(productDTO);
 
@@ -72,6 +78,14 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         }
 
         product.setUser(user);
+        // Phan Duc them
+        if (productDTO.getCategoryId() != null) {
+            ProductCategory category = productCategoryRepository.findById(productDTO.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy category với id = " + productDTO.getCategoryId()));
+            product.setCategory(category);
+        }
+
+        //
         MarketPlace savedProduct = marketPlaceRepository.save(product);
 
         return marketPlaceMapper.toDTO(savedProduct);
@@ -151,15 +165,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                 throw new BadRequestException("Giá khuyến mãi phải nhỏ hơn giá gốc");
             }
         }
-    }
-
-    @Override
-    @Transactional
-    public void deleteProduct(Integer id) {
-        if (!marketPlaceRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + id);
-        }
-        marketPlaceRepository.deleteById(id);
     }
 
     @Override
@@ -297,6 +302,134 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                 LocalDateTime.now(),
                 pageable
         ).map(marketPlaceMapper::toDTO);
+    }
+
+    @Override
+    public MarketPlaceDTO createProductWithImage(
+            String productName,
+            String description,
+            String shortDescription,
+            int quantity,
+            BigDecimal price,
+            BigDecimal salePrice,
+            LocalDateTime saleStartDate,
+            LocalDateTime saleEndDate,
+            Integer categoryId,
+            String sku,
+            Double weight,
+            String dimensions,
+            MultipartFile image) throws IOException {
+        
+        // Tạo DTO từ dữ liệu form
+        MarketPlaceDTO productDTO = MarketPlaceDTO.builder()
+                .productName(productName)
+                .description(description)
+                .shortDescription(shortDescription)
+                .quantity(quantity)
+                .price(price)
+                .salePrice(salePrice)
+                .saleStartDate(saleStartDate)
+                .saleEndDate(saleEndDate)
+                .categoryId(categoryId)
+                .sku(sku)
+                .weight(weight)
+                .dimensions(dimensions)
+                .build();
+        
+        // Upload ảnh lên Cloudinary nếu có
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImage(image, "marketplace-products");
+            productDTO.setImageUrl(imageUrl);
+        }
+        
+        // Gọi phương thức createProduct để tạo sản phẩm
+        return createProduct(productDTO);
+    }
+    
+    @Override
+    public MarketPlaceDTO updateProductWithImage(
+            Integer id,
+            String productName,
+            String description,
+            String shortDescription,
+            Integer quantity,
+            BigDecimal price,
+            BigDecimal salePrice,
+            LocalDateTime saleStartDate,
+            LocalDateTime saleEndDate,
+            Integer categoryId,
+            String sku,
+            Double weight,
+            String dimensions,
+            MultipartFile image) throws IOException {
+        
+        // Lấy thông tin sản phẩm hiện tại
+        MarketPlaceDTO existingProduct = getProduct(id);
+        
+        // Tạo DTO mới với các giá trị được cập nhật
+        MarketPlaceDTO productDTO = MarketPlaceDTO.builder()
+                .id(id)
+                .productName(productName != null ? productName : existingProduct.getProductName())
+                .description(description != null ? description : existingProduct.getDescription())
+                .shortDescription(shortDescription != null ? shortDescription : existingProduct.getShortDescription())
+                .quantity(quantity != null ? quantity : existingProduct.getQuantity())
+                .price(price != null ? price : existingProduct.getPrice())
+                .salePrice(salePrice != null ? salePrice : existingProduct.getSalePrice())
+                .saleStartDate(saleStartDate != null ? saleStartDate : existingProduct.getSaleStartDate())
+                .saleEndDate(saleEndDate != null ? saleEndDate : existingProduct.getSaleEndDate())
+                .categoryId(categoryId != null ? categoryId : existingProduct.getCategoryId())
+                .sku(sku != null ? sku : existingProduct.getSku())
+                .weight(weight != null ? weight : existingProduct.getWeight())
+                .dimensions(dimensions != null ? dimensions : existingProduct.getDimensions())
+                .imageUrl(existingProduct.getImageUrl()) // Giữ lại URL ảnh hiện tại
+                .build();
+        
+        // Upload ảnh mới nếu có
+        if (image != null && !image.isEmpty()) {
+            // Xóa ảnh cũ nếu có
+            if (existingProduct.getImageUrl() != null && !existingProduct.getImageUrl().isEmpty() 
+                    && !existingProduct.getImageUrl().contains("default-product_ehoouh.jpg")) {
+                try {
+                    String publicId = cloudinaryService.extractPublicIdFromUrl(existingProduct.getImageUrl());
+                    cloudinaryService.deleteImage(publicId);
+                } catch (Exception e) {
+                    // Bỏ qua lỗi khi xóa ảnh cũ
+                    log.warn("Không thể xóa ảnh cũ: {}", e.getMessage());
+                }
+            }
+            
+            // Upload ảnh mới
+            String imageUrl = cloudinaryService.uploadImage(image, "marketplace-products");
+            productDTO.setImageUrl(imageUrl);
+        }
+        
+        // Gọi phương thức updateProduct để cập nhật sản phẩm
+        return updateProduct(id, productDTO);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProduct(Integer id) {
+        // Tìm sản phẩm để lấy thông tin ảnh
+        MarketPlace product = marketPlaceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + id));
+        
+        // Lấy URL ảnh
+        String imageUrl = product.getImageUrl();
+        
+        // Xóa sản phẩm từ database
+        marketPlaceRepository.deleteById(id);
+        
+        // Xóa ảnh từ Cloudinary nếu có và không phải ảnh mặc định
+        if (imageUrl != null && !imageUrl.isEmpty() && !imageUrl.contains("default-product_ehoouh.jpg")) {
+            try {
+                String publicId = cloudinaryService.extractPublicIdFromUrl(imageUrl);
+                cloudinaryService.deleteImage(publicId);
+            } catch (Exception e) {
+                // Bỏ qua lỗi khi xóa ảnh
+                log.warn("Không thể xóa ảnh: {}", e.getMessage());
+            }
+        }
     }
 
 } 

@@ -1,5 +1,6 @@
 package com.agricultural.agricultural.service.impl;
 
+import com.agricultural.agricultural.dto.NotificationDTO;
 import com.agricultural.agricultural.dto.ProductVariantDTO;
 import com.agricultural.agricultural.entity.MarketPlace;
 import com.agricultural.agricultural.entity.ProductVariant;
@@ -9,10 +10,12 @@ import com.agricultural.agricultural.mapper.ProductVariantMapper;
 import com.agricultural.agricultural.repository.IMarketPlaceRepository;
 import com.agricultural.agricultural.repository.IProductVariantRepository;
 import com.agricultural.agricultural.service.IProductVariantService;
+import com.agricultural.agricultural.service.INotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -22,6 +25,7 @@ public class ProductVariantServiceImpl implements IProductVariantService {
     private final IProductVariantRepository productVariantRepository;
     private final IMarketPlaceRepository marketPlaceRepository;
     private final ProductVariantMapper productVariantMapper;
+    private final INotificationService notificationService;
 
     @Override
     @Transactional
@@ -52,6 +56,9 @@ public class ProductVariantServiceImpl implements IProductVariantService {
         // Tìm biến thể cần cập nhật
         ProductVariant variant = productVariantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể với ID: " + id));
+        Integer sellerId = variant.getProduct().getUser().getId();
+        Integer oldQuantity = variant.getQuantity();
+        BigDecimal oldPrice = variant.getFinalPrice();
         
         // Kiểm tra sản phẩm tồn tại nếu thay đổi
         if (variantDTO.getProductId() != null && !variantDTO.getProductId().equals(variant.getProduct().getId())) {
@@ -72,6 +79,29 @@ public class ProductVariantServiceImpl implements IProductVariantService {
         
         // Lưu vào database
         ProductVariant updatedVariant = productVariantRepository.save(variant);
+        
+        // Gửi notification khi hết hàng
+        if (oldQuantity > 0 && updatedVariant.getQuantity() == 0) {
+            NotificationDTO notification = NotificationDTO.builder()
+                .userId(sellerId)
+                .title("Sản phẩm hết hàng")
+                .message("Biến thể '" + updatedVariant.getName() + "' của sản phẩm '" + updatedVariant.getProduct().getProductName() + "' đã hết hàng.")
+                .type("PRODUCT_OUT_OF_STOCK")
+                .redirectUrl("/marketplace/products/" + updatedVariant.getProduct().getId())
+                .build();
+            notificationService.sendRealTimeNotification(notification);
+        }
+        // Gửi notification khi thay đổi giá
+        if (variantDTO.getPriceAdjustment() != null && !variantDTO.getPriceAdjustment().equals(oldPrice.subtract(variant.getProduct().getCurrentPrice()))) {
+            NotificationDTO notification = NotificationDTO.builder()
+                .userId(sellerId)
+                .title("Cập nhật giá sản phẩm")
+                .message("Biến thể '" + updatedVariant.getName() + "' của sản phẩm '" + updatedVariant.getProduct().getProductName() + "' đã thay đổi giá.")
+                .type("PRODUCT_PRICE_CHANGED")
+                .redirectUrl("/marketplace/products/" + updatedVariant.getProduct().getId())
+                .build();
+            notificationService.sendRealTimeNotification(notification);
+        }
         return productVariantMapper.toDTO(updatedVariant);
     }
 

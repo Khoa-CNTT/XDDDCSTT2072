@@ -41,4 +41,6 @@ public interface FlashSaleRepository extends JpaRepository<FlashSale, Integer> {
      */
     @Query("SELECT f FROM FlashSale f WHERE f.status = :status AND f.endTime <= :now")
     List<FlashSale> findFlashSalesToEnd(@Param("now") LocalDateTime now, @Param("status") FlashSaleStatus status);
+
+    List<FlashSale> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
 } 

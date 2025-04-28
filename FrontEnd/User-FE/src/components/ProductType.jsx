@@ -7,7 +7,7 @@ function ProductType() {
         <div className="rounded-lg border border-gray-200 overflow-hidden shadow-md"> 
             <Header />
             <div className="flex py-5 px-15 gap-10">
-                <div className="p-4 w-full px-5 py-3 border border-gray rounded-xl rounded-lg">
+                <div className="p-4 w-full px-5 py-3 border border-gray rounded-lg">
                     <div className="flex gap-15">
                         <div className="font-bold cursor-pointer">All Products</div>
                         <div className="italic text-blue-600 cursor-pointer">List</div>

@@ -2,31 +2,73 @@ package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import com.agricultural.agricultural.exception.BadRequestException;
-import com.agricultural.agricultural.service.impl.MarketPlaceServiceImpl;
+import com.agricultural.agricultural.service.IMarketPlaceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("${api.prefix}/marketplace")
 @RequiredArgsConstructor
 public class MarketPlaceController {
-    private final MarketPlaceServiceImpl marketPlaceService;
+    private final IMarketPlaceService marketPlaceService;
 
-    @PostMapping("/create")
-    public ResponseEntity<MarketPlaceDTO> createProduct(@RequestBody MarketPlaceDTO productDTO) {
-        MarketPlaceDTO createdProduct = marketPlaceService.createProduct(productDTO);
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MarketPlaceDTO> createProduct(
+            @RequestParam("productName") String productName,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "shortDescription", required = false) String shortDescription,
+            @RequestParam("quantity") int quantity,
+            @RequestParam("price") BigDecimal price,
+            @RequestParam(value = "salePrice", required = false) BigDecimal salePrice,
+            @RequestParam(value = "saleStartDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime saleStartDate,
+            @RequestParam(value = "saleEndDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime saleEndDate,
+            @RequestParam(value = "categoryId", required = false) Integer categoryId,
+            @RequestParam(value = "sku", required = false) String sku,
+            @RequestParam(value = "weight", required = false) Double weight,
+            @RequestParam(value = "dimensions", required = false) String dimensions,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+        
+        // Gọi service để xử lý tạo sản phẩm với ảnh
+        MarketPlaceDTO createdProduct = marketPlaceService.createProductWithImage(
+                productName, description, shortDescription, quantity, price, salePrice,
+                saleStartDate, saleEndDate, categoryId, sku, weight, dimensions, image);
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseEntity<MarketPlaceDTO> updateProduct(@PathVariable Integer id, @RequestBody MarketPlaceDTO productDTO) throws BadRequestException {
-        MarketPlaceDTO updatedProduct = marketPlaceService.updateProduct(id, productDTO);
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MarketPlaceDTO> updateProduct(
+            @PathVariable Integer id,
+            @RequestParam(value = "productName", required = false) String productName,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "shortDescription", required = false) String shortDescription,
+            @RequestParam(value = "quantity", required = false) Integer quantity,
+            @RequestParam(value = "price", required = false) BigDecimal price,
+            @RequestParam(value = "salePrice", required = false) BigDecimal salePrice,
+            @RequestParam(value = "saleStartDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime saleStartDate,
+            @RequestParam(value = "saleEndDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime saleEndDate,
+            @RequestParam(value = "categoryId", required = false) Integer categoryId,
+            @RequestParam(value = "sku", required = false) String sku,
+            @RequestParam(value = "weight", required = false) Double weight,
+            @RequestParam(value = "dimensions", required = false) String dimensions,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException, BadRequestException {
+        
+        // Gọi service để xử lý cập nhật sản phẩm với ảnh
+        MarketPlaceDTO updatedProduct = marketPlaceService.updateProductWithImage(
+                id, productName, description, shortDescription, quantity, price, salePrice,
+                saleStartDate, saleEndDate, categoryId, sku, weight, dimensions, image);
+        
         return ResponseEntity.ok(updatedProduct);
     }
 

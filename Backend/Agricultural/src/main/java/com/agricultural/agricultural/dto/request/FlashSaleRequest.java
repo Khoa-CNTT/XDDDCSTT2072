@@ -2,11 +2,11 @@ package com.agricultural.agricultural.dto.request;
 
 import com.agricultural.agricultural.enums.FlashSaleStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

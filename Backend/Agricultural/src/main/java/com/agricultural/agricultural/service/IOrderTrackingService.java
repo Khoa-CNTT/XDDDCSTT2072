@@ -1,7 +1,6 @@
 package com.agricultural.agricultural.service;
 
 import com.agricultural.agricultural.dto.OrderTrackingDTO;
-
 import java.util.List;
 
 public interface IOrderTrackingService {

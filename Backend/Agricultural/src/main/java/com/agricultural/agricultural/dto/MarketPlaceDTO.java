@@ -71,6 +71,12 @@ public class MarketPlaceDTO {
     @Builder.Default
     private List<ProductImageDTO> images = new ArrayList<>();
     
+    // Thêm trường giá sau giảm giá
+    private BigDecimal discountedPrice;
+    
+    // Thêm trường tỷ lệ giảm giá
+    private BigDecimal discountRate;
+    
     // Ảnh đầu tiên trong danh sách hoặc ảnh đại diện
     public String getMainImageUrl() {
         // Nếu có imageUrl thì trả về

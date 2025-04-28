@@ -1,190 +1,230 @@
-import React, { useState } from 'react'; 
-import backgroundImage from '../assets/page-signup-signin/sign-up.jpg';
-import smallImage from '../assets/page-signup-signin/sign-up.jpg';
-import axios from 'axios';
-import { useNavigate } from 'react-router';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import backgroundImage from "../assets/page-signup-signin/sign-up.jpg";
+import smallImage from "../assets/page-signup-signin/sign-up.jpg";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "react-toastify";
+import { useState } from "react";
+
+const formSchema = z
+  .object({
+    userName: z.string().min(3, "UserName must to have at least 3 characters"),
+    email: z.string().email("Email is not valid"),
+    phone: z
+      .string()
+      .regex(
+        /^[0-9]{10}$/,
+        "Phone number is not valid. Please enter 10 characters"
+      ),
+    password: z.string().min(6, "Password must to have at least 6 characters"),
+    confirmPassword: z.string(),
+    image: z.any().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password isn't matched",
+    path: ["confirmPassword"],
+  });
 
 const Register = () => {
   const navigate = useNavigate();
-  const [formValues, setFormValues] = useState({
-    userName: '',   
-    email: '',
-    password: '',
-    phone: '',  
-    confirmPassword: ''
+  const [previewImage, setPreviewImage] = useState(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(formSchema),
   });
-  const [errors, setErrors] = useState({});
-  const [registerError, setRegisterError] = useState('');
-  const [success, setSuccess] = useState('');
+  console.log(errors);
+  // const { ref: avatarRef, ...rest } = register("image");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormValues(prev => ({ ...prev, [name]: value }));
+  const mutation = useMutation({
+    mutationFn: async (formData) => {
+      return await axios.post(
+        "http://localhost:8080/api/v1/users/register-with-image",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+    },
+    onSuccess: (data) => {
+      console.log(data);
+      toast.success("Đăng ký thành công!");
+      reset();
+      navigate("/account/login");
+    },
+    onError: (error) => {
+      console.log(error);
+      toast.error(error.response.data);
+    },
+  });
+
+  // handle file change
+  // const handleFileChange = (e) => {
+  //   const file = e.target.files?.[0];
+  //   // console.log(file);
+  //   if (file) {
+  //     setPreviewImage(URL.createObjectURL(file));
+  //   }
+  //   avatarRef.onChange(e);
+  // };
+
+  const onSubmit = (data) => {
+    console.log(data);
+
+    const formData = new FormData();
+    formData.append("userName", data.userName);
+    formData.append("email", data.email);
+    formData.append("phone", data.phone);
+    formData.append("password", data.password);
+    // formData.append("confirmPassword", data.confirmPassword);
+    if (data.image && data.image[0]) {
+      formData.append("image", data.image[0]);
+    }
+    console.log("image to upload:", data.image[0]);
+    mutation.mutate(formData);
   };
 
-  const validate = () => {
-    let err = {};
-    let valid = true;
-
-    if (!formValues.userName.trim()) {  
-        err.userName = "Vui lòng nhập Tên đăng nhập.";
-        valid = false;
-    } else if (formValues.userName.trim().length < 3) {
-        err.userName = "Tên đăng nhập phải có ít nhất 3 ký tự.";
-        valid = false;
-    }
-
-    if (!formValues.email.trim()) {
-        err.email = "Vui lòng nhập Email.";
-        valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formValues.email)) {
-        err.email = "Email không hợp lệ.";
-        valid = false;
-    }
-
-    if (!formValues.password) {
-        err.password = "Vui lòng nhập Password.";
-        valid = false;
-    } else if (formValues.password.length < 6) {
-        err.password = "Mật khẩu phải có ít nhất 6 ký tự.";
-        valid = false;
-    }
-    if (!formValues.phone) {
-      err.phone = "Vui lòng nhập số điện thoại.";
-      valid = false;
-    } else if (!/^\d{10}$/.test(formValues.phone)) {
-      err.phone = "Số điện thoại không hợp lệ. Vui lòng nhập 10 chữ số.";
-      valid = false;
-    }
-
-    if (!formValues.confirmPassword) {
-        err.confirmPassword = "Vui lòng nhập Confirm Password.";
-        valid = false;
-    } else if (formValues.password !== formValues.confirmPassword) {
-        err.confirmPassword = "Mật khẩu xác nhận không khớp.";
-        valid = false;
-    }
-
-    setErrors(err);
-    return valid;
-}
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setRegisterError('');
-    setSuccess('');
-
-    if (validate()) {
-        const formData = new FormData();
-        formData.append("userName", formValues.userName);  
-        formData.append("email", formValues.email);
-        formData.append("password", formValues.password);
-        formData.append("phone", formValues.phone);  
-        formData.append("confirmPassword", formValues.confirmPassword);
-
-        axios.post("http://localhost:8080/api/v1/users/register-with-image", formData)
-            .then((response) => {
-                console.log(response.data);
-                if (response.data.error) {
-                    setRegisterError(response.data.error);
-                } else {
-                    setSuccess("Đăng ký thành công!");
-                    setFormValues({ userName: '', email: '', password: '', phone:'', confirmPassword: '' });  
-                    setErrors({});
-                }
-            })
-            .catch((err) => {
-                console.error(err.response);
-                setRegisterError("Đăng ký thất bại, vui lòng thử lại.");
-            });
-    }
-};
-
   return (
-    <div className="min-h-screen flex items-center justify-center relative p-4" style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div
+      className="min-h-screen flex items-center justify-center relative p-4"
+      style={{
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div className="absolute inset-0 bg-black opacity-30"></div>
-
       <div className="relative z-10 bg-white shadow-lg rounded-lg flex flex-col md:flex-row overflow-hidden w-full max-w-4xl border border-gray-300">
         <div className="w-full md:w-1/2 hidden md:block border-r border-gray-300">
-          <img src={smallImage} alt="Signup" className="w-full h-full object-cover" />
+          <img
+            src={smallImage}
+            alt="Signup"
+            className="w-full h-full object-cover"
+          />
         </div>
-
         <div className="w-full md:w-1/2 bg-white p-8 flex flex-col justify-center">
           <div className="flex justify-center mb-6">
             <div className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center text-white font-bold border border-gray-300">
               Logo
             </div>
           </div>
-
           <h2 className="text-2xl font-bold text-center mb-6">Sign Up</h2>
 
-          {registerError && <p className="text-red-500 text-center mb-4">{registerError}</p>}
-          {success && <p className="text-green-500 text-center mb-4">{success}</p>}
-
-          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-            <input
-              type="text"
-              name="userName"
-              placeholder="Username"
-              value={formValues.userName}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.userName && <p className="text-red-500 text-sm">{errors.userName}</p>}
-
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={formValues.email}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-
-            <input
-              type="text"
-              name="phone"
-              placeholder="Phone"
-              value={formValues.phone}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formValues.password}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={formValues.confirmPassword}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
-
-            <button
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+            <div>
+              <Input placeholder="Username" {...register("userName")} />
+              {errors.userName && (
+                <p className="text-red-500 text-sm">
+                  {errors.userName.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <Input placeholder="Email" {...register("email")} />
+              {errors.email && (
+                <p className="text-red-500 text-sm">{errors.email.message}</p>
+              )}
+            </div>
+            <div>
+              <Input placeholder="Phone" {...register("phone")} />
+              {errors.phone && (
+                <p className="text-red-500 text-sm">{errors.phone.message}</p>
+              )}
+            </div>
+            <div>
+              <Input
+                placeholder="Password"
+                type="password"
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <Input
+                placeholder="Confirm Password"
+                type="password"
+                {...register("confirmPassword")}
+              />
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                id="file-input"
+                {...register("image", {
+                  onChange: (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setPreviewImage(URL.createObjectURL(file));
+                    }
+                  },
+                })}
+                className="hidden"
+                accept="image/*"
+              />
+              <label htmlFor="file-input">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="max-w-[200px]"
+                  onClick={() => document.getElementById("file-input")?.click()}
+                >
+                  {previewImage ? "Change Avatar" : "Select Avatar"}
+                </Button>
+              </label>
+              {previewImage && (
+                <div className="mt-2">
+                  <img
+                    src={previewImage}
+                    alt="Avatar Preview"
+                    className="w-20 h-20 rounded-full object-cover border"
+                  />
+                </div>
+              )}
+            </div>
+            <Button
               type="submit"
-              className="w-full bg-blue-500 text-white p-3 rounded-md hover:bg-blue-600 transition duration-300"
+              className="w-full"
+              disabled={mutation.isLoading}
             >
-              Confirm
-            </button>
+              {mutation.isLoading ? "Loading..." : "Submit"}
+            </Button>
           </form>
 
-          <p className="text-center text-gray-500 mt-4 text-sm" onClick={() => navigate("/login")}>
-            Bạn đã có tài khoản? <a href="#" className="text-blue-500 hover:underline">Đăng nhập</a>
+          <p
+            className="text-center text-gray-500 mt-4 text-sm cursor-pointer"
+            onClick={() => navigate("/account/login")}
+          >
+            Bạn đã có tài khoản?{" "}
+            <span className="text-blue-500 hover:underline">Đăng nhập</span>
           </p>
-          <p className="text-center text-gray-500 text-sm" >
-            Bằng cách đăng ký, bạn đồng ý với <a href="#" className="text-blue-500 hover:underline">Điều khoản sử dụng</a> và <a href="#" className="text-blue-500 hover:underline">Chính sách bảo mật</a>
+          <p className="text-center text-gray-500 text-sm">
+            Bằng cách đăng ký, bạn đồng ý với{" "}
+            <span className="text-blue-500 hover:underline">
+              Điều khoản sử dụng
+            </span>{" "}
+            và{" "}
+            <span className="text-blue-500 hover:underline">
+              Chính sách bảo mật
+            </span>
           </p>
         </div>
       </div>

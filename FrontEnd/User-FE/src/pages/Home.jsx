@@ -20,6 +20,8 @@ import { FaInstagram, FaFacebook, FaTwitter } from "react-icons/fa";
 
 function Home() {
   const { auth } = useAuth();
+  console.log(auth);
+  
   const axiosPrivate = useAxiosPrivate();
   const [showPostInput, setShowPostInput] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);

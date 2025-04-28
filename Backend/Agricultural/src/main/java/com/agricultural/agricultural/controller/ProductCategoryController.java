@@ -7,9 +7,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -19,17 +22,36 @@ public class ProductCategoryController {
     
     private final IProductCategoryService productCategoryService;
     
-    @PostMapping
-    public ResponseEntity<ProductCategoryDTO> createCategory(@Valid @RequestBody ProductCategoryDTO categoryDTO) {
-        ProductCategoryDTO createdCategory = productCategoryService.createCategory(categoryDTO);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductCategoryDTO> createCategory(
+            @RequestParam("name") String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "parentId", required = false) Integer parentId,
+            @RequestParam(value = "isActive", required = false) Boolean isActive,
+            @RequestParam(value = "displayOrder", required = false) Integer displayOrder,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+        
+        // Gọi service để xử lý tạo danh mục với ảnh
+        ProductCategoryDTO createdCategory = productCategoryService.createCategoryWithImage(
+                name, description, parentId, isActive, displayOrder, image);
+        
         return new ResponseEntity<>(createdCategory, HttpStatus.CREATED);
     }
     
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductCategoryDTO> updateCategory(
-            @PathVariable Integer id, 
-            @Valid @RequestBody ProductCategoryDTO categoryDTO) {
-        ProductCategoryDTO updatedCategory = productCategoryService.updateCategory(id, categoryDTO);
+            @PathVariable Integer id,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "parentId", required = false) Integer parentId,
+            @RequestParam(value = "isActive", required = false) Boolean isActive,
+            @RequestParam(value = "displayOrder", required = false) Integer displayOrder,
+            @RequestParam(value = "image", required = false) MultipartFile image) throws IOException {
+        
+        // Gọi service để xử lý cập nhật danh mục với ảnh
+        ProductCategoryDTO updatedCategory = productCategoryService.updateCategoryWithImage(
+                id, name, description, parentId, isActive, displayOrder, image);
+        
         return ResponseEntity.ok(updatedCategory);
     }
     

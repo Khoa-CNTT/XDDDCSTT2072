@@ -1,7 +1,7 @@
 package com.agricultural.agricultural.service;
 
-import com.agricultural.agricultural.dto.AgriculturalAdviceDTO;
 import com.agricultural.agricultural.dto.WeatherDataDTO;
+import com.agricultural.agricultural.dto.AgriculturalAdviceDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;

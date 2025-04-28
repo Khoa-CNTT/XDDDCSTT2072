@@ -6,7 +6,7 @@ import axiosInstance from "../services/api/axios";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import useAuth from "../hooks/useAuth";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, Link } from "react-router";
 
 const login = async ({ email, password }) => {
   try {
@@ -61,6 +61,9 @@ const Login = () => {
       if (error.response?.data?.error) {
         toast.error(error.response.data.message);
       }
+      if (error.message) {
+        toast.error(error.message)
+      }
     },
   });
 
@@ -70,7 +73,7 @@ const Login = () => {
     setEmail("");
     setPassword("");
   };
-
+  
   return (
     <div
       className="min-h-screen flex items-center justify-center relative p-4"
@@ -136,9 +139,9 @@ const Login = () => {
 
           <p className="text-center text-gray-500 mt-3 text-sm">
             Bạn chưa có tài khoản?{" "}
-            <a href="#" className="text-blue-500 hover:underline">
+            <Link to="/account/register">
               Đăng Ký
-            </a>
+            </Link>
           </p>
         </div>
       </div>

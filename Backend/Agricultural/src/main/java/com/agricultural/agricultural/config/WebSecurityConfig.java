@@ -4,7 +4,6 @@ import com.agricultural.agricultural.filters.JwtTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,22 +22,35 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 
     private final JwtTokenFilter jwtTokenFilter;
 
-
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5173") // Allow frontend
-                .allowedMethods(HttpMethod.GET.name(), HttpMethod.POST.name(), HttpMethod.PUT.name(), HttpMethod.DELETE.name())
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
-
-    // ✅ Cấu hình bảo mật Spring Security
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//        return http
+//                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF để test API
+//                .authorizeHttpRequests(requests -> requests
+//                        // Cho phép mọi người truy cập vào login và register
+//                        .requestMatchers("/api/users/login", "/api/users/register").permitAll()
+//
+//                        // Phân quyền: cho phép ADMIN truy cập vào các API dưới đường dẫn "/admin/**"
+//                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+//
+//                        // Phân quyền: cho phép USER và ADMIN truy cập vào các API dưới đường dẫn "/user/**"
+//                        .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+//
+//                        // Các API khác yêu cầu xác thực người dùng
+//                        .anyRequest().authenticated()
+//                )
+//                .build();
+
+//        return http
+//                .csrf(AbstractHttpConfigurer::disable)
+//                .authorizeHttpRequests(requests -> requests
+//                        .requestMatchers("/**").permitAll() // ✅ Cho phép tất cả request (Tạm thời để test)
+//                )
+//                .build();
+
         return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF để test API
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Không dùng session
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/api/v1/users/login", "/api/v1/users/register",
                                 "/api/users/login", "/api/users/register").permitAll()
@@ -53,7 +65,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class) // ✅ Thêm filter kiểm tra JWT
                 .build();
     }
 }

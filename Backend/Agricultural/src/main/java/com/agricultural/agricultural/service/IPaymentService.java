@@ -2,9 +2,15 @@ package com.agricultural.agricultural.service;
 
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.request.RefundRequest;
-import com.agricultural.agricultural.dto.response.*;
-import org.springframework.data.domain.Page;
+import com.agricultural.agricultural.dto.response.PaymentDTO;
+import com.agricultural.agricultural.dto.response.PaymentResponse;
+import com.agricultural.agricultural.dto.response.PaymentUrlResponse;
+import com.agricultural.agricultural.dto.response.PaymentQRDTO;
+import com.agricultural.agricultural.dto.response.PaymentViewResponse;
+import com.agricultural.agricultural.dto.response.PaymentStatusResponse;
+import com.agricultural.agricultural.entity.Payment;
 
+import org.springframework.data.domain.Page;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,4 +103,6 @@ public interface IPaymentService {
      * @return Thông tin mã QR thanh toán
      */
     PaymentQRDTO createPaymentQRCode(PaymentRequest paymentRequest);
+
+    void handlePaymentCallback(Integer orderId, boolean paymentSuccessful);
 } 

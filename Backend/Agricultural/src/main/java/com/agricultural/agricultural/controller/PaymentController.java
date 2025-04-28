@@ -1,10 +1,12 @@
 package com.agricultural.agricultural.controller;
+
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.request.RefundRequest;
 import com.agricultural.agricultural.dto.response.ApiResponse;
 import com.agricultural.agricultural.dto.response.PaymentDTO;
 import com.agricultural.agricultural.dto.response.PaymentResponse;
 import com.agricultural.agricultural.dto.response.PaymentUrlResponse;
+import com.agricultural.agricultural.dto.response.PaymentQRDTO;
 import com.agricultural.agricultural.service.IPaymentService;
 import com.agricultural.agricultural.utils.VNPayUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -23,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import com.agricultural.agricultural.service.impl.MomoPaymentService;
 
 @RestController
 @RequestMapping("/api/v1/payment")
@@ -33,6 +37,7 @@ public class PaymentController {
     private final IPaymentService paymentService;
     private final VNPayUtils vnPayUtils;
     private final ObjectMapper objectMapper;
+    private final MomoPaymentService momoPaymentService;
 
     /**
      * API tạo URL thanh toán VNPAY
@@ -383,4 +388,46 @@ public class PaymentController {
         
         return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
-} 
+    
+    /**
+     * Tạo mã QR thanh toán VNPAY
+     * POST /api/v1/payment/create-qr
+     * 
+     * Request Body:
+     * {
+     *   "orderId": 123,
+     *   "amount": 10000,
+     *   "description": "Thanh toán đơn hàng #123",
+     *   "returnUrl": "https://yourdomain.com/payment/return"
+     * }
+     * 
+     * @param paymentRequest Thông tin yêu cầu thanh toán
+     * @param request HttpServletRequest
+     * @return Thông tin mã QR thanh toán
+     */
+    @PostMapping("/create-qr")
+    public ResponseEntity<ApiResponse<PaymentQRDTO>> createPaymentQR(
+            @RequestBody PaymentRequest paymentRequest,
+            HttpServletRequest request) {
+        
+        log.info("Tạo mã QR thanh toán cho đơn hàng ID: {}, số tiền: {}", 
+                paymentRequest.getOrderId(), paymentRequest.getAmount());
+        
+        // Lấy địa chỉ IP của người dùng
+        String ipAddress = vnPayUtils.getClientIpAddress(request);
+        paymentRequest.setClientIp(ipAddress);
+        
+        // Thiết lập phương thức thanh toán là VNPAY
+        paymentRequest.setPaymentMethod("VNPAY");
+        
+        // Tạo mã QR thanh toán
+        PaymentQRDTO paymentQRDTO = paymentService.createPaymentQRCode(paymentRequest);
+        
+        return ResponseEntity.ok(new ApiResponse<>(
+                true, 
+                "Tạo mã QR thanh toán thành công", 
+                paymentQRDTO
+        ));
+    }
+
+}
