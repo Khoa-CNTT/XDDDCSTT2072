@@ -12,6 +12,10 @@ import com.agricultural.agricultural.mapper.WeatherDataMapper;
 import com.agricultural.agricultural.repository.IAgriculturalAdviceRepository;
 import com.agricultural.agricultural.repository.IWeatherDataRepository;
 import com.agricultural.agricultural.service.IWeatherService;
+import com.agricultural.agricultural.service.INotificationService;
+import com.agricultural.agricultural.dto.NotificationDTO;
+import com.agricultural.agricultural.entity.UserWeatherSubscription;
+import com.agricultural.agricultural.repository.IUserWeatherSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +40,9 @@ public class WeatherService implements IWeatherService {
     private final AgriculturalAdviceMapper agriculturalAdviceMapper;
     private final OpenWeatherConfig openWeatherConfig;
     private final RestTemplate restTemplate;
-    
+    private final IUserWeatherSubscriptionRepository subscriptionRepository;
+    private final INotificationService notificationService;
+
     // Cache để giảm số lượng request API
     private Map<String, WeatherDataDTO> weatherCache = new HashMap<>();
     private LocalDateTime lastCleanupTime = LocalDateTime.now();
@@ -46,14 +52,14 @@ public class WeatherService implements IWeatherService {
         if (city == null || city.trim().isEmpty()) {
             throw new BadRequestException("Tên thành phố không được để trống");
         }
-        
+
         if (country == null || country.trim().isEmpty()) {
             throw new BadRequestException("Tên quốc gia không được để trống");
         }
-        
+
         // Tạo key cho cache
         String cacheKey = city.toLowerCase() + "," + country.toLowerCase();
-        
+
         // Kiểm tra cache trước
         if (weatherCache.containsKey(cacheKey)) {
             WeatherDataDTO cachedData = weatherCache.get(cacheKey);
@@ -62,24 +68,24 @@ public class WeatherService implements IWeatherService {
                 return cachedData;
             }
         }
-        
+
         // Kiểm tra database có dữ liệu gần đây không
         Optional<WeatherData> recentData = weatherDataRepository
                 .findFirstByCityIgnoreCaseAndCountryIgnoreCaseOrderByDataTimeDesc(city, country);
-        
-        if (recentData.isPresent() && 
-            recentData.get().getDataTime().isAfter(LocalDateTime.now().minusMinutes(60))) {
+
+        if (recentData.isPresent() &&
+                recentData.get().getDataTime().isAfter(LocalDateTime.now().minusMinutes(60))) {
             WeatherDataDTO dto = weatherDataMapper.toDTO(recentData.get());
             // Lưu vào cache
             weatherCache.put(cacheKey, dto);
             return dto;
         }
-        
+
         // Dọn cache nếu đã lâu chưa dọn
         if (lastCleanupTime.isBefore(LocalDateTime.now().minusHours(1))) {
             cleanupCache();
         }
-        
+
         try {
             // Gọi API OpenWeather
             String url = UriComponentsBuilder
@@ -90,19 +96,20 @@ public class WeatherService implements IWeatherService {
                     .queryParam("lang", "vi")
                     .build()
                     .toUriString();
-            
+
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-            
+
             // Chuyển đổi dữ liệu từ API thành entity và lưu vào database
             WeatherData weatherData = mapOpenWeatherResponse(response.getBody());
             weatherData = weatherDataRepository.save(weatherData);
-            
+
             // Tạo lời khuyên nông nghiệp
             generateAgriculturalAdvice(weatherData);
-            
+
             WeatherDataDTO dto = weatherDataMapper.toDTO(weatherData);
             // Lưu vào cache
             weatherCache.put(cacheKey, dto);
+            processWeatherAlert(weatherData);
             return dto;
         } catch (RestClientException e) {
             log.error("Lỗi khi lấy dữ liệu thời tiết từ API: " + e.getMessage());
@@ -119,15 +126,15 @@ public class WeatherService implements IWeatherService {
         if (city == null || city.trim().isEmpty()) {
             throw new BadRequestException("Tên thành phố không được để trống");
         }
-        
+
         if (country == null || country.trim().isEmpty()) {
             throw new BadRequestException("Tên quốc gia không được để trống");
         }
-        
+
         if (startTime == null) {
             startTime = LocalDateTime.now().minusDays(7); // Mặc định lấy 7 ngày gần nhất
         }
-        
+
         // API miễn phí không hỗ trợ dữ liệu lịch sử, chỉ trả về từ database
         List<WeatherData> weatherDataList = weatherDataRepository.findRecentWeatherData(city, country, startTime);
         return weatherDataList.stream()
@@ -140,14 +147,14 @@ public class WeatherService implements IWeatherService {
         if (latitude == null) {
             throw new BadRequestException("Vĩ độ không được để trống");
         }
-        
+
         if (longitude == null) {
             throw new BadRequestException("Kinh độ không được để trống");
         }
-        
+
         // Tạo key cho cache
         String cacheKey = latitude + "," + longitude;
-        
+
         // Kiểm tra cache trước
         if (weatherCache.containsKey(cacheKey)) {
             WeatherDataDTO cachedData = weatherCache.get(cacheKey);
@@ -156,19 +163,19 @@ public class WeatherService implements IWeatherService {
                 return cachedData;
             }
         }
-        
+
         // Kiểm tra database có dữ liệu gần đây không
         Optional<WeatherData> recentData = weatherDataRepository
                 .findFirstByLatitudeAndLongitudeOrderByDataTimeDesc(latitude, longitude);
-        
-        if (recentData.isPresent() && 
-            recentData.get().getDataTime().isAfter(LocalDateTime.now().minusMinutes(60))) {
+
+        if (recentData.isPresent() &&
+                recentData.get().getDataTime().isAfter(LocalDateTime.now().minusMinutes(60))) {
             WeatherDataDTO dto = weatherDataMapper.toDTO(recentData.get());
             // Lưu vào cache
             weatherCache.put(cacheKey, dto);
             return dto;
         }
-        
+
         try {
             // Gọi API OpenWeather
             String url = UriComponentsBuilder
@@ -180,19 +187,20 @@ public class WeatherService implements IWeatherService {
                     .queryParam("lang", "vi")
                     .build()
                     .toUriString();
-            
+
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-            
+
             // Chuyển đổi dữ liệu từ API thành entity và lưu vào database
             WeatherData weatherData = mapOpenWeatherResponse(response.getBody());
             weatherData = weatherDataRepository.save(weatherData);
-            
+
             // Tạo lời khuyên nông nghiệp
             generateAgriculturalAdvice(weatherData);
-            
+
             WeatherDataDTO dto = weatherDataMapper.toDTO(weatherData);
             // Lưu vào cache
             weatherCache.put(cacheKey, dto);
+            processWeatherAlert(weatherData);
             return dto;
         } catch (RestClientException e) {
             log.error("Lỗi khi lấy dữ liệu thời tiết từ API: " + e.getMessage());
@@ -209,7 +217,7 @@ public class WeatherService implements IWeatherService {
         if (keyword == null || keyword.trim().isEmpty()) {
             throw new BadRequestException("Từ khóa tìm kiếm không được để trống");
         }
-        
+
         return weatherDataRepository.findDistinctCitiesByKeyword(keyword);
     }
 
@@ -218,11 +226,11 @@ public class WeatherService implements IWeatherService {
         if (city == null || city.trim().isEmpty()) {
             throw new BadRequestException("Tên thành phố không được để trống");
         }
-        
+
         if (country == null || country.trim().isEmpty()) {
             throw new BadRequestException("Tên quốc gia không được để trống");
         }
-        
+
         return agriculturalAdviceRepository.findLatestByLocation(city, country)
                 .map(agriculturalAdviceMapper::toDTO);
     }
@@ -232,11 +240,11 @@ public class WeatherService implements IWeatherService {
         if (city == null || city.trim().isEmpty()) {
             throw new BadRequestException("Tên thành phố không được để trống");
         }
-        
+
         if (country == null || country.trim().isEmpty()) {
             throw new BadRequestException("Tên quốc gia không được để trống");
         }
-        
+
         List<AgriculturalAdvice> adviceList = agriculturalAdviceRepository.findByLocation(city, country);
         return adviceList.stream()
                 .map(agriculturalAdviceMapper::toDTO)
@@ -262,13 +270,13 @@ public class WeatherService implements IWeatherService {
     // Phương thức hỗ trợ để chuyển đổi dữ liệu từ API OpenWeather sang entity WeatherData
     private WeatherData mapOpenWeatherResponse(Map data) {
         WeatherData weatherData = new WeatherData();
-        
+
         Map<String, Object> main = (Map<String, Object>) data.get("main");
         Map<String, Object> wind = (Map<String, Object>) data.get("wind");
         List<Map<String, Object>> weather = (List<Map<String, Object>>) data.get("weather");
         Map<String, Object> sys = (Map<String, Object>) data.get("sys");
         Map<String, Object> coord = (Map<String, Object>) data.get("coord");
-        
+
         weatherData.setCity((String) data.get("name"));
         weatherData.setCountry((String) sys.get("country"));
         weatherData.setLatitude(((Number) coord.get("lat")).doubleValue());
@@ -276,18 +284,18 @@ public class WeatherService implements IWeatherService {
         weatherData.setTemperature(((Number) main.get("temp")).doubleValue());
         weatherData.setHumidity(((Number) main.get("humidity")).intValue());
         weatherData.setWindSpeed(((Number) wind.get("speed")).doubleValue());
-        
+
         Map<String, Object> weatherDetails = weather.get(0);
         weatherData.setWeatherDescription((String) weatherDetails.get("description"));
         weatherData.setIconCode((String) weatherDetails.get("icon"));
-        
+
         weatherData.setRequestTime(LocalDateTime.now());
         weatherData.setDataTime(LocalDateTime.ofEpochSecond(
-                ((Number) data.get("dt")).longValue(), 
-                0, 
+                ((Number) data.get("dt")).longValue(),
+                0,
                 ZoneOffset.UTC)
         );
-        
+
         return weatherData;
     }
 
@@ -295,7 +303,7 @@ public class WeatherService implements IWeatherService {
     private void generateAgriculturalAdvice(WeatherData weatherData) {
         AgriculturalAdvice advice = new AgriculturalAdvice();
         advice.setWeatherData(weatherData);
-        
+
         // Tạo tóm tắt thời tiết
         StringBuilder weatherSummary = new StringBuilder();
         weatherSummary.append("Thời tiết tại ")
@@ -309,23 +317,23 @@ public class WeatherService implements IWeatherService {
                 .append("%, tốc độ gió ")
                 .append(weatherData.getWindSpeed())
                 .append(" m/s.");
-        
+
         advice.setWeatherSummary(weatherSummary.toString());
-        
+
         // Xác định điều kiện thời tiết
         double temp = weatherData.getTemperature();
         int humidity = weatherData.getHumidity();
         double windSpeed = weatherData.getWindSpeed();
         String description = weatherData.getWeatherDescription().toLowerCase();
-        
+
         boolean isRainy = description.contains("mưa") || description.contains("rain");
         boolean isCloudy = description.contains("mây") || description.contains("cloud");
         boolean isSunny = description.contains("nắng") || description.contains("sun") || description.contains("clear");
         boolean isWindy = windSpeed > 5.0;
-        
+
         advice.setIsRainySeason(isRainy);
         advice.setIsDrySeason(!isRainy && humidity < 50);
-        
+
         // Tạo lời khuyên canh tác
         StringBuilder farmingAdvice = new StringBuilder();
         if (isRainy) {
@@ -341,13 +349,13 @@ public class WeatherService implements IWeatherService {
             advice.setIsSuitableForPlanting(true);
             advice.setIsSuitableForHarvesting(true);
         }
-        
+
         if (isWindy) {
             farmingAdvice.append("Gió mạnh, cần gia cố nhà kính và các công trình nông nghiệp. ");
         }
-        
+
         advice.setFarmingAdvice(farmingAdvice.toString());
-        
+
         // Tạo lời khuyên về cây trồng
         StringBuilder cropAdvice = new StringBuilder();
         if (temp < 20) {
@@ -357,53 +365,53 @@ public class WeatherService implements IWeatherService {
         } else {
             cropAdvice.append("Nhiệt độ cao phù hợp cho cây nhiệt đới như đậu, bắp, khoai lang. ");
         }
-        
+
         if (humidity > 80) {
             cropAdvice.append("Độ ẩm cao, cần lưu ý phòng trừ nấm bệnh. ");
         } else if (humidity < 40) {
             cropAdvice.append("Độ ẩm thấp, cần tăng cường tưới nước. ");
         }
-        
+
         advice.setCropAdvice(cropAdvice.toString());
-        
+
         // Tạo cảnh báo nếu cần thiết
         StringBuilder warnings = new StringBuilder();
         if (isRainy && weatherData.getTemperature() < 20) {
             warnings.append("Thời tiết mưa lạnh có thể ảnh hưởng xấu đến cây trồng non. ");
         }
-        
+
         if (temp > 35) {
             warnings.append("Nhiệt độ quá cao, cần che phủ cho cây trồng và tăng cường tưới nước. ");
         }
-        
+
         if (windSpeed > 10.0) {
             warnings.append("Gió mạnh có thể gây ngã đổ cây trồng cao. ");
         }
-        
+
         advice.setWarnings(warnings.length() > 0 ? warnings.toString() : null);
-        
+
         // Tạo hoạt động đề xuất
         StringBuilder activities = new StringBuilder();
         if (Boolean.TRUE.equals(advice.getIsSuitableForPlanting())) {
             activities.append("Trồng cây mới. ");
         }
-        
+
         if (Boolean.TRUE.equals(advice.getIsSuitableForHarvesting())) {
             activities.append("Thu hoạch nông sản. ");
         }
-        
+
         if (isRainy) {
             activities.append("Kiểm tra hệ thống thoát nước. ");
         } else if (isSunny) {
             activities.append("Tưới nước. Làm giàn che nắng cho cây. ");
         }
-        
+
         advice.setRecommendedActivities(activities.toString());
-        
+
         // Lưu lời khuyên
         agriculturalAdviceRepository.save(advice);
     }
-    
+
     // Dọn cache để tránh memory leak
     private void cleanupCache() {
         Iterator<Map.Entry<String, WeatherDataDTO>> iterator = weatherCache.entrySet().iterator();
@@ -414,5 +422,49 @@ public class WeatherService implements IWeatherService {
             }
         }
         lastCleanupTime = LocalDateTime.now();
+    }
+
+    private void processWeatherAlert(WeatherData weatherData) {
+        if (shouldSendAlert(weatherData)) {
+            // Tìm những người đăng ký nhận thông báo thời tiết cho khu vực này
+            List<UserWeatherSubscription> subscriptions = subscriptionRepository.findByLocationId(weatherData.getId());
+            for (UserWeatherSubscription subscription : subscriptions) {
+                sendWeatherAlert(subscription.getUser().getId(), weatherData);
+            }
+        }
+    }
+
+    private boolean shouldSendAlert(WeatherData weatherData) {
+        if (weatherData.getTemperature() != null && weatherData.getTemperature() > 35) return true;
+        if (weatherData.getTemperature() != null && weatherData.getTemperature() < 10) return true;
+        if (weatherData.getWindSpeed() != null && weatherData.getWindSpeed() > 20) return true;
+        String condition = weatherData.getWeatherDescription();
+        if (condition != null && (condition.contains("bão") || condition.contains("lũ") || condition.contains("lụt") || condition.contains("storm") || condition.contains("hurricane") || condition.contains("typhoon")))
+            return true;
+        return false;
+    }
+
+    private void sendWeatherAlert(Integer userId, WeatherData weatherData) {
+        String alertMessage = createAlertMessage(weatherData);
+        NotificationDTO notification = NotificationDTO.builder()
+                .userId(userId)
+                .title("Cảnh báo thời tiết!")
+                .message("Khu vực " + weatherData.getCity() + ": " + alertMessage)
+                .type("WEATHER_ALERT")
+                .redirectUrl("/weather/" + weatherData.getId())
+                .build();
+        notificationService.sendRealTimeNotification(notification);
+    }
+
+    private String createAlertMessage(WeatherData weatherData) {
+        StringBuilder message = new StringBuilder();
+        if (weatherData.getTemperature() != null && weatherData.getTemperature() > 35)
+            message.append("Nhiệt độ cao (").append(weatherData.getTemperature()).append("°C). ");
+        else if (weatherData.getTemperature() != null && weatherData.getTemperature() < 10)
+            message.append("Nhiệt độ thấp (").append(weatherData.getTemperature()).append("°C). ");
+        if (weatherData.getWindSpeed() != null && weatherData.getWindSpeed() > 20)
+            message.append("Gió mạnh (").append(weatherData.getWindSpeed()).append("m/s). ");
+        if (weatherData.getWeatherDescription() != null) message.append(weatherData.getWeatherDescription());
+        return message.toString();
     }
 } 

@@ -2,11 +2,13 @@ package com.agricultural.agricultural.service.impl;
 
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import com.agricultural.agricultural.entity.MarketPlace;
+import com.agricultural.agricultural.entity.ProductCategory;
 import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.exception.BadRequestException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.MarketPlaceMapper;
 import com.agricultural.agricultural.repository.IMarketPlaceRepository;
+import com.agricultural.agricultural.repository.IProductCategoryRepository;
 import com.agricultural.agricultural.repository.impl.UserRepository;
 import com.agricultural.agricultural.service.IMarketPlaceService;
 import com.agricultural.agricultural.service.ICloudinaryService;
@@ -31,17 +33,17 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class MarketPlaceServiceImpl implements IMarketPlaceService {
     private final IMarketPlaceRepository marketPlaceRepository;
+    private final IProductCategoryRepository productCategoryRepository;
     private final UserRepository userRepository;
     private final MarketPlaceMapper marketPlaceMapper;
     private final ICloudinaryService cloudinaryService;
 
 
-    @Override
     public MarketPlaceDTO createProduct(MarketPlaceDTO productDTO) {
         // Lấy thông tin authentication hiện tại
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
-        
+
         User user;
         try {
             // Thử tìm theo email thay vì username
@@ -61,7 +63,7 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             log.error("Lỗi khi tìm kiếm người dùng: {}", e.getMessage());
             throw new BadRequestException("Lỗi khi tìm kiếm người dùng: " + e.getMessage());
         }
-        
+
         // Validate thông tin khuyến mãi
         validateSaleInfo(productDTO);
 
@@ -76,6 +78,14 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         }
 
         product.setUser(user);
+        // Phan Duc them
+        if (productDTO.getCategoryId() != null) {
+            ProductCategory category = productCategoryRepository.findById(productDTO.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy category với id = " + productDTO.getCategoryId()));
+            product.setCategory(category);
+        }
+
+        //
         MarketPlace savedProduct = marketPlaceRepository.save(product);
 
         return marketPlaceMapper.toDTO(savedProduct);

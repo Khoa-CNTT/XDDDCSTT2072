@@ -57,6 +57,12 @@ public class FlashSale extends BaseEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "is_notified")
+    private Boolean isNotified = false;
+    
+    @Column(name = "is_start_notified")
+    private Boolean isStartNotified = false;
+
     // Phương thức kiểm tra flash sale có đang hoạt động không
     @Transient
     public boolean isActive() {
