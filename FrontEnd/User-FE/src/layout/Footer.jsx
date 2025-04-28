@@ -50,7 +50,7 @@ function Footer() {
   }, []);
 
   return (
-    <footer className="bg-gray-900 text-white py-3 px-3">
+    <footer className="w-full bg-gray-900  text-white py-3 px-3">
       <div className="w-full max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Logo and Address */}
         <div className="text-left">

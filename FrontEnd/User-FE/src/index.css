@@ -18,6 +18,10 @@
   .input-box {
     @apply text-xl bg-cyan-200/100 rounded px-5 py-3 outline-none;
   }
+  .arrow-icon {
+    @apply flex items-center justify-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer transition-all duration-300;
+    color: black; /* Chỉnh lại màu cho biểu tượng */
+  }
 }
 
 @theme inline {

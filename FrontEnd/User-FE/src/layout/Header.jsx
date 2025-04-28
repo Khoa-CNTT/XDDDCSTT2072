@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { FaBell, FaShoppingCart, FaUserCircle, FaBars } from "react-icons/fa";
+import { FaBell, FaShoppingCart, FaBars } from "react-icons/fa";
 import { IoIosSearch } from "react-icons/io";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import list from "../data/list.js";
 import useAuth from "@/hooks/useAuth.js";
 import { toast } from "react-toastify";
+import avatarUser from "@/assets/images/avatar.jpg";
 
 const Header = () => {
-  const { setAuth } = useAuth();
+  const { setAuth, auth } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
   const [underlineStyle, setUnderlineStyle] = useState({});
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -77,7 +78,7 @@ const Header = () => {
     toast.success("Logout successFully");
   };
   return (
-    <div className="w-full bg-lime-500 px-4 md:px-8 py-3 shadow-md rounded-b-2xl dark:bg-gray-900 transition-colors duration-300">
+    <div className="w-full bg-lime-500 px-4 md:px-8 py-3 shadow-md rounded-b-2xl dark:bg-gray-900 transition-colors duration-300 fixed z-40 top-0">
       <div className="flex justify-between items-center">
         {/* Logo */}
         <Link
@@ -153,10 +154,10 @@ const Header = () => {
 
           {/* Avatar dropdown */}
           <div className="relative hidden md:block">
-            <FaUserCircle
-              size={36}
-              className="text-black dark:text-white hover:scale-110 transition-transform cursor-pointer"
+            <img
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="max-w-10 max-h-10 rounded-full cursor-pointer"
+              src={auth?.user?.imageUrl || avatarUser}
             />
             {isDropdownOpen && (
               <div
