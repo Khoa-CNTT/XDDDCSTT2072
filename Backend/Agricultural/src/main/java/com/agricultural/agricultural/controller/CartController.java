@@ -2,6 +2,7 @@ package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.CartDTO;
 import com.agricultural.agricultural.dto.CartItemDTO;
+import com.agricultural.agricultural.dto.CartResponseDTO;
 import com.agricultural.agricultural.service.ICartService;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,14 @@ public class CartController {
     public ResponseEntity<CartDTO> getCurrentUserCart() {
         return ResponseEntity.ok(cartService.getCurrentUserCart());
     }
+    
+    /**
+     * Lấy thông tin giỏ hàng theo định dạng giống Shopee
+     */
+    @GetMapping("/shop-view")
+    public ResponseEntity<CartResponseDTO> getCartResponse() {
+        return ResponseEntity.ok(cartService.getCartResponse());
+    }
 
     /**
      * Thêm sản phẩm vào giỏ hàng
@@ -44,8 +53,6 @@ public class CartController {
             @RequestParam(required = false) String notes) {
         return ResponseEntity.ok(cartService.addItemToCart(productId, quantity, variantId, notes));
     }
-
-
 
     @PutMapping("/items/{cartItemId}")
     public ResponseEntity<CartDTO> updateCartItem(
@@ -75,6 +82,16 @@ public class CartController {
     public ResponseEntity<CartDTO> clearCart() {
         return ResponseEntity.ok(cartService.clearCart());
     }
+    
+    /**
+     * Xóa toàn bộ giỏ hàng
+     *
+     * @return Thông tin giỏ hàng sau khi xóa
+     */
+    @DeleteMapping
+    public ResponseEntity<CartDTO> deleteCart() {
+        return ResponseEntity.ok(cartService.clearCart());
+    }
 
     /**
      * Kiểm tra tính hợp lệ của giỏ hàng
@@ -96,6 +113,54 @@ public class CartController {
     public ResponseEntity<CartDTO> calculateShippingFee(@RequestParam Integer addressId) {
         return ResponseEntity.ok(cartService.calculateShippingFee(addressId));
     }
-
-
+    
+    /**
+     * Chọn/bỏ chọn các sản phẩm trong giỏ hàng
+     * 
+     * @param cartItemIds Danh sách ID sản phẩm trong giỏ hàng
+     * @param selected True nếu muốn chọn, False nếu muốn bỏ chọn
+     * @return Thông tin giỏ hàng sau khi cập nhật
+     */
+    @PutMapping("/items/select")
+    public ResponseEntity<CartDTO> selectCartItems(
+            @RequestParam List<Integer> cartItemIds,
+            @RequestParam boolean selected) {
+        return ResponseEntity.ok(cartService.selectCartItems(cartItemIds, selected));
+    }
+    
+    /**
+     * Chọn/bỏ chọn tất cả sản phẩm trong giỏ hàng
+     * 
+     * @param selected True nếu muốn chọn tất cả, False nếu muốn bỏ chọn tất cả
+     * @return Thông tin giỏ hàng sau khi cập nhật
+     */
+    @PutMapping("/items/select-all")
+    public ResponseEntity<CartDTO> selectAllCartItems(@RequestParam boolean selected) {
+        return ResponseEntity.ok(cartService.selectAllCartItems(selected));
+    }
+    
+    /**
+     * Áp dụng mã giảm giá (voucher) vào giỏ hàng
+     * 
+     * @param voucherCode Mã giảm giá
+     * @return Thông tin giỏ hàng sau khi áp dụng voucher
+     */
+    @PostMapping("/voucher/apply")
+    public ResponseEntity<CartDTO> applyVoucher(@RequestParam String voucherCode) {
+        return ResponseEntity.ok(cartService.applyVoucher(voucherCode));
+    }
+    
+    /**
+     * Hủy bỏ mã giảm giá (voucher) đã áp dụng
+     * 
+     * @param type Loại voucher (PLATFORM, SHOP, SHIPPING)
+     * @param shopId ID của shop (chỉ cần thiết khi type = SHOP)
+     * @return Thông tin giỏ hàng sau khi hủy voucher
+     */
+    @DeleteMapping("/voucher/remove")
+    public ResponseEntity<CartDTO> removeVoucher(
+            @RequestParam String type,
+            @RequestParam(required = false) Integer shopId) {
+        return ResponseEntity.ok(cartService.removeVoucher(type, shopId));
+    }
 } 

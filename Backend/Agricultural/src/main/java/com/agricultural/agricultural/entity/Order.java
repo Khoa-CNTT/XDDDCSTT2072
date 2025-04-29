@@ -15,6 +15,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "orders")
@@ -43,6 +45,10 @@ public class Order {
     @Builder.Default
     private BigDecimal shippingFee = BigDecimal.ZERO;
     
+    @Column(name = "shipping_discount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal shippingDiscount = BigDecimal.ZERO;
+    
     @Column(name = "tax_amount", precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal taxAmount = BigDecimal.ZERO;
@@ -50,6 +56,16 @@ public class Order {
     @Column(name = "discount_amount", precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal discountAmount = BigDecimal.ZERO;
+    
+    @Column(name = "voucher_discount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal voucherDiscount = BigDecimal.ZERO;
+    
+    @Column(name = "platform_voucher_code")
+    private String platformVoucherCode;
+    
+    @Column(name = "shop_voucher_codes", columnDefinition = "TEXT")
+    private String shopVoucherCodes;
     
     @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
@@ -155,9 +171,23 @@ public class Order {
         orderTracking.setOrder(this);
     }
     
+    public Map<Integer, List<OrderDetail>> getOrderDetailsByShop() {
+        return orderDetails.stream()
+                .filter(detail -> detail.getShopId() != null)
+                .collect(Collectors.groupingBy(OrderDetail::getShopId));
+    }
+    
+    public BigDecimal getShopSubtotal(Integer shopId) {
+        return orderDetails.stream()
+                .filter(detail -> shopId.equals(detail.getShopId()))
+                .map(OrderDetail::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
     public void calculateTotals() {
         this.totalQuantity = 0;
         this.subtotal = BigDecimal.ZERO;
+        this.voucherDiscount = BigDecimal.ZERO;
         
         // Kiểm tra null cho orderDetails
         if (orderDetails != null && !orderDetails.isEmpty()) {
@@ -176,6 +206,11 @@ public class Order {
                         if (detail.getDiscountAmount() != null) {
                             finalPrice = finalPrice.subtract(detail.getDiscountAmount());
                         }
+                        if (detail.getVoucherDiscount() != null) {
+                            finalPrice = finalPrice.subtract(detail.getVoucherDiscount());
+                            this.voucherDiscount = this.voucherDiscount.add(
+                                    detail.getVoucherDiscount().multiply(new BigDecimal(detail.getQuantity())));
+                        }
                         BigDecimal detailTotal = finalPrice.multiply(new BigDecimal(detail.getQuantity()));
                         this.subtotal = this.subtotal.add(detailTotal);
                     }
@@ -185,12 +220,19 @@ public class Order {
         
         // Khởi tạo giá trị mặc định nếu cần
         if (this.shippingFee == null) this.shippingFee = BigDecimal.ZERO;
+        if (this.shippingDiscount == null) this.shippingDiscount = BigDecimal.ZERO;
         if (this.taxAmount == null) this.taxAmount = BigDecimal.ZERO;
         if (this.discountAmount == null) this.discountAmount = BigDecimal.ZERO;
+        if (this.voucherDiscount == null) this.voucherDiscount = BigDecimal.ZERO;
         
         // Tính tổng giá trị đơn hàng với các giá trị đã được kiểm tra null
+        BigDecimal finalShippingFee = this.shippingFee.subtract(this.shippingDiscount);
+        if (finalShippingFee.compareTo(BigDecimal.ZERO) < 0) {
+            finalShippingFee = BigDecimal.ZERO;
+        }
+        
         this.totalAmount = this.subtotal
-                .add(this.shippingFee)
+                .add(finalShippingFee)
                 .add(this.taxAmount)
                 .subtract(this.discountAmount);
     }
