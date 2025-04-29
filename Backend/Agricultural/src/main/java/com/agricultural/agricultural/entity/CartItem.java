@@ -25,6 +25,12 @@ public class CartItem {
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
 
+    @Column(name = "shop_id")
+    private Integer shopId;
+
+    @Column(name = "shop_name")
+    private String shopName;
+
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private MarketPlace product;
@@ -43,9 +49,16 @@ public class CartItem {
     @Column(name = "total_price", precision = 10, scale = 2)
     private BigDecimal totalPrice;
 
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
 
     @Column
     private String notes;
+
+    @Column(name = "is_selected")
+    @Builder.Default
+    private Boolean isSelected = false;
 
     @CreationTimestamp
     @Column(name = "added_at")
@@ -68,12 +81,23 @@ public class CartItem {
             this.unitPrice = BigDecimal.ZERO;
         }
 
-        // Tính tổng giá
+        // Tính tổng giá sau khi trừ khuyến mãi
         if (this.unitPrice != null && this.quantity != null) {
-            this.totalPrice = this.unitPrice.multiply(new BigDecimal(this.quantity));
+            if (this.discountAmount == null) {
+                this.discountAmount = BigDecimal.ZERO;
+            }
+            BigDecimal finalPrice = this.unitPrice.subtract(this.discountAmount);
+            this.totalPrice = finalPrice.multiply(new BigDecimal(this.quantity));
         } else {
             this.totalPrice = BigDecimal.ZERO;
         }
+        
+        // Cập nhật thông tin shop từ sản phẩm nếu chưa có
+        if (this.shopId == null && product != null && product.getUser() != null) {
+            this.shopId = product.getUser().getId();
+            if (product.getUser().getUsername() != null) {
+                this.shopName = product.getUser().getUsername();
+            }
+        }
     }
-
 }

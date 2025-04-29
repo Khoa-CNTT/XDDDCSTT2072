@@ -216,7 +216,7 @@ CREATE TABLE order_coupons
     FOREIGN KEY (coupon_id) REFERENCES coupons (id) ON DELETE CASCADE
 );
 
-// Dùng để reset password
+-- Dùng để reset password
 CREATE TABLE password_reset_tokens
 (
     id          INT PRIMARY KEY AUTO_INCREMENT,
@@ -956,3 +956,89 @@ UPDATE feedback SET status = 'REJECTED' WHERE status = 'rejected';
 ALTER TABLE notifications ADD COLUMN redirect_url VARCHAR(255) NULL;
 ALTER TABLE flash_sales ADD COLUMN is_notified BOOLEAN DEFAULT FALSE;
 ALTER TABLE flash_sales ADD COLUMN is_start_notified BOOLEAN DEFAULT FALSE;
+
+-- Update Lần 6
+
+-- Cập nhật bảng cart để thêm các trường voucher và giảm giá
+ALTER TABLE cart
+    ADD COLUMN discount_amount DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN shipping_fee DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN shipping_discount DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN final_total DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN applied_voucher_code VARCHAR(50),
+ADD COLUMN applied_shop_vouchers TEXT;
+
+-- Cập nhật bảng cart_items để thêm các trường mới
+ALTER TABLE cart_items
+    ADD COLUMN shop_id INT,
+ADD COLUMN shop_name VARCHAR(100),
+ADD COLUMN discount_amount DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN is_selected BOOLEAN DEFAULT true;
+
+-- Cập nhật bảng orders để thêm các trường mới
+ALTER TABLE orders
+    ADD COLUMN shipping_discount DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN voucher_discount DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN platform_voucher_code VARCHAR(50),
+ADD COLUMN shop_voucher_codes TEXT;
+
+-- Cập nhật bảng order_details để thêm các trường mới
+ALTER TABLE order_details
+    ADD COLUMN shop_id INT,
+ADD COLUMN shop_name VARCHAR(100),
+ADD COLUMN voucher_code VARCHAR(50),
+ADD COLUMN voucher_discount DECIMAL(10, 2) DEFAULT 0;
+
+-- Tạo bảng vouchers để lưu thông tin mã giảm giá
+CREATE TABLE vouchers (
+                          id INT AUTO_INCREMENT PRIMARY KEY,
+                          code VARCHAR(50) NOT NULL UNIQUE,
+                          name VARCHAR(100) NOT NULL,
+                          description TEXT,
+                          type VARCHAR(20) NOT NULL COMMENT 'PLATFORM, SHOP, SHIPPING',
+                          discount_amount DECIMAL(10, 2),
+                          discount_percent INT,
+                          min_order_amount DECIMAL(10, 2),
+                          max_discount_amount DECIMAL(10, 2),
+                          is_shipping_voucher BOOLEAN DEFAULT false,
+                          shipping_discount_amount DECIMAL(10, 2),
+                          min_shipping_fee DECIMAL(10, 2),
+                          shop_id INT,
+                          shop_name VARCHAR(100),
+                          start_date DATETIME NOT NULL,
+                          end_date DATETIME NOT NULL,
+                          usage_limit INT,
+                          usage_count INT DEFAULT 0,
+                          is_active BOOLEAN DEFAULT true,
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                          FOREIGN KEY (shop_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Thêm chỉ mục cho các trường mới
+CREATE INDEX idx_cart_items_shop ON cart_items (shop_id);
+CREATE INDEX idx_order_details_shop ON order_details (shop_id);
+CREATE INDEX idx_vouchers_code ON vouchers (code);
+CREATE INDEX idx_vouchers_shop ON vouchers (shop_id);
+CREATE INDEX idx_vouchers_type ON vouchers (type);
+CREATE INDEX idx_vouchers_active ON vouchers (is_active);
+
+-- Thêm dữ liệu mẫu cho bảng vouchers
+INSERT INTO vouchers (code, name, description, type, discount_amount, min_order_amount, max_discount_amount, start_date, end_date, is_active, usage_limit)
+VALUES ('WELCOME100K', 'Chào mừng mới - Giảm 100K', 'Giảm 100.000đ cho đơn hàng từ 500.000đ', 'PLATFORM', 100000, 500000, 100000, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), TRUE, 10000);
+
+INSERT INTO vouchers (code, name, description, type, discount_percent, min_order_amount, max_discount_amount, start_date, end_date, is_active, usage_limit)
+VALUES ('GIAM15PT', 'Giảm 15% toàn sàn', 'Giảm 15% tối đa 50.000đ cho đơn hàng từ 200.000đ', 'PLATFORM', 15, 200000, 50000, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), TRUE, 5000);
+
+-- Thay đổi shop_id thành user_id (thay 1 bằng ID của user thực tế trong hệ thống)
+INSERT INTO vouchers (code, name, description, type, discount_amount, min_order_amount, shop_id, shop_name, start_date, end_date, is_active, usage_limit)
+SELECT 'SHOP50K', 'Giảm 50K Shop VIP', 'Giảm 50.000đ cho đơn hàng từ 200.000đ', 'SHOP', 50000, 200000, id, username, NOW(), DATE_ADD(NOW(), INTERVAL 14 DAY), TRUE, 1000
+FROM users
+WHERE id = 1 -- Lấy user đầu tiên làm shop
+    LIMIT 1;
+
+INSERT INTO vouchers (code, name, description, type, is_shipping_voucher, shipping_discount_amount, min_shipping_fee, min_order_amount, start_date, end_date, is_active)
+VALUES ('FREESHIP30K', 'Miễn phí vận chuyển 30K', 'Miễn phí vận chuyển 30.000đ cho đơn hàng từ 150.000đ', 'PLATFORM', TRUE, 30000, 0, 150000, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), TRUE);
+
+INSERT INTO vouchers (code, name, description, type, is_shipping_voucher, shipping_discount_amount, min_shipping_fee, min_order_amount, start_date, end_date, is_active)
+VALUES ('FREESHIP0D', 'Miễn phí vận chuyển 0Đ', 'Miễn phí vận chuyển không giới hạn cho đơn hàng từ 500.000đ', 'PLATFORM', TRUE, 100000, 0, 500000, NOW(), DATE_ADD(NOW(), INTERVAL 3 DAY), TRUE);
