@@ -4,7 +4,7 @@ const Product = ({ item }) => {
   const { productName, imageUrl, currentPrice } = item;
 
   return (
-    <div className="flex flex-col items-center bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-4 w-48 cursor-pointer">
+    <div className="flex flex-col items-center bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-4 w-full cursor-pointer">
       <img
         src={imageUrl}
         alt={productName}

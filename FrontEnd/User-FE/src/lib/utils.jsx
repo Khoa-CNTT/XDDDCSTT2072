@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge"
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -10,14 +10,18 @@ export function timeAgo(date) {
   const secondsDiff = Math.floor((now - date) / 1000);
   const minutesDiff = Math.floor(secondsDiff / 60);
   const hoursDiff = Math.floor(minutesDiff / 60);
-  const rtf = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' });
+  const daysDiff = Math.floor(hoursDiff / 24);
 
-  if (hoursDiff > 0) {
-      return rtf.format(-hoursDiff, 'hour');
+  const rtf = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
+
+  if (daysDiff > 0) {
+    return rtf.format(-daysDiff, "day");
+  } else if (hoursDiff > 0) {
+    return rtf.format(-hoursDiff, "hour");
   } else if (minutesDiff > 0) {
-      return rtf.format(-minutesDiff, 'minute');
+    return rtf.format(-minutesDiff, "minute");
   } else {
-      return rtf.format(-secondsDiff, 'second');
+    return rtf.format(-secondsDiff, "second");
   }
 }
 

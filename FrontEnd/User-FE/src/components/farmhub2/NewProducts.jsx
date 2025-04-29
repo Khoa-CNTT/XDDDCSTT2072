@@ -15,31 +15,24 @@ const NewProducts = () => {
     }
   };
 
-  const {
-    data: products,
-    error,
-    isPending,
-  } = useQuery({
+  const { data: products, isPending } = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
   });
-  console.log(products);
-  console.log(error);
-
   // sắp xếp mới nhất
   const sortedProducts = products?.sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
   // Lấy 5 sản phẩm mới nhất
   const latest5Products = sortedProducts?.slice(0, 5);
-  console.log(latest5Products);
+
   return (
-    <div className="flex flex-col gap-2 py-4 my-4 px-5 bg-[#E4EFE7] rounded-2xl w-full">
+    <div className="flex flex-col gap-4 py-4 my-4 px-5 bg-[#E4EFE7] rounded-2xl w-full">
       <h1 className="font-bold text-2xl ml-2">Sản phẩm mới nhất</h1>
       {isPending ? (
         <Loading />
       ) : (
-        <div className="flex justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {latest5Products?.map((product, index) => (
             <Product key={index} item={product} />
           ))}

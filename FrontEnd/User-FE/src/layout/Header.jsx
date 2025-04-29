@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { FaBell, FaShoppingCart, FaBars } from "react-icons/fa";
-import { IoIosSearch } from "react-icons/io";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import list from "../data/list.js";
 import useAuth from "@/hooks/useAuth.js";
 import { toast } from "react-toastify";
 import avatarUser from "@/assets/images/avatar.jpg";
+import Search from "@/components/header/Search.jsx";
 
 const Header = () => {
   const { setAuth, auth } = useAuth();
@@ -114,25 +114,10 @@ const Header = () => {
             }}
           />
         </div>
-
-        {/* Tìm kiếm */}
-        <div className="relative w-[200px] md:w-[300px] hidden md:block">
-          <input
-            type="text"
-            placeholder="Search"
-            className={`w-full pl-9 pr-4 py-2 rounded-full bg-green-100 focus:outline-none ${
-              isSearchActive
-                ? "transition-all duration-300 transform scale-105"
-                : ""
-            }`}
-            onFocus={() => setIsSearchActive(true)}
-            onBlur={() => setIsSearchActive(false)}
-          />
-          <IoIosSearch
-            size={20}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600"
-          />
-        </div>
+        <Search
+          isSearchActive={isSearchActive}
+          setIsSearchActive={setIsSearchActive}
+        />
 
         {/* Icon */}
         <div className="flex items-center gap-4 md:gap-6">
