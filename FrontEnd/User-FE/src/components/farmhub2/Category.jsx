@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { queryKeys } from "@/constant/queryKeys";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import { getAllCategories } from "@/services/productService";
@@ -13,24 +14,49 @@ import { useNavigate } from "react-router";
 const Category = () => {
   const axiosPrivate = useAxiosPrivate();
   const navigate = useNavigate();
+
   const { data: categories, isLoading } = useQuery({
     queryKey: queryKeys.categories,
     queryFn: () => getAllCategories(axiosPrivate),
   });
 
+  const [slidesToShow, setSlidesToShow] = useState(7);
 
-  // configure slider
+  // Handle responsive behavior for the number of slides to show
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSlidesToShow(7); // 7 items on large screens
+      } else if (window.innerWidth >= 768) {
+        setSlidesToShow(5); // 5 items on medium screens
+      } else if (window.innerWidth >= 480) {
+        setSlidesToShow(3); // 3 items on small screens
+      } else {
+        setSlidesToShow(2); // 2 items on extra small screens
+      }
+    };
+
+    // Run on resize
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial call to set the slides based on current screen size
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  // Slider configuration
   const settings = {
     infinite: true,
     speed: 500,
-    slidesToShow: 7,
+    slidesToShow: slidesToShow,
     slidesToScroll: 1,
     arrows: true,
     nextArrow: <NextArrow />,
     prevArrow: <PreArrow />,
   };
 
-  // handle click category
+  // Handle category click
   const handleCategoryClick = (categoryId) => {
     navigate(`category/${categoryId}`);
   };
@@ -42,11 +68,11 @@ const Category = () => {
         <Loading />
       ) : (
         <Slider {...settings}>
-          {categories.data.map((category, index) => (
+          {categories?.data?.map((category, index) => (
             <div key={index} className="w-24">
               <div className="flex flex-col items-center cursor-pointer">
                 <div
-                  className="w-20 h-20 rounded-full overflow-hidden "
+                  className="w-20 h-20 rounded-full overflow-hidden"
                   onClick={() => handleCategoryClick(category.id)}
                 >
                   <img

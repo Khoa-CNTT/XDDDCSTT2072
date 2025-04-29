@@ -5,7 +5,7 @@ export const getAllProducts = async (axiosPrivate) => {
 };
 
 // createProducts
-export const createProduct = (
+export const createProduct = async (
   axiosPrivate,
   productName,
   description,
@@ -18,7 +18,7 @@ export const createProduct = (
   image,
   weight
 ) => {
-  return axiosPrivate.post(`/marketplace/create`, {
+  return await axiosPrivate.post(`/marketplace/create`, {
     productName,
     description,
     quantity,
@@ -33,17 +33,29 @@ export const createProduct = (
 };
 
 // getProductByCategory
-export const getProductsByCategory = (axiosPrivate, categoryId) => {
-  return axiosPrivate.get(`/marketplace/category/${categoryId}`);
+export const getProductsByCategory = async (axiosPrivate, categoryId) => {
+  try {
+    const response = await axiosPrivate.get(
+      `/marketplace/category/${categoryId}`
+    );
+    return response.data.content;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 // serachProduct
-export const searctProducts = (axiosPrivate, keyword) => {
-  return axiosPrivate.get(`/marketplace/search`, {
-    params: {
-      keyword: keyword,
-    },
-  });
+export const searchProducts = async (axiosPrivate, keyword) => {
+  try {
+    const response = await axiosPrivate.get(`/marketplace/search`, {
+      params: {
+        keyword: keyword,
+      },
+    });
+    return response.data.content;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 // getAllCategory

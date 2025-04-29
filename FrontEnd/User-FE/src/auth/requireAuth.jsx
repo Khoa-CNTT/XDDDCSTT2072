@@ -5,7 +5,6 @@ import PropTypes from "prop-types";
 const RequireAuth = ({ allowedRoles }) => {
   const { auth } = useAuth();
   const location = useLocation();
-  console.log(auth);
   const isAuthorized = auth?.user?.roleName && allowedRoles.includes(auth?.user?.roleName);
   return isAuthorized ? (
     <Outlet />
