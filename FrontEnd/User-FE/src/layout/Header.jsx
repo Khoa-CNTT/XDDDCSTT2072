@@ -141,7 +141,7 @@ const Header = () => {
           <div className="relative hidden md:block">
             <img
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="max-w-10 max-h-10 rounded-full cursor-pointer"
+              className="w-10 h-10 rounded-full cursor-pointer"
               src={auth?.user?.imageUrl || avatarUser}
             />
             {isDropdownOpen && (
