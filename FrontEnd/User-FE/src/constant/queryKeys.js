@@ -6,4 +6,7 @@ export const queryKeys = {
   category: (categoryId) => ["category", categoryId],
   productsByCategory: (categoryId) => ["productsCategory", categoryId],
   searchProducts: (keyword) => ["searchProducts", keyword],
+  productById: (id) => ["productById", id],
+  userById: (id) => ["userById", id],
+  cart: () => ["cart"]
 };

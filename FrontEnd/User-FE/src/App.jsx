@@ -18,10 +18,12 @@ import RequireAuth from "./auth/requireAuth";
 import NoFoundPage from "./pages/NoFoundPage";
 import FarmHub2 from "./pages/FarmHub2";
 import CategoryPage from "./pages/CategoryPage ";
+import ProductDetail from "./pages/ProductDetail";
 
 import Category from "./components/farmhub2/Category";
 import NewProducts from "./components/farmhub2/NewProducts";
 import SearchPage from "./pages/SearchPage";
+import Cart from "./pages/Cart";
 
 const ROLES = {
   User: "User",
@@ -32,6 +34,37 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* <Route path="/" element={<Main />}>
+          <Route index element={<Navigate to="home" />} />
+          <Route path="account">
+            <Route path="register" element={<Register />} />
+            <Route path="login" element={<Login />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
+          </Route>
+
+          <Route path="home" element={<Home />} />
+          <Route path="farmhub2" element={<FarmHub2 />}>
+            <Route
+              index
+              element={
+                <>
+                  <Category />
+                  <NewProducts />
+                </>
+              }
+            />
+            <Route path="category/:id" element={<CategoryPage />} />
+            <Route path="search" element={<SearchPage />} />
+            <Route path="product/:id" element={<ProductDetail />} />
+          </Route>
+          <Route path="farmhub" element={<FarmHub />} />
+          <Route path="chat-ai" element={<ChatAI />} />
+          <Route path="news" element={<News />} />
+          <Route path="about" element={<AboutUs />} />
+
+          <Route path="*" element={<NoFoundPage />} />
+        </Route> */}
         <Route path="/" element={<Main />}>
           <Route index element={<Navigate to="account/login" />} />
           <Route path="account">
@@ -54,11 +87,13 @@ function App() {
               />
               <Route path="category/:id" element={<CategoryPage />} />
               <Route path="search" element={<SearchPage />} />
+              <Route path="product/:id" element={<ProductDetail />} />
             </Route>
             <Route path="farmhub" element={<FarmHub />} />
             <Route path="chat-ai" element={<ChatAI />} />
             <Route path="news" element={<News />} />
             <Route path="about" element={<AboutUs />} />
+            <Route path="cart" element={<Cart />} />
           </Route>
           <Route path="*" element={<NoFoundPage />} />
         </Route>

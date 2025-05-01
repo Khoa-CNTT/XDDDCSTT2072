@@ -69,3 +69,14 @@ export const getCategoryById = async (axiosPrivate, id) => {
   const response = await axiosPrivate.get(`/product-categories/${id}`);
   return response;
 };
+
+// getProductById
+export const getProductById = async (axiosPrivate, id) => {
+  try {
+    const response = await axiosPrivate.get(`/marketplace/product/${id}`);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};

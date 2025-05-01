@@ -1,10 +1,20 @@
 /* eslint-disable react/prop-types */
 
+import { useNavigate } from "react-router";
+
 const Product = ({ item }) => {
-  const { productName, imageUrl, currentPrice } = item;
+  const { productName, imageUrl, currentPrice, id } = item;
+  const navigate = useNavigate();
+  // handleClickproduct
+  const handleClickProduct = () => {
+    navigate(`/farmhub2/product/${id}`);
+  };
 
   return (
-    <div className="flex flex-col items-center bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-4 w-full cursor-pointer">
+    <div
+      className="flex flex-col items-center bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 p-4 w-full cursor-pointer"
+      onClick={handleClickProduct}
+    >
       <img
         src={imageUrl}
         alt={productName}
