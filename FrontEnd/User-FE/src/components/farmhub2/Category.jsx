@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { queryKeys } from "@/constant/queryKeys";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import { getAllCategories } from "@/services/productService";
 import { useQuery } from "@tanstack/react-query";
@@ -15,14 +14,14 @@ const Category = () => {
   const axiosPrivate = useAxiosPrivate();
   const navigate = useNavigate();
 
-  const { data: categories, isLoading } = useQuery({
-    queryKey: queryKeys.categories,
+  const { data: categories, isPending } = useQuery({
+    queryKey: ["categoryList"],
     queryFn: () => getAllCategories(axiosPrivate),
   });
+  console.log(categories);
 
   const [slidesToShow, setSlidesToShow] = useState(7);
 
-  // Handle responsive behavior for the number of slides to show
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -64,7 +63,7 @@ const Category = () => {
   return (
     <div className="flex flex-col gap-2 py-4 my-4 px-5 bg-[#E4EFE7] rounded-2xl w-full max-h-56">
       <h1 className="font-bold text-2xl ml-2">Danh mục</h1>
-      {isLoading ? (
+      {isPending ? (
         <Loading />
       ) : (
         <Slider {...settings}>

@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { FaBell, FaShoppingCart, FaBars } from "react-icons/fa";
+import { FaBell, FaBars } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import list from "../data/list.js";
 import useAuth from "@/hooks/useAuth.js";
 import { toast } from "react-toastify";
 import avatarUser from "@/assets/images/avatar.jpg";
 import Search from "@/components/header/Search.jsx";
+import Cart from "@/components/header/Cart.jsx";
 
 const Header = () => {
   const { setAuth, auth } = useAuth();
@@ -125,17 +126,12 @@ const Header = () => {
           <div className="relative hover:scale-110 transition-transform cursor-pointer">
             <FaBell size={22} className="text-black dark:text-white" />
             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-              2
+              
             </span>
           </div>
 
           {/* Giỏ hàng */}
-          <div className="relative hover:scale-110 transition-transform cursor-pointer">
-            <FaShoppingCart size={22} className="text-black dark:text-white" />
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-              0
-            </span>
-          </div>
+         <Cart/>
 
           {/* Avatar dropdown */}
           <div className="relative hidden md:block">
