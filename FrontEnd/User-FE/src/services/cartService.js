@@ -28,9 +28,22 @@ export const getCart = async (axiosPrivate) => {
 // deleteCartItems
 export const deleteCartItems = async (axiosPrivate, itemId) => {
   try {
-    const response = await axiosPrivate.delete(
-      `/cart/items/${itemId}`
-    );
+    const response = await axiosPrivate.delete(`/cart/items/${itemId}`);
+    return response;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+// updateCartItem
+export const updateCartItem = async (axiosPrivate, itemId, quantity) => {
+  try {
+    const response = await axiosPrivate.put(`/cart/items/${itemId}`, null, {
+      params: {
+        quantity,
+      },
+    });
     return response;
   } catch (error) {
     console.log(error);

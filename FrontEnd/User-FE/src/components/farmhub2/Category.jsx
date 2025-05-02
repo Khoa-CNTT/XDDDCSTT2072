@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { queryKeys } from "@/constant/queryKeys";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import { getAllCategories } from "@/services/productService";
 import { useQuery } from "@tanstack/react-query";
@@ -16,9 +15,10 @@ const Category = () => {
   const navigate = useNavigate();
 
   const { data: categories, isPending } = useQuery({
-    queryKey: queryKeys.categories,
+    queryKey: ["categoryList"],
     queryFn: () => getAllCategories(axiosPrivate),
   });
+  console.log(categories);
 
   const [slidesToShow, setSlidesToShow] = useState(7);
 

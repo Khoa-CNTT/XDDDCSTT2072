@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "./useAxiosPrivate";
-import { createCart, deleteCartItems, getCart } from "@/services/cartService";
+import {
+  createCart,
+  deleteCartItems,
+  getCart,
+  updateCartItem,
+} from "@/services/cartService";
 import { queryKeys } from "@/constant/queryKeys";
 
 export const useCartActions = (product = null) => {
@@ -32,5 +37,21 @@ export const useCartActions = (product = null) => {
       console.log(error);
     },
   });
-  return { createCartMuation, getCartQuery, deleteCartItemsMuation };
+  // updateCartItem
+  const updateCartMutation = useMutation({
+    mutationFn: ({ itemId, quantity }) =>
+      updateCartItem(axiosPrivate, itemId, quantity),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.cart });
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+  });
+  return {
+    createCartMuation,
+    getCartQuery,
+    deleteCartItemsMuation,
+    updateCartMutation,
+  };
 };

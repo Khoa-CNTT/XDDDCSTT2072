@@ -34,6 +34,7 @@ const Login = () => {
     const sessionAuth = sessionStorage.getItem("auth");
     if (sessionAuth) {
       navigate(from, { replace: true });
+      // navigate(from, { replace: true });
     }
   }, [from, navigate]);
 

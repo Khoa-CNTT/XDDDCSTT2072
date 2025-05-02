@@ -10,8 +10,10 @@ const Cart = () => {
   const navigate = useNavigate();
   const { getCartQuery, isLoading } = useCartActions();
   const { data: cart } = getCartQuery;
-  const cartItems = cart?.cartItems;
 
+
+  const cartItems = cart?.cartItems;
+  console.log(cartItems);
   const handleBackFarmHubPage = () => {
     navigate("/farmhub2");
   };
@@ -50,7 +52,7 @@ const Cart = () => {
               </tr>
             </thead>
             <tbody>
-              {cartItems.map((item, index) => (
+              {cartItems?.map((item, index) => (
                 <tr key={index} className="border-b">
                   <td className="flex items-center gap-4 p-4">
                     <img
@@ -64,10 +66,7 @@ const Cart = () => {
                     {item.unitPrice.toLocaleString()}đ
                   </td>
                   <td className="text-center">
-                    <CartUpdate
-                      cartItemId={item.id}
-                      currentQuantity={item.quantity}
-                    />
+                    <CartUpdate cartItemId={item.id} quantity={item.quantity} />
                   </td>
                   <td className="text-red-500 font-semibold text-center">
                     {(item.unitPrice * item.quantity).toLocaleString()}đ
@@ -83,8 +82,7 @@ const Cart = () => {
           <div className="flex justify-end mt-6 items-center gap-4">
             <span className="text-lg font-semibold">Tổng tiền:</span>
             <span className="text-red-500 text-xl font-bold">
-              {cartItems
-                .reduce(
+              {cartItems?.reduce(
                   (total, item) => total + item.unitPrice * item.quantity,
                   0
                 )
