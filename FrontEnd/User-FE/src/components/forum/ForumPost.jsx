@@ -38,7 +38,6 @@ const ForumPost = ({ post, isOwner }) => {
   const [editedContent, setEditedContent] = useState(post.content);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  console.log(post);
 
   // Get user data
   const { data: user } = useQuery({

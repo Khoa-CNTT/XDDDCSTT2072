@@ -34,6 +34,7 @@ const Login = () => {
     const sessionAuth = sessionStorage.getItem("auth");
     if (sessionAuth) {
       navigate(from, { replace: true });
+      // navigate(from, { replace: true });
     }
   }, [from, navigate]);
 
@@ -46,6 +47,8 @@ const Login = () => {
       const authData = { accessToken, user, roleName };
       setAuth(authData);
       sessionStorage.setItem("auth", JSON.stringify(authData));
+      setEmail("");
+      setPassword("");
       // Navigate to the intended destination or home
       navigate(from, { replace: true });
     },
@@ -60,9 +63,10 @@ const Login = () => {
       }
       if (error.response?.data?.error) {
         toast.error(error.response.data.message);
+        return;
       }
       if (error.message) {
-        toast.error(error.message)
+        toast.error(error.message);
       }
     },
   });
@@ -70,10 +74,8 @@ const Login = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     mutate({ email, password });
-    setEmail("");
-    setPassword("");
   };
-  
+
   return (
     <div
       className="min-h-screen flex items-center justify-center relative p-4"
@@ -126,8 +128,10 @@ const Login = () => {
               {isPending ? "Loading..." : "Sign In"}
             </button>
           </form>
-          <div className="text-center text-sm text-gray-600 mt-3">
-            Quên mật khẩu?
+          <div className="text-center text-xl text-gray-600 mt-3 cursor-pointer font-medium">
+            <Link to="/account/forgot-password" className="hover:text-blue-600">
+              Quên mật khẩu?
+            </Link>
           </div>
           <div className="flex items-center justify-center mt-3">
             <p className="text-gray-600 text-sm mr-2">Or Login With</p>
@@ -139,9 +143,9 @@ const Login = () => {
 
           <p className="text-center text-gray-500 mt-3 text-sm">
             Bạn chưa có tài khoản?{" "}
-            <Link to="/account/register">
-              Đăng Ký
-            </Link>
+            <span className="text-xl font-bold">
+              <Link to="/account/register">Đăng Ký</Link>
+            </span>
           </p>
         </div>
       </div>

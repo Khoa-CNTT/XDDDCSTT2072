@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -75,7 +75,7 @@ function FarmHub() {
                 <img
                   src={slide.image}
                   alt={`Slide ${index + 1}`}
-                  className="w-full h-80 object-cover cursor-pointer"
+                  className="w-full h-50 object-cover cursor-pointer"
                 />
               </div>
             ))}
@@ -148,7 +148,6 @@ function FarmHub() {
             )}
           </div>
         </div>
-
         <Footer />
       </div>
     </div>
