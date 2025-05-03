@@ -51,7 +51,8 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(requests -> requests
                         // ✅ Cho phép API đăng nhập/đăng ký không cần token, chỉ định nhiều pattern để phủ hết các trường hợp
                         .requestMatchers("/api/v1/users/login", "/api/v1/users/register",
-                                        "/api/users/login", "/api/users/register").permitAll()
+                                        "/api/users/login", "/api/users/register",
+                                "/api/v1/auth/forgot-password","/api/v1/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/forum/**").authenticated() // ✅ Yêu cầu đăng nhập với API forum
                         .requestMatchers("/api/v1/orders/**").authenticated() // Yêu cầu xác thực cho API orders
                         .requestMatchers("/api/v1/weather/locations", "/api/v1/weather/locations/*").permitAll() // Cho phép xem thông tin địa điểm 

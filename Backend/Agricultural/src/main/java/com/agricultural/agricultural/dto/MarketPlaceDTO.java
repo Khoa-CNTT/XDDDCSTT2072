@@ -1,15 +1,19 @@
 package com.agricultural.agricultural.dto;
 
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.agricultural.agricultural.entity.enumeration.StockStatus;
 
 @Data
 @Builder
@@ -77,6 +81,12 @@ public class MarketPlaceDTO {
     // Thêm trường tỷ lệ giảm giá
     private BigDecimal discountRate;
     
+    @Transient
+    private MultipartFile imageFile;
+    
+    // Thêm trường trạng thái tồn kho
+    private StockStatus stockStatus;
+    
     // Ảnh đầu tiên trong danh sách hoặc ảnh đại diện
     public String getMainImageUrl() {
         // Nếu có imageUrl thì trả về
@@ -105,5 +115,34 @@ public class MarketPlaceDTO {
     public boolean hasImages() {
         return (imageUrl != null && !imageUrl.isEmpty()) || 
                (images != null && !images.isEmpty());
+    }
+
+    // Phương thức tính toán giá hiện tại
+    public BigDecimal getCurrentPrice() {
+        if (salePrice != null && 
+            saleStartDate != null && 
+            saleEndDate != null && 
+            LocalDateTime.now().isAfter(saleStartDate) && 
+            LocalDateTime.now().isBefore(saleEndDate) &&
+            salePrice.compareTo(price) < 0) {
+            return salePrice;
+        }
+        return price;
+    }
+    
+    // Phương thức kiểm tra sản phẩm có đang giảm giá không
+    public boolean isOnSale() {
+        return salePrice != null && 
+               salePrice.compareTo(BigDecimal.ZERO) > 0 &&  // Đảm bảo salePrice > 0
+               saleStartDate != null && 
+               saleEndDate != null && 
+               LocalDateTime.now().isAfter(saleStartDate) && 
+               LocalDateTime.now().isBefore(saleEndDate) &&
+               salePrice.compareTo(price) < 0;
+    }
+    
+    // Getter cho thumbnailUrl nếu không có thumbnailUrl thì lấy imageUrl
+    public String getThumbnailUrl() {
+        return imageUrl;
     }
 }
