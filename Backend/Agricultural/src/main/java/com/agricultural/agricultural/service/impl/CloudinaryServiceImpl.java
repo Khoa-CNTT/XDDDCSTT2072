@@ -46,14 +46,28 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
             throw new BadRequestException("Tên file không được để trống");
         }
 
+        // Log thông tin file trước khi upload
+        System.out.println("Đang upload file: " + file.getOriginalFilename() + 
+                         ", MIME type: " + file.getContentType() + 
+                         ", Kích thước: " + file.getSize() + " bytes");
+        System.out.println("Đường dẫn mục tiêu: " + folder + "/" + fileName);
+
         Map<String, Object> params = ObjectUtils.asMap(
                 "public_id", folder + "/" + fileName,
                 "overwrite", true,
                 "resource_type", "auto"
         );
 
-        Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), params);
-        return (String) uploadResult.get("secure_url");
+        try {
+            Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), params);
+            String secureUrl = (String) uploadResult.get("secure_url");
+            System.out.println("Upload thành công. URL: " + secureUrl);
+            return secureUrl;
+        } catch (Exception e) {
+            System.err.println("Lỗi khi upload file lên Cloudinary: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override

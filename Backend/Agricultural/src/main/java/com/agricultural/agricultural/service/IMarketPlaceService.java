@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface IMarketPlaceService {
     MarketPlaceDTO createProduct(MarketPlaceDTO productDTO);
@@ -31,6 +32,7 @@ public interface IMarketPlaceService {
         BigDecimal maxPrice,
         String keyword,
         boolean onSaleOnly,
+        String sortBy,
         Pageable pageable
     );
     Page<MarketPlaceDTO> getProductsByUser(Integer userId, Pageable pageable);
@@ -73,35 +75,22 @@ public interface IMarketPlaceService {
      * Cập nhật sản phẩm từ form-data với hình ảnh
      * 
      * @param id ID sản phẩm cần cập nhật
-     * @param productName Tên sản phẩm
-     * @param description Mô tả chi tiết
-     * @param shortDescription Mô tả ngắn
-     * @param quantity Số lượng
-     * @param price Giá
-     * @param salePrice Giá khuyến mãi
-     * @param saleStartDate Ngày bắt đầu khuyến mãi
-     * @param saleEndDate Ngày kết thúc khuyến mãi
-     * @param categoryId ID danh mục
-     * @param sku Mã SKU
-     * @param weight Cân nặng
-     * @param dimensions Kích thước
-     * @param image File ảnh mới
+     * @param productDTO DTO của sản phẩm cần cập nhật
      * @return Sản phẩm đã cập nhật
      * @throws IOException Nếu có lỗi khi xử lý ảnh
      */
-    MarketPlaceDTO updateProductWithImage(
-            Integer id,
-            String productName,
-            String description,
-            String shortDescription,
-            Integer quantity,
-            BigDecimal price,
-            BigDecimal salePrice,
-            LocalDateTime saleStartDate,
-            LocalDateTime saleEndDate,
-            Integer categoryId,
-            String sku,
-            Double weight,
-            String dimensions,
-            MultipartFile image) throws IOException;
+    MarketPlaceDTO updateProductWithImage(Integer id, MarketPlaceDTO productDTO) throws IOException;
+
+    /**
+     * Refresh trạng thái tồn kho của tất cả sản phẩm
+     * @return Danh sách các sản phẩm đã cập nhật
+     */
+    List<MarketPlaceDTO> refreshAllStockStatus();
+
+    /**
+     * Làm mới dữ liệu của tất cả sản phẩm, cập nhật trạng thái tồn kho và các thông tin khác
+     *
+     * @return Danh sách DTO của các sản phẩm đã được làm mới
+     */
+    List<MarketPlaceDTO> refreshAllProducts();
 } 
