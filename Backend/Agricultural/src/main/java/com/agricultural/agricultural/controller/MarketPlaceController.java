@@ -5,21 +5,22 @@ import com.agricultural.agricultural.exception.BadRequestException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.service.IMarketPlaceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("${api.prefix}/marketplace")
 @RequiredArgsConstructor
@@ -185,7 +186,7 @@ public class MarketPlaceController {
                                 productDTO.getImageFile().getOriginalFilename() : "null"));
             
             // Gọi service, tất cả xử lý dữ liệu nằm trong service
-            MarketPlaceDTO updatedProduct = marketPlaceService.updateProductWithImage(id, productDTO);
+            MarketPlaceDTO updatedProduct = marketPlaceService.updateProduct(id, productDTO);
             return ResponseEntity.ok(updatedProduct);
         } catch (ResourceNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
@@ -222,31 +223,63 @@ public class MarketPlaceController {
     }
 
     @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> updateProductLegacy(
+    public ResponseEntity<MarketPlaceDTO> updateProductWithImage(
             @PathVariable Integer id,
-            @ModelAttribute MarketPlaceDTO productDTO) {
-        try {
-            // Log dữ liệu nhận được
-            System.out.println("\n===== REQUEST DATA CHO UPDATE PRODUCT (LEGACY) =====");
-            System.out.println("ID: " + id);
-            System.out.println("Product Name: " + productDTO.getProductName());
-            System.out.println("salePrice: " + productDTO.getSalePrice());
-            System.out.println("saleStartDate: " + productDTO.getSaleStartDate());
-            System.out.println("saleEndDate: " + productDTO.getSaleEndDate());
-            System.out.println("Image File: " + (productDTO.getImageFile() != null ? 
-                                productDTO.getImageFile().getOriginalFilename() : "null"));
-            
-            // Gọi service, tất cả xử lý dữ liệu nằm trong service
-            MarketPlaceDTO updatedProduct = marketPlaceService.updateProductWithImage(id, productDTO);
-            return ResponseEntity.ok(updatedProduct);
-        } catch (ResourceNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (BadRequestException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi cập nhật sản phẩm: " + ex.getMessage());
+            @RequestParam(value = "productName", required = false) String productName,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "shortDescription", required = false) String shortDescription,
+            @RequestParam(value = "quantity", required = false) Integer quantity,
+            @RequestParam(value = "price", required = false) BigDecimal price,
+            @RequestParam(value = "salePrice", required = false) BigDecimal salePrice,
+            @RequestParam(value = "saleStartDate", required = false) String saleStartDateStr,
+            @RequestParam(value = "saleEndDate", required = false) String saleEndDateStr,
+            @RequestParam(value = "categoryId", required = false) Integer categoryId,
+            @RequestParam(value = "sku", required = false) String sku,
+            @RequestParam(value = "weight", required = false) Double weight,
+            @RequestParam(value = "dimensions", required = false) String dimensions,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "timestamp", required = false) String timestamp) throws IOException {
+        
+        log.info("Nhận yêu cầu cập nhật sản phẩm ID={} với timestamp={}", id, timestamp);
+        
+        // Chuyển đổi các chuỗi ngày tháng sang LocalDateTime
+        LocalDateTime saleStartDate = null;
+        LocalDateTime saleEndDate = null;
+        
+        if (saleStartDateStr != null && !saleStartDateStr.equalsIgnoreCase("null")) {
+            try {
+                saleStartDate = LocalDateTime.parse(saleStartDateStr, DateTimeFormatter.ISO_DATE_TIME);
+                log.info("Đã chuyển đổi saleStartDate: {}", saleStartDate);
+            } catch (Exception e) {
+                log.error("Lỗi khi chuyển đổi saleStartDate: {}", e.getMessage());
+                throw new BadRequestException("Định dạng ngày bắt đầu giảm giá không hợp lệ");
+            }
         }
+        
+        if (saleEndDateStr != null && !saleEndDateStr.equalsIgnoreCase("null")) {
+            try {
+                saleEndDate = LocalDateTime.parse(saleEndDateStr, DateTimeFormatter.ISO_DATE_TIME);
+                log.info("Đã chuyển đổi saleEndDate: {}", saleEndDate);
+            } catch (Exception e) {
+                log.error("Lỗi khi chuyển đổi saleEndDate: {}", e.getMessage());
+                throw new BadRequestException("Định dạng ngày kết thúc giảm giá không hợp lệ");
+            }
+        }
+        
+        // Xử lý trường salePrice đặc biệt
+        if (salePrice != null && salePrice.toString().equalsIgnoreCase("null")) {
+            salePrice = null;
+            log.info("Đã đặt salePrice = null từ chuỗi 'null'");
+        }
+        
+        // Gọi service để xử lý
+        MarketPlaceDTO updatedProduct = marketPlaceService.updateProduct(
+                id, productName, description, shortDescription, quantity, price, 
+                salePrice, saleStartDate, saleEndDate, categoryId, sku, weight, dimensions, imageFile);
+                
+        log.info("Cập nhật sản phẩm thành công: id={}, tên={}", updatedProduct.getId(), updatedProduct.getProductName());
+        
+        return ResponseEntity.ok(updatedProduct);
     }
 
     @PostMapping("/admin/refresh-stock-status")

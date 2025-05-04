@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 public class ProductImageServiceImpl implements IProductImageService {
@@ -30,6 +33,8 @@ public class ProductImageServiceImpl implements IProductImageService {
     private final ICloudinaryService cloudinaryService;
     
     private static final String PRODUCT_IMAGE_PATH = "product-images";
+    
+    private static final Logger log = LoggerFactory.getLogger(ProductImageServiceImpl.class);
     
     @Override
     public List<ProductImageDTO> getAllImagesByProduct(Integer productId) {
@@ -181,21 +186,47 @@ public class ProductImageServiceImpl implements IProductImageService {
         ProductImage productImage = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ảnh với ID: " + imageId));
         
+        // Log trước khi cập nhật
+        log.info("Cập nhật ảnh ID: {} cho sản phẩm ID: {}", imageId, productImage.getProduct().getId());
+        log.info("Thông tin trước khi cập nhật: imageUrl={}, isPrimary={}", 
+                productImage.getImageUrl(), productImage.isPrimary());
+        log.info("Thông tin cập nhật mới: imageUrl={}, isPrimary={}", 
+                imageDTO.getImageUrl(), imageDTO.isPrimary());
+        
         // Cập nhật thông tin
         productImageMapper.updateEntityFromDTO(imageDTO, productImage);
         
         // Nếu đang cập nhật thành ảnh chính
         if (imageDTO.isPrimary() && !productImage.isPrimary()) {
+            log.info("Đặt ảnh ID {} làm ảnh chính cho sản phẩm ID: {}", 
+                    imageId, productImage.getProduct().getId());
+            
             productImageRepository.unsetPrimaryForAllProductImages(productImage.getProduct().getId());
             productImage.setIsPrimary(true);
             
             // Cập nhật ảnh chính cho sản phẩm
             MarketPlace product = productImage.getProduct();
-            product.setImageUrl(productImage.getImageUrl());
+            
+            // Cập nhật URL ảnh với timestamp để tránh cache
+            String imageUrl = productImage.getImageUrl();
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                // Thêm timestamp vào URL nếu cần
+                if (imageUrl.contains("?")) {
+                    imageUrl = imageUrl + "&t=" + System.currentTimeMillis();
+                } else {
+                    imageUrl = imageUrl + "?t=" + System.currentTimeMillis();
+                }
+                log.info("Đã thêm timestamp vào URL ảnh: {}", imageUrl);
+            }
+            
+            product.setImageUrl(imageUrl);
             marketPlaceRepository.save(product);
+            log.info("Đã cập nhật ảnh chính cho sản phẩm ID: {}", product.getId());
         }
         
         ProductImage updatedImage = productImageRepository.save(productImage);
+        log.info("Lưu ảnh thành công, ID: {}", updatedImage.getId());
+        
         return productImageMapper.toDTO(updatedImage);
     }
     

@@ -6,6 +6,7 @@ import com.agricultural.agricultural.dto.AgriculturalAdviceDTO;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 public interface IWeatherService {
     
@@ -52,4 +53,24 @@ public interface IWeatherService {
     // Lấy các lời khuyên phù hợp cho việc thu hoạch
     // @return Danh sách lời khuyên nông nghiệp phù hợp cho việc thu hoạch
     List<AgriculturalAdviceDTO> getHarvestingAdvice();
+    
+    /**
+     * Dự báo thời tiết cho một khoảng thời gian
+     * 
+     * @param city Tên thành phố
+     * @param country Mã quốc gia
+     * @param days Số ngày dự báo
+     * @return Danh sách dữ liệu thời tiết dự báo
+     */
+    List<WeatherDataDTO> getWeatherForecast(String city, String country, int days);
+    
+    /**
+     * Dự đoán các hiện tượng thời tiết khắc nghiệt sắp xảy ra
+     * 
+     * @param city Tên thành phố
+     * @param country Mã quốc gia
+     * @param forecastDays Số ngày dự báo
+     * @return Thông tin về các hiện tượng thời tiết khắc nghiệt
+     */
+    Map<String, Object> predictExtremeWeather(String city, String country, int forecastDays);
 } 

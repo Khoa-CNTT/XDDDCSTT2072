@@ -3,6 +3,7 @@ package com.agricultural.agricultural.service.impl;
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import com.agricultural.agricultural.entity.MarketPlace;
 import com.agricultural.agricultural.entity.ProductCategory;
+import com.agricultural.agricultural.entity.ProductImage;
 import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.entity.enumeration.StockStatus;
 import com.agricultural.agricultural.exception.BadRequestException;
@@ -10,6 +11,7 @@ import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.MarketPlaceMapper;
 import com.agricultural.agricultural.repository.IMarketPlaceRepository;
 import com.agricultural.agricultural.repository.IProductCategoryRepository;
+import com.agricultural.agricultural.repository.IProductImageRepository;
 import com.agricultural.agricultural.repository.impl.UserRepository;
 import com.agricultural.agricultural.service.IMarketPlaceService;
 import com.agricultural.agricultural.service.ICloudinaryService;
@@ -46,6 +48,7 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
     private final UserRepository userRepository;
     private final MarketPlaceMapper marketPlaceMapper;
     private final ICloudinaryService cloudinaryService;
+    private final IProductImageRepository productImageRepository;
 
 
     public MarketPlaceDTO createProduct(MarketPlaceDTO productDTO) {
@@ -101,134 +104,146 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
     }
 
     @Override
-    public MarketPlaceDTO updateProduct(Integer id, MarketPlaceDTO productDTO) {
-        // Tìm sản phẩm cần cập nhật
+    @Transactional
+    public MarketPlaceDTO updateProduct(Integer id, String productName, String description, String shortDescription, 
+                                       Integer quantity, BigDecimal price, BigDecimal salePrice, LocalDateTime saleStartDate, 
+                                       LocalDateTime saleEndDate, Integer categoryId, String sku, Double weight, 
+                                       String dimensions, MultipartFile imageFile) throws IOException {
+        // Tìm sản phẩm để cập nhật
         MarketPlace product = marketPlaceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm ID: " + id));
         
-        // Xử lý dữ liệu đặc biệt trước khi tiến hành cập nhật
-        processDateTimeFields(productDTO);
+        // Lưu URL ảnh cũ để xóa sau nếu có upload ảnh mới
+        String oldImageUrl = product.getImageUrl();
         
-        // Log thông tin trước khi cập nhật
-        System.out.println("===== THÔNG TIN SẢN PHẨM TRƯỚC KHI CẬP NHẬT =====");
-        System.out.println("ID: " + product.getId());
-        System.out.println("Product Name: " + product.getProductName());
-        System.out.println("Quantity: " + product.getQuantity());
-        System.out.println("Stock Status: " + product.getStockStatus());
-        System.out.println("salePrice: " + product.getSalePrice());
-        System.out.println("saleStartDate: " + product.getSaleStartDate());
-        System.out.println("saleEndDate: " + product.getSaleEndDate());
-        System.out.println("isOnSale: " + product.isOnSale());
+        // Log thông tin cập nhật
+        log.info("Đang cập nhật sản phẩm ID: {}, tên: {}", id, productName);
+        log.info("Thông tin cũ: imageUrl={}, price={}, salePrice={}", 
+                oldImageUrl, product.getPrice(), product.getSalePrice());
         
-        // Log thông tin DTO được gửi lên
-        System.out.println("===== THÔNG TIN DTO ĐƯỢC GỬI LÊN =====");
-        System.out.println("ID: " + productDTO.getId());
-        System.out.println("Product Name: " + productDTO.getProductName());
-        System.out.println("salePrice: " + productDTO.getSalePrice());
-        System.out.println("saleStartDate: " + productDTO.getSaleStartDate());
-        System.out.println("saleEndDate: " + productDTO.getSaleEndDate());
+        // Cập nhật thông tin cơ bản
+        if (productName != null) {
+            product.setProductName(productName);
+        }
         
-        // Đặc biệt xử lý các trường liên quan đến sale
-        // Nếu salePrice null hoặc là 0, đảm bảo tất cả thông tin sale đều null
-        if (productDTO.getSalePrice() == null || (productDTO.getSalePrice() != null && productDTO.getSalePrice().compareTo(BigDecimal.ZERO) <= 0)) {
-            System.out.println("UPDATE: SALE PRICE NULL hoặc <= 0 - XÓA TẤT CẢ THÔNG TIN GIẢM GIÁ");
-            
-            // Cập nhật trực tiếp vào entity để đảm bảo
+        if (description != null) {
+            product.setDescription(description);
+        }
+        
+        if (shortDescription != null) {
+            product.setShortDescription(shortDescription);
+        }
+        
+        if (quantity != null) {
+            product.setQuantity(quantity);
+        }
+        
+        if (price != null) {
+            product.setPrice(price);
+        }
+        
+        // Cập nhật thông tin ưu đãi
+        if (salePrice != null && salePrice.compareTo(BigDecimal.ZERO) > 0 && saleStartDate != null && saleEndDate != null) {
+            log.info("Cập nhật thông tin giảm giá: giá={}, từ={}, đến={}", 
+                    salePrice, saleStartDate, saleEndDate);
+            product.setSalePrice(salePrice);
+            product.setSaleStartDate(saleStartDate);
+            product.setSaleEndDate(saleEndDate);
+        } else {
+            // Xóa thông tin giảm giá
+            log.info("Xóa thông tin giảm giá cho sản phẩm ID: {}", id);
             product.setSalePrice(null);
             product.setSaleStartDate(null);
             product.setSaleEndDate(null);
-            
-            System.out.println("Đã xóa thông tin giảm giá: salePrice=" + product.getSalePrice() + 
-                                 ", saleStartDate=" + product.getSaleStartDate() + 
-                                 ", saleEndDate=" + product.getSaleEndDate());
-        } else {
-            // Nếu có giá giảm giá hợp lệ
-            System.out.println("UPDATE: SALE PRICE HỢP LỆ - CẬP NHẬT THÔNG TIN GIẢM GIÁ");
-            
-            product.setSalePrice(productDTO.getSalePrice());
-            
-            // Xử lý các ngày
-            if (productDTO.getSaleStartDate() != null) {
-                product.setSaleStartDate(productDTO.getSaleStartDate());
-                System.out.println("Đã cập nhật saleStartDate: " + product.getSaleStartDate());
-            } else {
-                // Nếu không có ngày bắt đầu thì đặt mặc định là ngày hiện tại
-                LocalDateTime now = LocalDateTime.now();
-                product.setSaleStartDate(now);
-                System.out.println("Đã đặt saleStartDate mặc định: " + now);
-            }
-            
-            if (productDTO.getSaleEndDate() != null) {
-                product.setSaleEndDate(productDTO.getSaleEndDate());
-                System.out.println("Đã cập nhật saleEndDate: " + product.getSaleEndDate());
-            } else {
-                // Nếu không có ngày kết thúc thì mặc định là sau 1 tháng
-                LocalDateTime endDate = LocalDateTime.now().plusMonths(1);
-                product.setSaleEndDate(endDate);
-                System.out.println("Đã đặt saleEndDate mặc định: " + endDate);
-            }
-            
-            System.out.println("Thông tin giảm giá sau cập nhật: salePrice=" + product.getSalePrice() + 
-                               ", saleStartDate=" + product.getSaleStartDate() + 
-                               ", saleEndDate=" + product.getSaleEndDate());
         }
         
-        // Validate thông tin giảm giá
-        validateSaleInfo(productDTO);
-        
-        // Cập nhật thông tin cơ bản
-        product.setProductName(productDTO.getProductName());
-        
-        if (productDTO.getDescription() != null) {
-            product.setDescription(productDTO.getDescription());
-        }
-        
-        if (productDTO.getShortDescription() != null) {
-            product.setShortDescription(productDTO.getShortDescription());
-        }
-        
-        product.setQuantity(productDTO.getQuantity());
-        
-        // Cập nhật trạng thái tồn kho dựa trên số lượng
-        updateStockStatus(product);
-        
-        if (productDTO.getPrice() != null) {
-            product.setPrice(productDTO.getPrice());
-        }
-        
-        if (productDTO.getSku() != null) {
-            product.setSku(productDTO.getSku());
-        }
-        
-        if (productDTO.getCategoryId() != null) {
-            ProductCategory category = productCategoryRepository.findById(productDTO.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + productDTO.getCategoryId()));
+        // Cập nhật danh mục
+        if (categoryId != null) {
+            ProductCategory category = productCategoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục ID: " + categoryId));
             product.setCategory(category);
         }
         
-        if (productDTO.getWeight() != null) {
-            product.setWeight(productDTO.getWeight());
+        // Cập nhật các thông tin khác
+        if (sku != null) {
+            product.setSku(sku);
         }
         
-        if (productDTO.getDimensions() != null) {
-            product.setDimensions(productDTO.getDimensions());
+        if (weight != null) {
+            product.setWeight(weight);
         }
         
-        if (productDTO.getImageUrl() != null) {
-            product.setImageUrl(productDTO.getImageUrl());
+        if (dimensions != null) {
+            product.setDimensions(dimensions);
         }
         
-        // Lưu sản phẩm đã cập nhật
+        // Xử lý file ảnh nếu có
+        if (imageFile != null && !imageFile.isEmpty()) {
+            log.info("Đang xử lý file ảnh mới: name={}, size={}, type={}", 
+                    imageFile.getOriginalFilename(), imageFile.getSize(), imageFile.getContentType());
+            
+            try {
+                // Tạo tên file
+                String fileName = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
+                
+                // Upload file lên Cloudinary
+                String fileUrl = cloudinaryService.uploadImage(imageFile, "marketplace", fileName);
+                log.info("Đã upload ảnh lên Cloudinary: {}", fileUrl);
+                
+                // Cập nhật URL ảnh mới
+                product.setImageUrl(fileUrl);
+                
+                // Xóa file ảnh cũ nếu có
+                if (oldImageUrl != null && !oldImageUrl.isEmpty() && 
+                    !oldImageUrl.equals("https://res.cloudinary.com/dey5xwdud/image/upload/v1618481241/default-product_ehoouh.jpg")) {
+                    try {
+                        String publicId = cloudinaryService.extractPublicIdFromUrl(oldImageUrl);
+                        cloudinaryService.deleteImage(publicId);
+                        log.info("Đã xóa ảnh cũ: {}", publicId);
+                    } catch (Exception e) {
+                        log.error("Lỗi khi xóa ảnh cũ: {}", e.getMessage());
+                    }
+                }
+                
+                // Cập nhật ảnh chính trong product_images nếu có
+                try {
+                    ProductImage primaryImage = productImageRepository.findByProductIdAndIsPrimaryTrue(id).orElse(null);
+                    if (primaryImage != null) {
+                        // Thêm timestamp vào URL để tránh cache
+                        String imageUrlWithTimestamp = fileUrl;
+                        if (fileUrl.contains("?")) {
+                            imageUrlWithTimestamp = fileUrl + "&t=" + System.currentTimeMillis();
+                        } else {
+                            imageUrlWithTimestamp = fileUrl + "?t=" + System.currentTimeMillis();
+                        }
+                        
+                        primaryImage.setImageUrl(fileUrl);
+                        productImageRepository.save(primaryImage);
+                        log.info("Đã cập nhật ảnh chính trong bảng product_images");
+                    } else {
+                        // Tạo bản ghi ảnh mới nếu chưa có
+                        ProductImage newPrimaryImage = new ProductImage();
+                        newPrimaryImage.setProduct(product);
+                        newPrimaryImage.setImageUrl(fileUrl);
+                        newPrimaryImage.setIsPrimary(true);
+                        newPrimaryImage.setDisplayOrder(1);
+                        newPrimaryImage.setAltText(productName);
+                        newPrimaryImage.setTitle(productName);
+                        productImageRepository.save(newPrimaryImage);
+                        log.info("Đã tạo mới ảnh chính trong bảng product_images");
+                    }
+                } catch (Exception e) {
+                    log.error("Lỗi khi cập nhật ảnh chính trong product_images: {}", e.getMessage());
+                }
+            } catch (Exception e) {
+                log.error("Lỗi khi xử lý file ảnh: {}", e.getMessage());
+                throw new IOException("Lỗi khi xử lý file ảnh: " + e.getMessage());
+            }
+        }
+        
+        // Lưu sản phẩm
         MarketPlace updatedProduct = marketPlaceRepository.save(product);
-        
-        // Log thông tin sau khi đã cập nhật
-        System.out.println("===== THÔNG TIN SẢN PHẨM SAU KHI CẬP NHẬT =====");
-        System.out.println("ID: " + updatedProduct.getId());
-        System.out.println("Product Name: " + updatedProduct.getProductName());
-        System.out.println("salePrice: " + updatedProduct.getSalePrice());
-        System.out.println("saleStartDate: " + updatedProduct.getSaleStartDate());
-        System.out.println("saleEndDate: " + updatedProduct.getSaleEndDate());
-        System.out.println("isOnSale: " + updatedProduct.isOnSale());
+        log.info("Cập nhật sản phẩm thành công, ID: {}", updatedProduct.getId());
         
         return marketPlaceMapper.toDTO(updatedProduct);
     }
@@ -459,7 +474,7 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             String productName,
             String description,
             String shortDescription,
-            int quantity,
+            Integer quantity,
             BigDecimal price,
             BigDecimal salePrice,
             LocalDateTime saleStartDate,
@@ -497,7 +512,7 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
     }
     
     @Override
-    public MarketPlaceDTO updateProductWithImage(Integer id, MarketPlaceDTO productDTO) {
+    public MarketPlaceDTO updateProduct(Integer id, MarketPlaceDTO productDTO) {
         try {
             // Tìm sản phẩm cần cập nhật
             MarketPlace product = marketPlaceRepository.findById(id)
@@ -885,6 +900,139 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         
         // Đảm bảo trường images là null để tránh lỗi conversion
         productDTO.setImages(null);
+    }
+
+    @Override
+    public MarketPlaceDTO updateProductWithImage(Integer id, MarketPlaceDTO productDTO) throws IOException {
+        try {
+            // Tìm sản phẩm cần cập nhật
+            MarketPlace product = marketPlaceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + id));
+
+            // Xử lý dữ liệu đặc biệt trước khi tiến hành cập nhật
+            processDateTimeFields(productDTO);
+            
+            // Log thông tin trước khi cập nhật
+            log.info("===== THÔNG TIN SẢN PHẨM TRƯỚC KHI CẬP NHẬT (WITH IMAGE) =====");
+            log.info("ID: {}", product.getId());
+            log.info("Product Name: {}", product.getProductName());
+            log.info("Quantity: {}", product.getQuantity());
+            log.info("Stock Status: {}", product.getStockStatus());
+            log.info("salePrice: {}", product.getSalePrice());
+            log.info("saleStartDate: {}", product.getSaleStartDate());
+            log.info("saleEndDate: {}", product.getSaleEndDate());
+            log.info("isOnSale: {}", product.isOnSale());
+            
+            // Log thông tin DTO được gửi lên
+            log.info("===== THÔNG TIN DTO ĐƯỢC GỬI LÊN =====");
+            log.info("Product Name: {}", productDTO.getProductName());
+            log.info("Giá trị salePrice gửi lên: {}", productDTO.getSalePrice());
+            log.info("Giá trị saleStartDate gửi lên: {}", productDTO.getSaleStartDate());
+            log.info("Giá trị saleEndDate gửi lên: {}", productDTO.getSaleEndDate());
+            
+            // Kiểm tra xem có bật/tắt chế độ giảm giá hay không
+            boolean enableSale = productDTO.getSalePrice() != null && productDTO.getSalePrice().compareTo(BigDecimal.ZERO) > 0;
+            log.info("enableSale: {} (dựa vào salePrice={})", enableSale, productDTO.getSalePrice());
+
+            // Lưu lại thông tin của sản phẩm
+            if (productDTO.getProductName() != null) {
+                product.setProductName(productDTO.getProductName());
+            }
+            
+            if (productDTO.getDescription() != null) {
+                product.setDescription(productDTO.getDescription());
+            }
+            
+            if (productDTO.getShortDescription() != null) {
+                product.setShortDescription(productDTO.getShortDescription());
+            }
+            
+                product.setQuantity(productDTO.getQuantity());
+
+            
+            if (productDTO.getPrice() != null) {
+                product.setPrice(productDTO.getPrice());
+            }
+            
+            if (productDTO.getSku() != null) {
+                product.setSku(productDTO.getSku());
+            }
+            
+            if (productDTO.getCategoryId() != null) {
+                ProductCategory category = productCategoryRepository.findById(productDTO.getCategoryId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + productDTO.getCategoryId()));
+                product.setCategory(category);
+            }
+            
+            if (productDTO.getWeight() != null) {
+                product.setWeight(productDTO.getWeight());
+            }
+            
+            if (productDTO.getDimensions() != null) {
+                product.setDimensions(productDTO.getDimensions());
+            }
+            
+            if (productDTO.getImageUrl() != null) {
+                product.setImageUrl(productDTO.getImageUrl());
+            }
+            
+            // XỬ LÝ THÔNG TIN KHUYẾN MÃI
+            if (enableSale) {
+                // Nếu bật chế độ giảm giá và có thông tin giá khuyến mãi
+                product.setSalePrice(productDTO.getSalePrice());
+                log.info("Đã cập nhật salePrice: {}", product.getSalePrice());
+                
+                // Xử lý các ngày bắt đầu/kết thúc giảm giá
+                if (productDTO.getSaleStartDate() != null) {
+                    product.setSaleStartDate(productDTO.getSaleStartDate());
+                    log.info("Đã cập nhật saleStartDate: {}", product.getSaleStartDate());
+                } else if (product.getSaleStartDate() == null) {
+                    // Nếu không có ngày bắt đầu thì đặt mặc định là ngày hiện tại
+                    LocalDateTime now = LocalDateTime.now();
+                    product.setSaleStartDate(now);
+                    log.info("Đã đặt saleStartDate mặc định: {}", now);
+                }
+                
+                if (productDTO.getSaleEndDate() != null) {
+                    product.setSaleEndDate(productDTO.getSaleEndDate());
+                    log.info("Đã cập nhật saleEndDate: {}", product.getSaleEndDate());
+                } else if (product.getSaleEndDate() == null) {
+                    // Nếu không có ngày kết thúc thì mặc định là sau 1 tháng
+                    LocalDateTime endDate = LocalDateTime.now().plusMonths(1);
+                    product.setSaleEndDate(endDate);
+                    log.info("Đã đặt saleEndDate mặc định: {}", endDate);
+                }
+            } else {
+                // Nếu tắt chế độ giảm giá, xóa tất cả thông tin liên quan
+                product.setSalePrice(null);
+                product.setSaleStartDate(null);
+                product.setSaleEndDate(null);
+                log.info("Đã xóa tất cả thông tin giảm giá");
+            }
+            
+            // Cập nhật trạng thái tồn kho dựa trên số lượng
+            updateStockStatus(product);
+            
+            // Lưu sản phẩm đã cập nhật vào cơ sở dữ liệu
+            MarketPlace updatedProduct = marketPlaceRepository.save(product);
+            
+            // Kiểm tra sau khi lưu
+            log.info("===== THÔNG TIN SẢN PHẨM SAU KHI CẬP NHẬT (WITH IMAGE) =====");
+            log.info("ID: {}", updatedProduct.getId());
+            log.info("Product Name: {}", updatedProduct.getProductName());
+            log.info("Quantity: {}", updatedProduct.getQuantity());
+            log.info("Stock Status: {}", updatedProduct.getStockStatus());
+            log.info("salePrice: {}", updatedProduct.getSalePrice());
+            log.info("saleStartDate: {}", updatedProduct.getSaleStartDate());
+            log.info("saleEndDate: {}", updatedProduct.getSaleEndDate());
+            log.info("isOnSale: {}", updatedProduct.isOnSale());
+            
+            // Chuyển đổi entity thành DTO và trả về
+            return marketPlaceMapper.toDTO(updatedProduct);
+        } catch (Exception e) {
+            log.error("Lỗi khi cập nhật sản phẩm: {}", e.getMessage());
+            throw new BadRequestException("Lỗi khi cập nhật sản phẩm: " + e.getMessage());
+        }
     }
 
 } 

@@ -456,11 +456,28 @@ public class ProductRecommendationServiceImpl implements IProductRecommendationS
         log.info("Lấy danh sách nông sản theo mùa vụ hiện tại");
         
         List<MarketPlace> allProducts = marketPlaceRepository.findAll();
+        log.info("Tổng số sản phẩm trong cơ sở dữ liệu: {}", allProducts.size());
+        
+        // Nếu không có sản phẩm nào trong database, trả về page rỗng
+        if (allProducts.isEmpty()) {
+            log.warn("Không có sản phẩm nào trong cơ sở dữ liệu");
+            return Page.empty(pageable);
+        }
+        
         LocalDateTime now = LocalDateTime.now();
         
+        // Lọc sản phẩm theo mùa vụ
         List<MarketPlace> seasonalProducts = allProducts.stream()
             .filter(product -> seasonalAnalyzer.isInSeason(product, now))
             .collect(Collectors.toList());
+        
+        log.info("Số sản phẩm phù hợp với mùa vụ hiện tại: {}", seasonalProducts.size());
+        
+        // Nếu không tìm thấy sản phẩm theo mùa vụ, trả về tất cả sản phẩm
+        if (seasonalProducts.isEmpty()) {
+            log.warn("Không tìm thấy sản phẩm theo mùa vụ, trả về tất cả sản phẩm");
+            seasonalProducts = allProducts;
+        }
             
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), seasonalProducts.size());

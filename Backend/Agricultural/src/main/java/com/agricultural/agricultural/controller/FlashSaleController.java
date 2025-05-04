@@ -23,11 +23,6 @@ public class FlashSaleController {
 
     private final IFlashSaleService flashSaleService;
 
-    /**
-     * Tạo flash sale mới
-     * @param request Thông tin flash sale
-     * @return Thông tin flash sale đã tạo
-     */
     @PostMapping
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<FlashSaleResponse>> createFlashSale(@Valid @RequestBody FlashSaleRequest request) {
@@ -37,27 +32,16 @@ public class FlashSaleController {
                 .body(new ApiResponse<>(true, "Tạo flash sale thành công", response));
     }
 
-    /**
-     * Cập nhật thông tin flash sale
-     * @param id ID của flash sale
-     * @param request Thông tin cập nhật
-     * @return Thông tin flash sale đã cập nhật
-     */
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<FlashSaleResponse>> updateFlashSale(
-            @PathVariable Integer id, 
+            @PathVariable Integer id,
             @Valid @RequestBody FlashSaleRequest request) {
         log.info("Yêu cầu cập nhật flash sale ID {}: {}", id, request);
         FlashSaleResponse response = flashSaleService.updateFlashSale(id, request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật flash sale thành công", response));
     }
 
-    /**
-     * Xóa flash sale
-     * @param id ID của flash sale
-     * @return Thông báo kết quả
-     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<Void>> deleteFlashSale(@PathVariable Integer id) {
@@ -66,34 +50,26 @@ public class FlashSaleController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Xóa flash sale thành công", null));
     }
 
-    /**
-     * Lấy thông tin chi tiết flash sale
-     * @param id ID của flash sale
-     * @return Thông tin chi tiết flash sale
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<FlashSaleResponse>> getFlashSaleById(@PathVariable Integer id) {
-        log.info("Yêu cầu lấy thông tin chi tiết flash sale ID: {}", id);
+        log.info("Lấy chi tiết flash sale ID: {}", id);
         FlashSaleResponse response = flashSaleService.getFlashSaleById(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông tin flash sale thành công", response));
     }
 
-    /**
-     * Lấy danh sách flash sale theo trạng thái
-     * @param status Trạng thái flash sale
-     * @return Danh sách flash sale
-     */
     @GetMapping("/status/{status}")
-    public ResponseEntity<ApiResponse<List<FlashSaleResponse>>> getFlashSalesByStatus(@PathVariable FlashSaleStatus status) {
+    public ResponseEntity<ApiResponse<List<FlashSaleResponse>>> getFlashSalesByStatus(@PathVariable String status) {
         log.info("Yêu cầu lấy danh sách flash sale theo trạng thái: {}", status);
-        List<FlashSaleResponse> responses = flashSaleService.getFlashSalesByStatus(status);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách flash sale thành công", responses));
+        try {
+            FlashSaleStatus validStatus = FlashSaleStatus.valueOf(status.toUpperCase());
+            List<FlashSaleResponse> responses = flashSaleService.getFlashSalesByStatus(validStatus);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách flash sale thành công", responses));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, "Trạng thái flash sale không hợp lệ: " + status, null));
+        }
     }
 
-    /**
-     * Lấy danh sách flash sale đang hoạt động
-     * @return Danh sách flash sale đang hoạt động
-     */
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<List<FlashSaleResponse>>> getActiveFlashSales() {
         log.info("Yêu cầu lấy danh sách flash sale đang hoạt động");
@@ -101,10 +77,6 @@ public class FlashSaleController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách flash sale đang hoạt động thành công", responses));
     }
 
-    /**
-     * Lấy danh sách flash sale sắp diễn ra
-     * @return Danh sách flash sale sắp diễn ra
-     */
     @GetMapping("/upcoming")
     public ResponseEntity<ApiResponse<List<FlashSaleResponse>>> getUpcomingFlashSales() {
         log.info("Yêu cầu lấy danh sách flash sale sắp diễn ra");
@@ -112,60 +84,43 @@ public class FlashSaleController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách flash sale sắp diễn ra thành công", responses));
     }
 
-    /**
-     * Thêm sản phẩm vào flash sale
-     * @param flashSaleId ID của flash sale
-     * @param request Thông tin sản phẩm
-     * @return Thông tin flash sale đã cập nhật
-     */
     @PostMapping("/{flashSaleId}/products")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<FlashSaleResponse>> addProductToFlashSale(
-            @PathVariable Integer flashSaleId, 
+            @PathVariable Integer flashSaleId,
             @Valid @RequestBody FlashSaleItemRequest request) {
-        log.info("Yêu cầu thêm sản phẩm vào flash sale ID {}: {}", flashSaleId, request);
+        log.info("Thêm sản phẩm vào flash sale ID {}: {}", flashSaleId, request);
         FlashSaleResponse response = flashSaleService.addProductToFlashSale(flashSaleId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse<>(true, "Thêm sản phẩm vào flash sale thành công", response));
     }
 
-    /**
-     * Xóa sản phẩm khỏi flash sale
-     * @param flashSaleId ID của flash sale
-     * @param productId ID của sản phẩm
-     * @return Thông tin flash sale đã cập nhật
-     */
     @DeleteMapping("/{flashSaleId}/products/{productId}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<FlashSaleResponse>> removeProductFromFlashSale(
-            @PathVariable Integer flashSaleId, 
+            @PathVariable Integer flashSaleId,
             @PathVariable Integer productId) {
-        log.info("Yêu cầu xóa sản phẩm ID {} khỏi flash sale ID {}", productId, flashSaleId);
+        log.info("Xóa sản phẩm ID {} khỏi flash sale ID {}", productId, flashSaleId);
         FlashSaleResponse response = flashSaleService.removeProductFromFlashSale(flashSaleId, productId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Xóa sản phẩm khỏi flash sale thành công", response));
     }
 
-    /**
-     * Cập nhật trạng thái flash sale
-     * @param id ID của flash sale
-     * @param status Trạng thái mới
-     * @return Thông tin flash sale đã cập nhật
-     */
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<FlashSaleResponse>> updateFlashSaleStatus(
-            @PathVariable Integer id, 
-            @RequestParam FlashSaleStatus status) {
-        log.info("Yêu cầu cập nhật trạng thái flash sale ID {} thành {}", id, status);
-        FlashSaleResponse response = flashSaleService.updateFlashSaleStatus(id, status);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật trạng thái flash sale thành công", response));
+            @PathVariable Integer id,
+            @RequestParam String status) {
+        log.info("Cập nhật trạng thái flash sale ID {} thành {}", id, status);
+        try {
+            FlashSaleStatus flashSaleStatus = FlashSaleStatus.valueOf(status.toUpperCase());
+            FlashSaleResponse response = flashSaleService.updateFlashSaleStatus(id, flashSaleStatus);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật trạng thái flash sale thành công", response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, "Trạng thái không hợp lệ: " + status, null));
+        }
     }
 
-    /**
-     * Kiểm tra sản phẩm có trong flash sale đang hoạt động không
-     * @param productId ID của sản phẩm
-     * @return Kết quả kiểm tra
-     */
     @GetMapping("/check-product/{productId}")
     public ResponseEntity<ApiResponse<Boolean>> isProductInActiveFlashSale(@PathVariable Integer productId) {
         log.info("Kiểm tra sản phẩm ID {} có trong flash sale đang hoạt động không", productId);
@@ -173,15 +128,10 @@ public class FlashSaleController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Kiểm tra sản phẩm trong flash sale thành công", result));
     }
 
-    /**
-     * Lấy thông tin flash sale đang hoạt động cho sản phẩm
-     * @param productId ID của sản phẩm
-     * @return Thông tin flash sale
-     */
     @GetMapping("/product/{productId}")
     public ResponseEntity<ApiResponse<FlashSaleResponse>> getActiveFlashSaleForProduct(@PathVariable Integer productId) {
-        log.info("Yêu cầu lấy thông tin flash sale đang hoạt động cho sản phẩm ID {}", productId);
+        log.info("Lấy flash sale đang hoạt động cho sản phẩm ID {}", productId);
         FlashSaleResponse response = flashSaleService.getActiveFlashSaleForProduct(productId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông tin flash sale cho sản phẩm thành công", response));
     }
-} 
+}

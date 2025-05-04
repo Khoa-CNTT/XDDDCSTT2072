@@ -52,24 +52,14 @@ public interface IMarketPlaceService {
      * @param sku Mã SKU
      * @param weight Cân nặng
      * @param dimensions Kích thước
-     * @param image File ảnh
+     * @param imageFile File ảnh
      * @return Sản phẩm đã tạo
      * @throws IOException Nếu có lỗi khi xử lý ảnh
      */
-    MarketPlaceDTO createProductWithImage(
-            String productName,
-            String description,
-            String shortDescription,
-            int quantity,
-            BigDecimal price,
-            BigDecimal salePrice,
-            LocalDateTime saleStartDate,
-            LocalDateTime saleEndDate,
-            Integer categoryId,
-            String sku,
-            Double weight,
-            String dimensions,
-            MultipartFile image) throws IOException;
+    MarketPlaceDTO createProductWithImage(String productName, String description, String shortDescription, Integer quantity, 
+                                        BigDecimal price, BigDecimal salePrice, LocalDateTime saleStartDate, 
+                                        LocalDateTime saleEndDate, Integer categoryId, String sku, Double weight, 
+                                        String dimensions, MultipartFile imageFile) throws IOException;
     
     /**
      * Cập nhật sản phẩm từ form-data với hình ảnh
@@ -79,7 +69,10 @@ public interface IMarketPlaceService {
      * @return Sản phẩm đã cập nhật
      * @throws IOException Nếu có lỗi khi xử lý ảnh
      */
-    MarketPlaceDTO updateProductWithImage(Integer id, MarketPlaceDTO productDTO) throws IOException;
+    MarketPlaceDTO updateProduct(Integer id, String productName, String description, String shortDescription, 
+                               Integer quantity, BigDecimal price, BigDecimal salePrice, LocalDateTime saleStartDate, 
+                               LocalDateTime saleEndDate, Integer categoryId, String sku, Double weight, 
+                               String dimensions, MultipartFile imageFile) throws IOException;
 
     /**
      * Refresh trạng thái tồn kho của tất cả sản phẩm
@@ -93,4 +86,14 @@ public interface IMarketPlaceService {
      * @return Danh sách DTO của các sản phẩm đã được làm mới
      */
     List<MarketPlaceDTO> refreshAllProducts();
+
+    /**
+     * Cập nhật sản phẩm từ form-data với hình ảnh
+     * 
+     * @param id ID sản phẩm cần cập nhật
+     * @param productDTO DTO của sản phẩm cần cập nhật
+     * @return Sản phẩm đã cập nhật
+     * @throws IOException Nếu có lỗi khi xử lý ảnh
+     */
+    MarketPlaceDTO updateProductWithImage(Integer id, MarketPlaceDTO productDTO) throws IOException;
 } 
