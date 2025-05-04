@@ -157,6 +157,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 // Chỉ bypass các API công khai liên quan đến thời tiết
                 Pair.of(String.format("%s/weather/locations", apiPrefix), "GET"),
                 Pair.of(String.format("%s/weather/locations/[0-9]+$", apiPrefix), "GET"),
+                Pair.of(String.format("%s/weather/current", apiPrefix), "GET"),
+                Pair.of(String.format("%s/weather/forecast", apiPrefix), "GET"),
                 
                 // Tạm thời bypass để debug
                 Pair.of(String.format("%s/weather-subscriptions", apiPrefix), "GET"),

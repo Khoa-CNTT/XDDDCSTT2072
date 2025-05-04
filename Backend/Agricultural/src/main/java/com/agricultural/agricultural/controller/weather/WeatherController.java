@@ -35,6 +35,14 @@ public class WeatherController {
         return ResponseEntity.ok(weatherService.getCurrentWeatherByCoordinates(latitude, longitude));
     }
 
+    @GetMapping("/forecast")
+    public ResponseEntity<List<WeatherDataDTO>> getWeatherForecast(
+            @RequestParam String city,
+            @RequestParam String country,
+            @RequestParam(defaultValue = "7") int days) {
+        return ResponseEntity.ok(weatherService.getWeatherForecast(city, country, days));
+    }
+
     @GetMapping("/history")
     public ResponseEntity<List<WeatherDataDTO>> getWeatherHistory(
             @RequestParam String city,

@@ -467,4 +467,185 @@ public class WeatherService implements IWeatherService {
         if (weatherData.getWeatherDescription() != null) message.append(weatherData.getWeatherDescription());
         return message.toString();
     }
+
+    @Override
+    public List<WeatherDataDTO> getWeatherForecast(String city, String country, int days) {
+        log.info("Lấy dự báo thời tiết cho: {} ngày ở địa điểm: {}, {}", days, city, country);
+        
+        // Giới hạn số ngày dự báo
+        int forecastDays = Math.min(days, 14);
+        
+        List<WeatherDataDTO> forecastList = new ArrayList<>();
+        
+        try {
+            // Lấy thời tiết hiện tại làm cơ sở
+            WeatherDataDTO currentWeather = getCurrentWeather(city, country);
+            forecastList.add(currentWeather);
+            
+            // Để demo, ta sẽ tạo dữ liệu dự báo giả lập
+            Random random = new Random();
+            LocalDateTime startDate = LocalDateTime.now().plusDays(1);
+            
+            // Các thông số cơ bản từ thời tiết hiện tại
+            double baseTemp = currentWeather.getTemperature();
+            int baseHumidity = currentWeather.getHumidity();
+            double baseWindSpeed = currentWeather.getWindSpeed();
+            
+            // Các mô tả thời tiết phổ biến
+            String[] weatherDescriptions = {
+                "Trời nắng", "Mây rải rác", "Mưa nhẹ", 
+                "Mưa vừa", "Mưa to", "Nắng gắt", 
+                "Nhiều mây", "Nắng nhẹ", "Mưa rào"
+            };
+            
+            for (int i = 1; i < forecastDays; i++) {
+                WeatherDataDTO forecast = new WeatherDataDTO();
+                
+                // Ngày dự báo
+                LocalDateTime forecastDate = startDate.plusDays(i-1);
+                forecast.setDataTime(forecastDate);
+                
+                // Nhiệt độ dao động +/- 3 độ so với ngày trước
+                double tempVariation = random.nextDouble() * 6 - 3; // -3 đến +3
+                double forecastTemp = baseTemp + tempVariation;
+                forecast.setTemperature(Math.round(forecastTemp * 10) / 10.0); // Làm tròn 1 chữ số thập phân
+                
+                // Độ ẩm dao động +/- 10%
+                int humidityVariation = random.nextInt(21) - 10; // -10 đến +10
+                int forecastHumidity = baseHumidity + humidityVariation;
+                forecast.setHumidity(Math.max(0, Math.min(100, forecastHumidity))); // Đảm bảo trong khoảng 0-100
+                
+                // Tốc độ gió
+                double windVariation = random.nextDouble() * 4 - 2; // -2 đến +2
+                double forecastWind = baseWindSpeed + windVariation;
+                forecast.setWindSpeed(Math.max(0, Math.round(forecastWind * 10) / 10.0)); // Làm tròn và đảm bảo không âm
+                
+                // Mô tả thời tiết
+                String weatherDesc = weatherDescriptions[random.nextInt(weatherDescriptions.length)];
+                forecast.setWeatherDescription(weatherDesc);
+                
+                // Áp suất
+//                forecast.setPressure(currentWeather.getPressure() + random.nextInt(11) - 5); // +/- 5
+                
+                // Cập nhật giá trị cơ sở cho ngày tiếp theo
+                baseTemp = forecast.getTemperature();
+                baseHumidity = forecast.getHumidity();
+                baseWindSpeed = forecast.getWindSpeed();
+                
+                forecastList.add(forecast);
+            }
+            
+            return forecastList;
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy dự báo thời tiết: {}", e.getMessage());
+            // Trả về danh sách dự báo mặc định nếu có lỗi
+            return createDefaultForecast(forecastDays);
+        }
+    }
+    
+    private List<WeatherDataDTO> createDefaultForecast(int days) {
+        List<WeatherDataDTO> defaultForecast = new ArrayList<>();
+        
+        LocalDateTime startDate = LocalDateTime.now();
+        String[] defaultDescriptions = {"Trời nắng", "Mây rải rác", "Trời nắng", "Mây rải rác", "Mưa nhẹ", "Trời nắng", "Trời nắng"};
+        
+        for (int i = 0; i < days; i++) {
+            WeatherDataDTO forecast = new WeatherDataDTO();
+            forecast.setDataTime(startDate.plusDays(i));
+            forecast.setTemperature(30.0);
+            forecast.setHumidity(70);
+            forecast.setWindSpeed(5.0);
+//            forecast.setPressure(1010);
+            forecast.setWeatherDescription(defaultDescriptions[i % defaultDescriptions.length]);
+            
+            defaultForecast.add(forecast);
+        }
+        
+        return defaultForecast;
+    }
+    
+    @Override
+    public Map<String, Object> predictExtremeWeather(String city, String country, int forecastDays) {
+        log.info("Dự đoán thời tiết khắc nghiệt cho: {} ngày ở địa điểm: {}, {}", forecastDays, city, country);
+        
+        // Lấy dữ liệu dự báo thời tiết
+        List<WeatherDataDTO> forecast = getWeatherForecast(city, country, forecastDays);
+        
+        Map<String, Object> extremeWeatherMap = new HashMap<>();
+        Map<String, Integer> extremeEventCounter = new HashMap<>();
+        
+        // Phân tích dự báo thời tiết tìm các hiện tượng khắc nghiệt
+        for (WeatherDataDTO data : forecast) {
+            String description = data.getWeatherDescription().toLowerCase();
+            double temperature = data.getTemperature();
+            int humidity = data.getHumidity();
+            double windSpeed = data.getWindSpeed();
+            
+            // Kiểm tra mưa lớn
+            if (description.contains("mưa lớn") || description.contains("mưa to") || 
+                description.contains("heavy rain") || description.contains("thunderstorm")) {
+                extremeEventCounter.put("heavyRain", extremeEventCounter.getOrDefault("heavyRain", 0) + 1);
+            }
+            
+            // Kiểm tra nắng nóng
+            if (temperature > 35) {
+                extremeEventCounter.put("heatwave", extremeEventCounter.getOrDefault("heatwave", 0) + 1);
+            }
+            
+            // Kiểm tra khô hạn
+            if (temperature > 30 && humidity < 40) {
+                extremeEventCounter.put("drought", extremeEventCounter.getOrDefault("drought", 0) + 1);
+            }
+            
+            // Kiểm tra gió mạnh
+            if (windSpeed > 10) {
+                extremeEventCounter.put("strongWind", extremeEventCounter.getOrDefault("strongWind", 0) + 1);
+            }
+        }
+        
+        // Xác định các hiện tượng thời tiết khắc nghiệt chính
+        for (Map.Entry<String, Integer> entry : extremeEventCounter.entrySet()) {
+            if (entry.getValue() >= 2) { // Nếu hiện tượng xảy ra ít nhất 2 ngày
+                switch (entry.getKey()) {
+                    case "heavyRain":
+                        extremeWeatherMap.put("type", "heavyRain");
+                        extremeWeatherMap.put("name", "Mưa lớn/Dông bão");
+                        extremeWeatherMap.put("days", entry.getValue());
+                        extremeWeatherMap.put("severity", entry.getValue() > 3 ? "Cao" : "Trung bình");
+                        extremeWeatherMap.put("startDate", forecast.get(0).getDataTime());
+                        break;
+                    case "heatwave":
+                        extremeWeatherMap.put("type", "heatwave");
+                        extremeWeatherMap.put("name", "Nắng nóng");
+                        extremeWeatherMap.put("days", entry.getValue());
+                        extremeWeatherMap.put("severity", entry.getValue() > 3 ? "Cao" : "Trung bình");
+                        extremeWeatherMap.put("startDate", forecast.get(0).getDataTime());
+                        break;
+                    case "drought":
+                        extremeWeatherMap.put("type", "drought");
+                        extremeWeatherMap.put("name", "Khô hạn");
+                        extremeWeatherMap.put("days", entry.getValue());
+                        extremeWeatherMap.put("severity", entry.getValue() > 3 ? "Cao" : "Trung bình");
+                        extremeWeatherMap.put("startDate", forecast.get(0).getDataTime());
+                        break;
+                    case "strongWind":
+                        extremeWeatherMap.put("type", "strongWind");
+                        extremeWeatherMap.put("name", "Gió mạnh");
+                        extremeWeatherMap.put("days", entry.getValue());
+                        extremeWeatherMap.put("severity", entry.getValue() > 3 ? "Cao" : "Trung bình");
+                        extremeWeatherMap.put("startDate", forecast.get(0).getDataTime());
+                        break;
+                }
+            }
+        }
+        
+        // Nếu không có hiện tượng thời tiết khắc nghiệt nào
+        if (extremeWeatherMap.isEmpty()) {
+            extremeWeatherMap.put("type", "normal");
+            extremeWeatherMap.put("name", "Thời tiết bình thường");
+            extremeWeatherMap.put("severity", "Thấp");
+        }
+        
+        return extremeWeatherMap;
+    }
 } 

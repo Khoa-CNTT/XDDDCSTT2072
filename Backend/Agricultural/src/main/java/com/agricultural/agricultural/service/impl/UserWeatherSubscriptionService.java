@@ -10,6 +10,7 @@ import com.agricultural.agricultural.mapper.UserWeatherSubscriptionMapper;
 import com.agricultural.agricultural.repository.IUserWeatherSubscriptionRepository;
 import com.agricultural.agricultural.repository.IWeatherMonitoredLocationRepository;
 import com.agricultural.agricultural.repository.IUserRepository;
+import com.agricultural.agricultural.service.IUserSubscriptionService;
 import com.agricultural.agricultural.service.IUserWeatherSubscriptionService;
 import com.agricultural.agricultural.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class UserWeatherSubscriptionService implements IUserWeatherSubscriptionS
     private final IWeatherMonitoredLocationRepository locationRepository;
     private final IUserRepository userRepository;
     private final UserWeatherSubscriptionMapper subscriptionMapper;
+    private final IUserSubscriptionService userSubscriptionService;
 
     @Override
     public List<UserWeatherSubscriptionDTO> getUserSubscriptions(Integer userId) {
@@ -107,12 +109,24 @@ public class UserWeatherSubscriptionService implements IUserWeatherSubscriptionS
             subscription.setEnableNotifications(enableNotifications);
             return subscriptionMapper.toDTO(subscriptionRepository.save(subscription));
         } else {
-            // Nếu chưa đăng ký, tạo mới
+            // Kiểm tra xem người dùng có thể đăng ký thêm địa điểm không
+            if (!userSubscriptionService.canSubscribeMoreLocations(userId)) {
+                throw new BadRequestException("Bạn đã đạt đến giới hạn số lượng địa điểm có thể đăng ký. Vui lòng nâng cấp gói đăng ký để tiếp tục.");
+            }
+            
+            // Nếu chưa đăng ký và có thể đăng ký thêm, tạo mới
             UserWeatherSubscription subscription = new UserWeatherSubscription();
             subscription.setUser(user);
             subscription.setLocation(location);
             subscription.setEnableNotifications(enableNotifications);
-            return subscriptionMapper.toDTO(subscriptionRepository.save(subscription));
+            
+            // Lưu đăng ký mới
+            UserWeatherSubscription savedSubscription = subscriptionRepository.save(subscription);
+            
+            // Tăng số lượng địa điểm đã sử dụng lên 1
+            userSubscriptionService.incrementLocationsUsed(userId);
+            
+            return subscriptionMapper.toDTO(savedSubscription);
         }
     }
 
@@ -152,7 +166,11 @@ public class UserWeatherSubscriptionService implements IUserWeatherSubscriptionS
         UserWeatherSubscription subscription = subscriptionRepository.findByUserIdAndLocationId(userId, locationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đăng ký theo dõi thời tiết cho người dùng và địa điểm này"));
         
+        // Xóa đăng ký
         subscriptionRepository.delete(subscription);
+        
+        // Giảm số lượng địa điểm đã sử dụng xuống 1
+        userSubscriptionService.decrementLocationsUsed(userId);
     }
 
     @Override
@@ -196,6 +214,12 @@ public class UserWeatherSubscriptionService implements IUserWeatherSubscriptionS
         if (currentUserId == null) {
             throw new BadRequestException("Bạn cần đăng nhập để thực hiện thao tác này");
         }
+        
+        // Kiểm tra xem người dùng có thể đăng ký thêm địa điểm không
+        if (!userSubscriptionService.canSubscribeMoreLocations(currentUserId)) {
+            throw new BadRequestException("Bạn đã đạt đến giới hạn số lượng địa điểm có thể đăng ký. Vui lòng nâng cấp gói đăng ký để tiếp tục.");
+        }
+        
         return subscribeToLocation(currentUserId, locationId, enableNotifications);
     }
 
