@@ -70,8 +70,8 @@ vnpay:
   locale: vn
 
 app:
-  frontend-url: http://localhost:3000
-  backend-url: https://9f83-42-112-56-163.ngrok-free.app
+  frontend-url: https://e42a-14-191-241-100.ngrok-free.app
+  backend-url: https://e42a-14-191-241-100.ngrok-free.app
   payment:
     method: VNPAY # Phương thức thanh toán mặc định
 

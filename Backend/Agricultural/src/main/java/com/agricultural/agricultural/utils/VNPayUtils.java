@@ -296,10 +296,11 @@ public class VNPayUtils {
             log.info("HMAC-SHA512 - Data: [{}]", data);
             
             final Mac hmac = Mac.getInstance("HmacSHA512");
-            final SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), "HmacSHA512");
+            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+            final SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "HmacSHA512");
             hmac.init(secretKey);
             
-            byte[] hmacData = hmac.doFinal(data.getBytes());
+            byte[] hmacData = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
             
             // Chuyển byte array thành chuỗi hex
             StringBuilder sb = new StringBuilder();
@@ -405,5 +406,9 @@ public class VNPayUtils {
         String temp = Normalizer.normalize(s, Normalizer.Form.NFD);
         Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
         return pattern.matcher(temp).replaceAll("").replaceAll("Đ", "D").replaceAll("đ", "d");
+    }
+
+    public VNPAYConfig getVnpayConfig() {
+        return this.vnpayConfig;
     }
 } 
