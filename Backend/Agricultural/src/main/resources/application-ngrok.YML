@@ -1,0 +1,15 @@
+app:
+  frontend-url: https://c87d-14-191-241-100.ngrok-free.app
+  backend-url: https://c87d-14-191-241-100.ngrok-free.app
+  payment:
+    method: VNPAY # Phương thức thanh toán mặc định
+
+# Cấu hình VNPAY cho ngrok 
+vnpay:
+  return-url: ${app.backend-url}/api/v1/payment/vnpay-return
+  ipn-url: ${app.backend-url}/api/v1/payment/vnpay-ipn
+
+# Cấu hình Momo cho ngrok
+momo:
+  redirectUrl: ${app.backend-url}/api/v1/payment/momo/return
+  ipnUrl: ${app.backend-url}/api/v1/payment/momo/ipn 
