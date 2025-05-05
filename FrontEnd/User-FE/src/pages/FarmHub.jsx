@@ -7,10 +7,12 @@ import backgroundImage from "../assets/page-signup-signin/sign-in.jpg";
 import axios from "axios";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
+import { useNavigate } from "react-router";
 
 const slides = [{ image: backgroundImage }, { image: backgroundImage }];
 
 function FarmHub() {
+  const navigate = useNavigate()
   const [products, setProducts] = useState([]);
   const [visibleCount, setVisibleCount] = useState(12);
 
@@ -111,6 +113,7 @@ function FarmHub() {
                 initial="hidden"
                 animate="visible"
                 custom={index}
+                onClick={() => navigate(`/farmhub/product/details/${product.id}`)}
               >
                 <img
                   src={product.imageUrl}

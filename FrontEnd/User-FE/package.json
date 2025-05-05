@@ -29,6 +29,7 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.503.0",
     "prop-types": "^15.8.1",
+    "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.0",
