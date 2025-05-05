@@ -1,7 +1,9 @@
 package com.agricultural.agricultural.service.impl;
 
 import com.agricultural.agricultural.dto.ForumPostDTO;
+import com.agricultural.agricultural.dto.ForumPostImageDTO;
 import com.agricultural.agricultural.entity.ForumPost;
+import com.agricultural.agricultural.entity.ForumPostImage;
 import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.exception.BadRequestException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
@@ -9,7 +11,9 @@ import com.agricultural.agricultural.repository.IForumPostRepository;
 import com.agricultural.agricultural.repository.impl.UserRepository;
 import com.agricultural.agricultural.service.IForumPostService;
 import com.agricultural.agricultural.mapper.ForumPostMapper;
+import com.agricultural.agricultural.mapper.ForumPostImageMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ForumPostService implements IForumPostService {
     @Autowired
     private IForumPostRepository forumPostRepository;
@@ -35,7 +40,9 @@ public class ForumPostService implements IForumPostService {
     private final UserDetailsService userDetailsService;
 
     private final ForumPostMapper forumPostMapper = ForumPostMapper.INSTANCE; // Khởi tạo Mapper
+    private final ForumPostImageMapper forumPostImageMapper = ForumPostImageMapper.INSTANCE; // Khởi tạo ForumPostImageMapper
 
+    @Override
     public ForumPostDTO createPost(ForumPostDTO forumPostDto) {
         if (forumPostDto == null) {
             throw new BadRequestException("Thông tin bài viết không được để trống");
@@ -70,9 +77,36 @@ public class ForumPostService implements IForumPostService {
 
         // Lưu vào database
         forumPost = forumPostRepository.save(forumPost);
+        
+        // Xử lý thêm images nếu có
+        ForumPostDTO createdPostDTO = forumPostMapper.toDTO(forumPost);
+        
+        // Nếu có ảnh trong DTO
+        if (forumPostDto.getImages() != null && !forumPostDto.getImages().isEmpty()) {
+            // Thêm ảnh vào bài viết
+            try {
+                for (ForumPostImageDTO imageDTO : forumPostDto.getImages()) {
+                    // Đảm bảo có postId
+                    imageDTO.setPostId(forumPost.getId());
+                    // Dùng ForumPostImage service để lưu ảnh
+                    ForumPostImage image = forumPostImageMapper.toEntity(imageDTO);
+                    image.setPost(forumPost);
+                    forumPost.addImage(image);
+                }
+                
+                // Lưu lại bài viết với các ảnh
+                forumPost = forumPostRepository.save(forumPost);
+                
+                // Cập nhật DTO với danh sách ảnh mới
+                createdPostDTO = forumPostMapper.toDTO(forumPost);
+            } catch (Exception e) {
+                log.error("Lỗi khi lưu ảnh bài viết", e);
+                // Vẫn trả về bài viết đã tạo, nhưng không có ảnh
+            }
+        }
 
         // Trả về DTO
-        return forumPostMapper.toDTO(forumPost);
+        return createdPostDTO;
     }
 
     public ForumPostDTO updatePost(int id, ForumPostDTO forumPostDto) throws AccessDeniedException {
@@ -102,6 +136,31 @@ public class ForumPostService implements IForumPostService {
         forumPost.setTitle(forumPostDto.getTitle());
         forumPost.setContent(forumPostDto.getContent());
         forumPost.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+
+        // Xử lý cập nhật ảnh nếu có
+        if (forumPostDto.getImages() != null) {
+            try {
+                // Xóa hết ảnh cũ nếu danh sách trống
+                if (forumPostDto.getImages().isEmpty()) {
+                    // Xóa tất cả ảnh hiện tại
+                    forumPost.getImages().clear();
+                } else {
+                    // Thay thế ảnh hiện tại bằng ảnh mới
+                    forumPost.getImages().clear();
+                    
+                    // Thêm từng ảnh mới
+                    for (ForumPostImageDTO imageDTO : forumPostDto.getImages()) {
+                        imageDTO.setPostId(forumPost.getId());
+                        ForumPostImage image = forumPostImageMapper.toEntity(imageDTO);
+                        image.setPost(forumPost);
+                        forumPost.addImage(image);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Lỗi khi cập nhật ảnh bài viết", e);
+                // Vẫn tiếp tục cập nhật bài viết, không cập nhật ảnh
+            }
+        }
 
         forumPost = forumPostRepository.save(forumPost);
 

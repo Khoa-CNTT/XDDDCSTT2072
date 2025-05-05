@@ -14,8 +14,8 @@ public class OpenWeatherConfig {
     @Value("${openweather.api-url}")
     private String apiUrl;
 
-    @Bean
-    public RestTemplate restTemplate() {
+    @Bean(name = "weatherRestTemplate")
+    public RestTemplate weatherRestTemplate() {
         return new RestTemplate();
     }
 

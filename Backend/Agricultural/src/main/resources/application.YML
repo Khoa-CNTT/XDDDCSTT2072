@@ -5,19 +5,18 @@ spring:
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-    mail:
-      host: smtp.gmail.com
-      port: 587
-      username: truyenramos420@gmail.com
-      password: pgbgixaczrpobbrc
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: truyenramos420@gmail.com
+    password: pgbgixaczrpobbrc
 
-      properties:
-        mail:
-          smtp:
-            auth: true
-            starttls:
-              enable: true
-
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
@@ -68,6 +67,17 @@ vnpay:
   command: pay
   currency-code: VND
   locale: vn
+
+# Cấu hình AI Service
+ai:
+  service:
+    baseUrl: http://localhost:8000
+    apiKey: ${AI_SERVICE_API_KEY:}
+    timeout: 30000
+    gemini:
+      api:
+        url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+        key: AIzaSyAWuG5_36F_CIPPVjCFEam8VoY4iyLIZN4
 
 app:
   frontend-url: https://e42a-14-191-241-100.ngrok-free.app
