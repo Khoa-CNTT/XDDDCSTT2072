@@ -53,17 +53,15 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Không dùng session
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/api/v1/users/login", "/api/v1/users/register",
-                                "/api/users/login", "/api/users/register").permitAll()
-                        .requestMatchers("/api/v1/forum/**").authenticated()
-                        .requestMatchers("/api/v1/orders/**").authenticated()
-                        .requestMatchers("/api/v1/weather/locations", "/api/v1/weather/locations/*").permitAll()
-                        .requestMatchers("/api/v1/weather-subscriptions/**").authenticated()
-                        .requestMatchers("/api/v1/user-addresses/**").authenticated()
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/marketplace/product/**").authenticated()
-                        .requestMatchers("/api/v1/cart/**").authenticated()
-
-                        .anyRequest().permitAll()
+                                        "/api/users/login", "/api/users/register",
+                                "/api/v1/auth/forgot-password","/api/v1/auth/reset-password").permitAll()
+                        .requestMatchers("/api/v1/forum/**").authenticated() // ✅ Yêu cầu đăng nhập với API forum
+                        .requestMatchers("/api/v1/orders/**").authenticated() // Yêu cầu xác thực cho API orders
+                        .requestMatchers("/api/v1/weather/locations", "/api/v1/weather/locations/*").permitAll() // Cho phép xem thông tin địa điểm 
+                        .requestMatchers("/api/v1/weather-subscriptions/**").authenticated() // Yêu cầu xác thực cho đăng ký thời tiết
+                        .requestMatchers("/api/v1/user-addresses/**").authenticated() // Yêu cầu xác thực cho địa chỉ người dùng
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // Chỉ Admin mới có quyền truy cập API admin
+                        .anyRequest().permitAll() // Các API khác được phép truy cập công khai (cân nhắc thay đổi nếu cần bảo mật hơn)
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class) // ✅ Thêm filter kiểm tra JWT
                 .build();

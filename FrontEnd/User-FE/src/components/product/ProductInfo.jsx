@@ -1,18 +1,21 @@
-/* eslint-disable react/prop-types */
 import { Button } from "@/components/ui/Button";
 import { useCartActions } from "@/hooks/useCartActions";
 import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const ProductInfo = ({ product }) => {
+  const navigate = useNavigate();
   const {
+    id: productId,
     productName,
     onSale,
     salePrice,
     price,
     quantity: stock,
     description,
+    imageUrl,
   } = product;
 
   const { createCartMuation } = useCartActions(product);
@@ -32,8 +35,28 @@ const ProductInfo = ({ product }) => {
         toast.success("Sản phẩm đã được thêm vào giỏ hàng");
       },
       onError: (error) => {
-        toast.error(error.response.data.errorMessage || "Something wrong");
+        toast.error(error.response?.data?.errorMessage || "Something wrong");
       },
+    });
+  };
+  
+  // Xử lý Mua ngay - chuyển thẳng đến checkout với sản phẩm hiện tại
+  const handleBuyNow = () => {
+    // Dùng state để chuyển thông tin sản phẩm đến trang checkout
+    const actualPrice = onSale ? salePrice : price;
+    
+    navigate("/checkout", {
+      state: {
+        buyNow: true,
+        product: {
+          productId,
+          productName,
+          quantity,
+          unitPrice: actualPrice,
+          productImage: imageUrl,
+          totalPrice: actualPrice * quantity
+        }
+      }
     });
   };
 
@@ -109,7 +132,10 @@ const ProductInfo = ({ product }) => {
           Thêm vào giỏ hàng
         </Button>
 
-        <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-xl">
+        <Button 
+          onClick={handleBuyNow}
+          className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-xl"
+        >
           Mua ngay
         </Button>
       </div>

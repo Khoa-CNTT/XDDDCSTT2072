@@ -46,7 +46,7 @@ public class CartItem {
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(name = "total_price", precision = 10, scale = 2)
+    @Column(name = "total_price", precision = 10, scale = 2, insertable = false, updatable = false)
     private BigDecimal totalPrice;
 
     @Column(name = "discount_amount", precision = 10, scale = 2)

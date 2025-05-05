@@ -15,6 +15,8 @@ public interface MarketPlaceMapper {
     @Mapping(source = "category.id", target = "categoryId") // Lấy category.id và ánh xạ thành categoryId
     @Mapping(expression = "java(marketPlace.isOnSale())", target = "onSale") // Lấy kết quả từ phương thức isOnSale()
     @Mapping(expression = "java(marketPlace.getCurrentPrice())", target = "currentPrice") // Lấy kết quả từ phương thức getCurrentPrice()
+    @Mapping(target = "imageUrl", source = "imageUrl")
+    @Mapping(target = "stockStatus", source = "stockStatus") // Ánh xạ trạng thái tồn kho
     MarketPlaceDTO toDTO(MarketPlace marketPlace);
 
     // Ánh xạ từ DTO sang entity

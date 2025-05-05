@@ -117,15 +117,43 @@ public class MarketPlace {
     
     // Helper methods
     public boolean isOnSale() {
-        if (salePrice == null || saleStartDate == null || saleEndDate == null) {
+        System.out.println("===== DEBUG isOnSale() cho sản phẩm: " + id + " - " + productName + " =====");
+        
+        if (salePrice == null) {
+            System.out.println("isOnSale: FALSE - Lý do: salePrice là null");
+            return false;
+        }
+        
+        if (salePrice.compareTo(BigDecimal.ZERO) <= 0) {
+            System.out.println("isOnSale: FALSE - Lý do: salePrice <= 0, giá trị: " + salePrice);
+            return false;
+        }
+        
+        if (saleStartDate == null) {
+            System.out.println("isOnSale: FALSE - Lý do: saleStartDate là null");
+            return false;
+        }
+        
+        if (saleEndDate == null) {
+            System.out.println("isOnSale: FALSE - Lý do: saleEndDate là null");
             return false;
         }
         
         LocalDateTime now = LocalDateTime.now();
+        System.out.println("Thời điểm hiện tại: " + now);
+        System.out.println("Thời gian bắt đầu khuyến mãi: " + saleStartDate);
+        System.out.println("Thời gian kết thúc khuyến mãi: " + saleEndDate);
         
-        return now.isAfter(saleStartDate) && 
-               now.isBefore(saleEndDate) && 
-               salePrice.compareTo(price) < 0;
+        boolean isAfterStartDate = now.isAfter(saleStartDate) || now.isEqual(saleStartDate);
+        boolean isBeforeEndDate = now.isBefore(saleEndDate) || now.isEqual(saleEndDate);
+        
+        System.out.println("Sau thời gian bắt đầu? " + isAfterStartDate);
+        System.out.println("Trước thời gian kết thúc? " + isBeforeEndDate);
+        
+        boolean result = isAfterStartDate && isBeforeEndDate;
+        System.out.println("isOnSale: " + result);
+        
+        return result;
     }
     
     public BigDecimal getCurrentPrice() {
@@ -168,5 +196,29 @@ public class MarketPlace {
     public void removeImage(ProductImage image) {
         images.remove(image);
         image.setProduct(null);
+    }
+
+    // Thêm method mới để tự động cập nhật stockStatus trước khi trả về
+    public StockStatus getStockStatus() {
+        // Tự động cập nhật trạng thái tồn kho dựa trên số lượng hiện tại
+        StockStatus currentStatus;
+        
+        if (this.quantity <= 0) {
+            currentStatus = StockStatus.OUT_OF_STOCK;
+        } else if (this.quantity <= 10) {
+            currentStatus = StockStatus.LOW_STOCK;
+        } else {
+            currentStatus = StockStatus.IN_STOCK;
+        }
+        
+        // Nếu trạng thái đã thay đổi, cập nhật lại field
+        if (this.stockStatus != currentStatus) {
+            System.out.println("Tự động cập nhật stockStatus cho sản phẩm ID " + this.id + 
+                    " từ " + this.stockStatus + " thành " + currentStatus + 
+                    " dựa trên quantity = " + this.quantity);
+            this.stockStatus = currentStatus;
+        }
+        
+        return this.stockStatus;
     }
 } 

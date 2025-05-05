@@ -27,7 +27,7 @@ public class FlashSaleScheduler {
      * - Chuyển trạng thái các flash sale đến thời gian bắt đầu từ 'upcoming' thành 'active'
      * - Chuyển trạng thái các flash sale hết thời gian từ 'active' thành 'ended'
      */
-    @Scheduled(cron = "0 * * * * ?") // Chạy mỗi phút
+    @Scheduled(cron = "0 0 0 1 * ?") // Chạy vào lúc 00:00:00 ngày đầu tiên mỗi tháng
     @Transactional
     public void updateFlashSaleStatus() {
         log.info("Bắt đầu cập nhật trạng thái flash sale");

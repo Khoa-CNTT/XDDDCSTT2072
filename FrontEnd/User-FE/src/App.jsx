@@ -24,6 +24,11 @@ import Category from "./components/farmhub2/Category";
 import NewProducts from "./components/farmhub2/NewProducts";
 import SearchPage from "./pages/SearchPage";
 import Cart from "./pages/Cart";
+import Checkout from "./components/checkout/CheckOut";
+import OrderSuccess from "./components/checkout/OrderSuccess";
+import OrderHistory from "./components/checkout/OrderHistory";
+import OrderDetail from "./components/checkout/OrderDetail";
+
 
 const ROLES = {
   User: "User",
@@ -94,6 +99,13 @@ function App() {
             <Route path="news" element={<News />} />
             <Route path="about" element={<AboutUs />} />
             <Route path="cart" element={<Cart />} />
+            <Route path="checkout" element={<Checkout />} /> 
+            <Route path="order-success" element={<OrderSuccess />} />  
+            <Route path="order-history" element={<OrderHistory />} />  
+            <Route path="order/:id" element={<OrderDetail />} />  
+           
+
+
           </Route>
           <Route path="*" element={<NoFoundPage />} />
         </Route>
