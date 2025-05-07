@@ -1,0 +1,30 @@
+package com.agricultural.agricultural.service;
+
+import com.agricultural.agricultural.dto.NewsDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+
+public interface NewsService {
+    
+    Page<NewsDTO> getAllNews(Pageable pageable);
+    
+    Page<NewsDTO> getNewsByCategory(String category, Pageable pageable);
+    
+    NewsDTO getNewsById(Long id);
+    
+    List<NewsDTO> getLatestNews();
+    
+    Page<NewsDTO> searchNews(String keyword, Pageable pageable);
+    
+    NewsDTO createNews(NewsDTO newsDTO);
+    
+    NewsDTO updateNews(Long id, NewsDTO newsDTO);
+    
+    void deleteNews(Long id);
+    
+    void fetchNewsFromSources();
+    
+    void fetchNewsFromSource(Long sourceId);
+} 
