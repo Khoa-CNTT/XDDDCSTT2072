@@ -20,6 +20,8 @@ import { FaInstagram, FaFacebook, FaTwitter } from "react-icons/fa";
 
 function Home() {
   const { auth } = useAuth();
+  console.log(auth);
+  
   const axiosPrivate = useAxiosPrivate();
   const [showPostInput, setShowPostInput] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,7 +54,7 @@ function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6 mt-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main Content Area */}
           <div className="md:col-span-2">

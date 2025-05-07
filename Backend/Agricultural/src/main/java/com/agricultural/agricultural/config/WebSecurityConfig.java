@@ -11,12 +11,15 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
-public class WebSecurityConfig {
+public class WebSecurityConfig implements WebMvcConfigurer {
+
     private final JwtTokenFilter jwtTokenFilter;
 
     @Bean
@@ -49,7 +52,6 @@ public class WebSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF để test API
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Không dùng session
                 .authorizeHttpRequests(requests -> requests
-                        // ✅ Cho phép API đăng nhập/đăng ký không cần token, chỉ định nhiều pattern để phủ hết các trường hợp
                         .requestMatchers("/api/v1/users/login", "/api/v1/users/register",
                                         "/api/users/login", "/api/users/register",
                                 "/api/v1/auth/forgot-password","/api/v1/auth/reset-password").permitAll()

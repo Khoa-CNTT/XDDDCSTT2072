@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -7,10 +7,12 @@ import backgroundImage from "../assets/page-signup-signin/sign-in.jpg";
 import axios from "axios";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
+import { useNavigate } from "react-router";
 
 const slides = [{ image: backgroundImage }, { image: backgroundImage }];
 
 function FarmHub() {
+  const navigate = useNavigate()
   const [products, setProducts] = useState([]);
   const [visibleCount, setVisibleCount] = useState(12);
 
@@ -73,7 +75,7 @@ function FarmHub() {
                 <img
                   src={slide.image}
                   alt={`Slide ${index + 1}`}
-                  className="w-full h-80 object-cover cursor-pointer"
+                  className="w-full h-50 object-cover cursor-pointer"
                 />
               </div>
             ))}
@@ -111,6 +113,7 @@ function FarmHub() {
                 initial="hidden"
                 animate="visible"
                 custom={index}
+                onClick={() => navigate(`/farmhub/product/details/${product.id}`)}
               >
                 <img
                   src={product.imageUrl}
@@ -145,7 +148,6 @@ function FarmHub() {
             )}
           </div>
         </div>
-
         <Footer />
       </div>
     </div>

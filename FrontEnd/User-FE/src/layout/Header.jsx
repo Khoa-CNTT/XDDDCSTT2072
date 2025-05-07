@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { FaBell, FaShoppingCart, FaUserCircle, FaBars } from "react-icons/fa";
-import { IoIosSearch } from "react-icons/io";
+import { FaBell, FaBars } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import list from "../data/list.js";
 import useAuth from "@/hooks/useAuth.js";
 import { toast } from "react-toastify";
+import avatarUser from "@/assets/images/avatar.jpg";
+import Search from "@/components/header/Search.jsx";
+import Cart from "@/components/header/Cart.jsx";
 
 const Header = () => {
-  const { setAuth } = useAuth();
+  const { setAuth, auth } = useAuth();
   const [activeIndex, setActiveIndex] = useState(0);
   const [underlineStyle, setUnderlineStyle] = useState({});
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -77,7 +79,7 @@ const Header = () => {
     toast.success("Logout successFully");
   };
   return (
-    <div className="w-full bg-lime-500 px-4 md:px-8 py-3 shadow-md rounded-b-2xl dark:bg-gray-900 transition-colors duration-300">
+    <div className="w-full bg-lime-500 px-4 md:px-8 py-3 shadow-md rounded-b-2xl dark:bg-gray-900 transition-colors duration-300 fixed z-40 top-0">
       <div className="flex justify-between items-center">
         {/* Logo */}
         <Link
@@ -113,25 +115,10 @@ const Header = () => {
             }}
           />
         </div>
-
-        {/* Tìm kiếm */}
-        <div className="relative w-[200px] md:w-[300px] hidden md:block">
-          <input
-            type="text"
-            placeholder="Search"
-            className={`w-full pl-9 pr-4 py-2 rounded-full bg-green-100 focus:outline-none ${
-              isSearchActive
-                ? "transition-all duration-300 transform scale-105"
-                : ""
-            }`}
-            onFocus={() => setIsSearchActive(true)}
-            onBlur={() => setIsSearchActive(false)}
-          />
-          <IoIosSearch
-            size={20}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600"
-          />
-        </div>
+        <Search
+          isSearchActive={isSearchActive}
+          setIsSearchActive={setIsSearchActive}
+        />
 
         {/* Icon */}
         <div className="flex items-center gap-4 md:gap-6">
@@ -139,24 +126,19 @@ const Header = () => {
           <div className="relative hover:scale-110 transition-transform cursor-pointer">
             <FaBell size={22} className="text-black dark:text-white" />
             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-              2
+              
             </span>
           </div>
 
           {/* Giỏ hàng */}
-          <div className="relative hover:scale-110 transition-transform cursor-pointer">
-            <FaShoppingCart size={22} className="text-black dark:text-white" />
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-              0
-            </span>
-          </div>
+         <Cart/>
 
           {/* Avatar dropdown */}
           <div className="relative hidden md:block">
-            <FaUserCircle
-              size={36}
-              className="text-black dark:text-white hover:scale-110 transition-transform cursor-pointer"
+            <img
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-10 h-10 rounded-full cursor-pointer"
+              src={auth?.user?.imageUrl || avatarUser}
             />
             {isDropdownOpen && (
               <div

@@ -5,7 +5,7 @@ function New() {
     return (
         <div className="flex flex-col items-center">
             <Header />
-            <div className="flex flex-wrap p-4 w-full max-w-6xl border border-gray-300 shadow-lg rounded-lg gap-4">
+            <div className="flex flex-wrap p-4 w-full max-w-6xl border border-gray-300 shadow-lg rounded-lg gap-4 mt-20">
                 <div className="relative flex-[8] min-w-[300px]">
                     <img
                         className="w-full h-full object-cover rounded-lg"

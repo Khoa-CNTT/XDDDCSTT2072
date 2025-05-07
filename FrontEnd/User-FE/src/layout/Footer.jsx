@@ -50,11 +50,11 @@ function Footer() {
   }, []);
 
   return (
-    <footer className="bg-gray-900 text-white py-10 px-4">
+    <footer className="w-full bg-gray-900  text-white py-3 px-3">
       <div className="w-full max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Logo and Address */}
         <div className="text-left">
-          <div className="border border-white text-center py-4 w-24 mb-4 mx-auto">Logo</div>
+          <div className="border border-white text-center py-2 w-24 mb-4">Logo</div>
           <p className="text-sm leading-relaxed">
             Address: 03 Quang Trung, Thành phố Đà Nẵng, Việt Nam
           </p>
@@ -128,7 +128,7 @@ function Footer() {
         </div>
 
         {/* Map */}
-        <div className="text-center md:text-left">
+        <div className="text-center md:text-left ml-auto">
           <h3 className="mb-4 font-semibold text-lg">MAP</h3>
           {position ? (
             <MapContainer
