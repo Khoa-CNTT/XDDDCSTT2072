@@ -16,8 +16,8 @@ import com.agricultural.agricultural.service.INotificationService;
 import com.agricultural.agricultural.dto.NotificationDTO;
 import com.agricultural.agricultural.entity.UserWeatherSubscription;
 import com.agricultural.agricultural.repository.IUserWeatherSubscriptionRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -30,7 +30,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class WeatherService implements IWeatherService {
 
@@ -39,9 +38,29 @@ public class WeatherService implements IWeatherService {
     private final WeatherDataMapper weatherDataMapper;
     private final AgriculturalAdviceMapper agriculturalAdviceMapper;
     private final OpenWeatherConfig openWeatherConfig;
-    private final RestTemplate restTemplate;
+    private final RestTemplate weatherRestTemplate;
     private final IUserWeatherSubscriptionRepository subscriptionRepository;
     private final INotificationService notificationService;
+    
+    // Constructor với @Qualifier cho RestTemplate
+    public WeatherService(
+            IWeatherDataRepository weatherDataRepository,
+            IAgriculturalAdviceRepository agriculturalAdviceRepository,
+            WeatherDataMapper weatherDataMapper,
+            AgriculturalAdviceMapper agriculturalAdviceMapper,
+            OpenWeatherConfig openWeatherConfig,
+            @Qualifier("weatherRestTemplate") RestTemplate weatherRestTemplate,
+            IUserWeatherSubscriptionRepository subscriptionRepository,
+            INotificationService notificationService) {
+        this.weatherDataRepository = weatherDataRepository;
+        this.agriculturalAdviceRepository = agriculturalAdviceRepository;
+        this.weatherDataMapper = weatherDataMapper;
+        this.agriculturalAdviceMapper = agriculturalAdviceMapper;
+        this.openWeatherConfig = openWeatherConfig;
+        this.weatherRestTemplate = weatherRestTemplate;
+        this.subscriptionRepository = subscriptionRepository;
+        this.notificationService = notificationService;
+    }
 
     // Cache để giảm số lượng request API
     private Map<String, WeatherDataDTO> weatherCache = new HashMap<>();
@@ -97,7 +116,7 @@ public class WeatherService implements IWeatherService {
                     .build()
                     .toUriString();
 
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            ResponseEntity<Map> response = weatherRestTemplate.getForEntity(url, Map.class);
 
             // Chuyển đổi dữ liệu từ API thành entity và lưu vào database
             WeatherData weatherData = mapOpenWeatherResponse(response.getBody());
@@ -188,7 +207,7 @@ public class WeatherService implements IWeatherService {
                     .build()
                     .toUriString();
 
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            ResponseEntity<Map> response = weatherRestTemplate.getForEntity(url, Map.class);
 
             // Chuyển đổi dữ liệu từ API thành entity và lưu vào database
             WeatherData weatherData = mapOpenWeatherResponse(response.getBody());

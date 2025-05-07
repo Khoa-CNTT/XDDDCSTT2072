@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -27,6 +29,8 @@ public class ForumPostDTO {
     private String content;
     
     private Timestamp createdAt;
+    
+    private List<ForumPostImageDTO> images = new ArrayList<>();
 
     public ForumPostDTO(int id, int userId, String title, String content, Timestamp createdAt) {
         this.id = id;
@@ -34,5 +38,16 @@ public class ForumPostDTO {
         this.title = title;
         this.content = content;
         this.createdAt = createdAt;
+    }
+    
+    public ForumPostDTO(int id, int userId, String title, String content, Timestamp createdAt, List<ForumPostImageDTO> images) {
+        this.id = id;
+        this.userId = userId;
+        this.title = title;
+        this.content = content;
+        this.createdAt = createdAt;
+        if (images != null) {
+            this.images = images;
+        }
     }
 }
