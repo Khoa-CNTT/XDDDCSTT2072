@@ -21,6 +21,8 @@ public class ForumPostImageDTO {
     @NotBlank(message = "URL hình ảnh không được để trống")
     private String imageUrl;
     
+    private String publicId;
+    
     @Size(max = 255, message = "Alt text không được vượt quá 255 ký tự")
     private String altText;
     

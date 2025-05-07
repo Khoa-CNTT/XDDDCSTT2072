@@ -25,6 +25,9 @@ public class ForumPostImage {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
+    @Column(name = "public_id")
+    private String publicId;
+
     @Column(name = "alt_text")
     private String altText;
 

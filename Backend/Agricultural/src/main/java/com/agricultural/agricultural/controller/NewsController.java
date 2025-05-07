@@ -93,14 +93,12 @@ public class NewsController {
     }
 
     @PostMapping("/fetch")
-    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<String> fetchNewsFromAllSources() {
         newsService.fetchNewsFromSources();
         return ResponseEntity.ok("News fetching process started for all active sources");
     }
 
     @PostMapping("/fetch/{sourceId}")
-    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<String> fetchNewsFromSource(@PathVariable Long sourceId) {
         newsService.fetchNewsFromSource(sourceId);
         return ResponseEntity.ok("News fetching process started for source with ID: " + sourceId);

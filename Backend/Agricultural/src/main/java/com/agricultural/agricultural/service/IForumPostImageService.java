@@ -5,10 +5,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface IForumPostImageService {
     // Lấy tất cả ảnh của bài viết
-    List<ForumPostImageDTO> getAllImagesByPost(Integer postId);
+    List<ForumPostImageDTO> getALlImagesByPost(Integer postId);
     
     // Thêm ảnh vào bài viết
     ForumPostImageDTO addImageToPost(Integer postId, ForumPostImageDTO imageDTO);
@@ -33,4 +34,40 @@ public interface IForumPostImageService {
     
     // Sắp xếp lại thứ tự ảnh của bài viết
     List<ForumPostImageDTO> reorderImages(Integer postId, List<Integer> imageIds);
+    
+    /**
+     * Lưu ảnh của bài viết lên Cloudinary
+     * @param postId ID của bài viết
+     * @param imageFile File ảnh cần lưu
+     * @return Thông tin ảnh đã lưu
+     */
+    ForumPostImageDTO saveImage(Integer postId, MultipartFile imageFile);
+    
+    /**
+     * Lấy danh sách ảnh của bài viết
+     * @param postId ID của bài viết
+     * @return Danh sách ảnh
+     */
+    List<ForumPostImageDTO> getImagesByPostId(Integer postId);
+    
+    /**
+     * Xóa tất cả ảnh của bài viết
+     * @param postId ID của bài viết
+     */
+    void deleteAllImagesByPostId(Integer postId);
+    
+    /**
+     * Upload ảnh lên Cloudinary
+     * @param file File ảnh cần upload
+     * @return Map chứa secure_url và public_id
+     * @throws IOException nếu có lỗi khi upload
+     */
+    Map<String, String> upload(MultipartFile file) throws IOException;
+    
+    /**
+     * Xóa ảnh từ Cloudinary theo public_id
+     * @param publicId Public ID của ảnh
+     * @throws IOException nếu có lỗi khi xóa
+     */
+    void delete(String publicId) throws IOException;
 } 

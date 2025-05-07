@@ -18,28 +18,24 @@ public class NewsSourceController {
     private final NewsSourceService newsSourceService;
 
     @GetMapping
-    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<List<NewsSourceDTO>> getAllNewsSources() {
         List<NewsSourceDTO> sources = newsSourceService.getAllNewsSources();
         return ResponseEntity.ok(sources);
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<List<NewsSourceDTO>> getActiveNewsSources() {
         List<NewsSourceDTO> activeSources = newsSourceService.getActiveNewsSources();
         return ResponseEntity.ok(activeSources);
     }
 
     @GetMapping("/category/{category}")
-    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<List<NewsSourceDTO>> getNewsSourcesByCategory(@PathVariable String category) {
         List<NewsSourceDTO> sources = newsSourceService.getNewsSourcesByCategory(category);
         return ResponseEntity.ok(sources);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<NewsSourceDTO> getNewsSourceById(@PathVariable Long id) {
         NewsSourceDTO source = newsSourceService.getNewsSourceById(id);
         return ResponseEntity.ok(source);
