@@ -1672,3 +1672,226 @@ VALUES
     (@flash_sale_1, 23, 50, 5, 37500, 50000, 25, NOW(), NOW()),
     (@flash_sale_1, 24, 50, 8, 112500, 150000, 25, NOW(), NOW()),
     (@flash_sale_1, 25, 50, 12, 67500, 90000, 25, NOW(), NOW());
+
+-- Tạo bảng chat_sessions
+CREATE TABLE IF NOT EXISTS chat_sessions (
+                                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                             session_id VARCHAR(255) NOT NULL UNIQUE,
+    user_id VARCHAR(255),
+    title VARCHAR(255),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    model VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_session_id (session_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tạo bảng chat_messages
+CREATE TABLE IF NOT EXISTS chat_messages (
+                                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                             session_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255),
+    content TEXT NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    source VARCHAR(50),
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metadata TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_session_id (session_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_timestamp (timestamp),
+    CONSTRAINT fk_chat_message_session FOREIGN KEY (session_id)
+    REFERENCES chat_sessions(session_id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tạo bảng forum_post_images
+CREATE TABLE IF NOT EXISTS forum_post_images (
+                                                 id INT AUTO_INCREMENT PRIMARY KEY,
+                                                 post_id INT NOT NULL,
+                                                 image_url VARCHAR(255) NOT NULL,
+    alt_text VARCHAR(255),
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_forum_post_images_post FOREIGN KEY (post_id)
+    REFERENCES forum_posts (id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+--UPDATE LẦN 8
+
+-- Cập nhật bảng news hiện tại để đáp ứng cấu trúc entity mới
+ALTER TABLE news
+    ADD COLUMN summary VARCHAR(1000),
+    ADD COLUMN image_url VARCHAR(500),
+    ADD COLUMN source_url VARCHAR(500),
+    ADD COLUMN source_name VARCHAR(255),
+    ADD COLUMN published_date TIMESTAMP,
+    ADD COLUMN active BOOLEAN DEFAULT TRUE,
+    ADD COLUMN tags VARCHAR(500),
+    ADD COLUMN unique_id VARCHAR(255) UNIQUE;
+
+-- Tạo bảng news_sources mới
+CREATE TABLE news_sources (
+                              id INT PRIMARY KEY AUTO_INCREMENT,
+                              name VARCHAR(255) NOT NULL,
+                              url VARCHAR(500) NOT NULL,
+                              article_selector VARCHAR(500) NOT NULL,
+                              title_selector VARCHAR(255) NOT NULL,
+                              summary_selector VARCHAR(255),
+                              content_selector VARCHAR(255),
+                              image_selector VARCHAR(255),
+                              date_selector VARCHAR(255),
+                              date_format VARCHAR(500),
+                              category VARCHAR(255) NOT NULL,
+                              active BOOLEAN NOT NULL DEFAULT TRUE,
+                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Tạo chỉ mục để tối ưu hiệu suất
+CREATE INDEX idx_news_category ON news(category);
+CREATE INDEX idx_news_active ON news(active);
+CREATE INDEX idx_news_published_date ON news(published_date);
+CREATE INDEX idx_news_unique_id ON news(unique_id);
+CREATE INDEX idx_news_sources_active ON news_sources(active);
+CREATE INDEX idx_news_sources_category ON news_sources(category);
+
+ALTER TABLE news_sources MODIFY id INT AUTO_INCREMENT;
+
+
+-- UPDATE lần 9
+-- Cập nhật bảng forum_posts để thêm các trường cần thiết
+ALTER TABLE forum_posts
+    ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                                                                                                                  ADD COLUMN view_count INT DEFAULT 0,
+                                                                                                                                  ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE,
+                                                                                                                                  ADD COLUMN privacy_level ENUM('PUBLIC', 'CONNECTIONS', 'PRIVATE') DEFAULT 'PUBLIC';
+
+-- Tạo bảng reactions cho cảm xúc giống LinkedIn (Like, Celebrate, Support, Love, Insightful, Funny)
+CREATE TABLE forum_reactions (
+                                 id INT PRIMARY KEY AUTO_INCREMENT,
+                                 post_id INT,
+                                 reply_id INT,
+                                 user_id INT NOT NULL,
+                                 reaction_type ENUM('LIKE', 'CELEBRATE', 'SUPPORT', 'LOVE', 'INSIGHTFUL', 'FUNNY') NOT NULL DEFAULT 'LIKE',
+                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                                 FOREIGN KEY (post_id) REFERENCES forum_posts(id) ON DELETE CASCADE,
+                                 FOREIGN KEY (reply_id) REFERENCES forum_replies(id) ON DELETE CASCADE,
+                                 CONSTRAINT unique_post_reaction UNIQUE (post_id, user_id, reaction_type),
+                                 CONSTRAINT unique_reply_reaction UNIQUE (reply_id, user_id, reaction_type),
+                                 CONSTRAINT check_post_or_reply CHECK ((post_id IS NULL) != (reply_id IS NULL))
+    );
+
+-- Thêm bảng hashtags
+CREATE TABLE hashtags (
+                          id INT PRIMARY KEY AUTO_INCREMENT,
+                          name VARCHAR(100) NOT NULL UNIQUE,
+                          post_count INT DEFAULT 0,
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bảng liên kết posts và hashtags
+CREATE TABLE post_hashtags (
+                               post_id INT NOT NULL,
+                               hashtag_id INT NOT NULL,
+                               PRIMARY KEY (post_id, hashtag_id),
+                               FOREIGN KEY (post_id) REFERENCES forum_posts(id) ON DELETE CASCADE,
+                               FOREIGN KEY (hashtag_id) REFERENCES hashtags(id) ON DELETE CASCADE
+);
+
+-- Bảng mentions để lưu đề cập đến người dùng trong bài đăng
+CREATE TABLE post_mentions (
+                               id INT PRIMARY KEY AUTO_INCREMENT,
+                               post_id INT,
+                               reply_id INT,
+                               mentioned_user_id INT NOT NULL,
+                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               FOREIGN KEY (post_id) REFERENCES forum_posts(id) ON DELETE CASCADE,
+                               FOREIGN KEY (reply_id) REFERENCES forum_replies(id) ON DELETE CASCADE,
+                               FOREIGN KEY (mentioned_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                               CONSTRAINT check_post_or_reply_mention CHECK ((post_id IS NULL) != (reply_id IS NULL))
+    );
+
+-- Tạo chỉ mục để tối ưu hiệu suất
+CREATE INDEX idx_post_hashtags_hashtag ON post_hashtags(hashtag_id);
+CREATE INDEX idx_forum_reactions_post ON forum_reactions(post_id);
+CREATE INDEX idx_forum_reactions_reply ON forum_reactions(reply_id);
+CREATE INDEX idx_forum_reactions_user ON forum_reactions(user_id);
+CREATE INDEX idx_post_mentions_mentioned ON post_mentions(mentioned_user_id);
+
+-- Trigger để cập nhật số lượng post khi thêm/xóa hashtag
+DELIMITER //
+CREATE TRIGGER after_post_hashtag_insert
+    AFTER INSERT ON post_hashtags
+    FOR EACH ROW
+BEGIN
+    UPDATE hashtags
+    SET post_count = post_count + 1
+    WHERE id = NEW.hashtag_id;
+END//
+
+CREATE TRIGGER after_post_hashtag_delete
+    AFTER DELETE ON post_hashtags
+    FOR EACH ROW
+BEGIN
+    UPDATE hashtags
+    SET post_count = post_count - 1
+    WHERE id = OLD.hashtag_id;
+END//
+DELIMITER ;
+
+-- Cập nhật bảng forum_posts để thêm các trường bổ sung cho giao diện giống LinkedIn
+ALTER TABLE forum_posts
+    ADD COLUMN attachment_type ENUM('NONE', 'IMAGE', 'VIDEO', 'DOCUMENT', 'LINK') DEFAULT 'NONE',
+    ADD COLUMN attachment_url VARCHAR(500),
+    ADD COLUMN location VARCHAR(255),
+    ADD COLUMN feeling VARCHAR(100),
+    ADD COLUMN background_color VARCHAR(20),
+    ADD COLUMN is_pinned BOOLEAN DEFAULT FALSE,
+    ADD COLUMN is_edited BOOLEAN DEFAULT FALSE,
+    ADD COLUMN edited_at TIMESTAMP NULL,
+    ADD COLUMN is_shared BOOLEAN DEFAULT FALSE,
+    ADD COLUMN original_post_id INT NULL,
+    ADD CONSTRAINT fk_original_post FOREIGN KEY (original_post_id) REFERENCES forum_posts(id);
+
+-- Tạo bảng kết nối giữa người dùng (tương tự connections của LinkedIn)
+CREATE TABLE user_connections (
+                                  id INT PRIMARY KEY AUTO_INCREMENT,
+                                  user_id INT NOT NULL,
+                                  connected_user_id INT NOT NULL,
+                                  status ENUM('PENDING', 'ACCEPTED', 'REJECTED', 'BLOCKED') NOT NULL DEFAULT 'PENDING',
+                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                                  FOREIGN KEY (connected_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                                  UNIQUE KEY uq_connection (user_id, connected_user_id)
+);
+
+-- Bảng lưu lượt xem bài đăng
+CREATE TABLE post_views (
+                            id INT PRIMARY KEY AUTO_INCREMENT,
+                            post_id INT NOT NULL,
+                            user_id INT NOT NULL,
+                            view_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (post_id) REFERENCES forum_posts(id) ON DELETE CASCADE,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                            UNIQUE KEY uq_post_view (post_id, user_id)
+);
+
+-- Trigger để cập nhật số lượt xem khi có view mới
+DELIMITER //
+CREATE TRIGGER after_post_view_insert
+    AFTER INSERT ON post_views
+    FOR EACH ROW
+BEGIN
+    UPDATE forum_posts
+    SET view_count = view_count + 1
+    WHERE id = NEW.post_id;
+END//
+DELIMITER ;

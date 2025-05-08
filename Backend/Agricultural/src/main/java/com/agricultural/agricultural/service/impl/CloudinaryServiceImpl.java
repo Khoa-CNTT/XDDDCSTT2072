@@ -37,19 +37,19 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("File không được để trống");
         }
-        
+
         if (folder == null || folder.trim().isEmpty()) {
             throw new BadRequestException("Thư mục không được để trống");
         }
-        
+
         if (fileName == null || fileName.trim().isEmpty()) {
             throw new BadRequestException("Tên file không được để trống");
         }
 
         // Log thông tin file trước khi upload
-        System.out.println("Đang upload file: " + file.getOriginalFilename() + 
-                         ", MIME type: " + file.getContentType() + 
-                         ", Kích thước: " + file.getSize() + " bytes");
+        System.out.println("Đang upload file: " + file.getOriginalFilename() +
+                ", MIME type: " + file.getContentType() +
+                ", Kích thước: " + file.getSize() + " bytes");
         System.out.println("Đường dẫn mục tiêu: " + folder + "/" + fileName);
 
         Map<String, Object> params = ObjectUtils.asMap(
@@ -75,7 +75,7 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
         if (publicId == null || publicId.trim().isEmpty()) {
             throw new BadRequestException("Public ID không được để trống");
         }
-        
+
         Map<String, Object> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
         if (result.get("result").equals("not found")) {
             throw new ResourceNotFoundException("Không tìm thấy ảnh với public ID: " + publicId);
@@ -88,13 +88,13 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
         if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
             throw new BadRequestException("URL không được để trống");
         }
-        
+
         // Cloudinary URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/{public_id}.{format}
         String[] parts = cloudinaryUrl.split("/upload/");
         if (parts.length < 2) {
             throw new BadRequestException("URL không hợp lệ");
         }
-        
+
         String publicIdWithVersion = parts[1];
         // Remove version if exists (v1234567890/)
         if (publicIdWithVersion.startsWith("v")) {
@@ -103,13 +103,13 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
                 publicIdWithVersion = publicIdWithVersion.substring(slashIndex + 1);
             }
         }
-        
+
         // Remove file extension
         int dotIndex = publicIdWithVersion.lastIndexOf(".");
         if (dotIndex != -1) {
             publicIdWithVersion = publicIdWithVersion.substring(0, dotIndex);
         }
-        
+
         return publicIdWithVersion;
     }
 } 

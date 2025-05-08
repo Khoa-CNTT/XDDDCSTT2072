@@ -16,7 +16,7 @@ import java.util.List;
 @RequestMapping("${api.prefix}/cart")
 @RequiredArgsConstructor
 @Validated
-public class CartController  {
+public class CartController {
 
     private final ICartService cartService;
 

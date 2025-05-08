@@ -21,11 +21,13 @@ public class CorsConfig {
         // Cho phép cookies
         config.setAllowCredentials(true);
         
-        // Cho phép tất cả origins (thay thế bằng domain cụ thể trong môi trường production)
+        // Cho phép các origins cụ thể
         config.addAllowedOrigin("http://localhost:5173"); // Frontend URL
         config.addAllowedOrigin("http://127.0.0.1:5173");
         config.addAllowedOrigin("http://localhost:3000"); // Frontend URL
         config.addAllowedOrigin("http://127.0.0.1:3000");
+        // Thêm ngrok URL
+        config.addAllowedOrigin("https://e42a-14-191-241-100.ngrok-free.app");
         
         // Cho phép tất cả headers
         config.addAllowedHeader("*");
@@ -46,7 +48,11 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+                        .allowedOrigins(
+                            "http://localhost:5173", 
+                            "http://127.0.0.1:5173", 
+                            "https://e42a-14-191-241-100.ngrok-free.app"
+                        )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true)

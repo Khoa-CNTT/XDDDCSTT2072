@@ -11,6 +11,7 @@ import com.agricultural.agricultural.repository.IForumPostRepository;
 import com.agricultural.agricultural.service.ICloudinaryService;
 import com.agricultural.agricultural.service.IForumPostImageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,10 +19,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ForumPostImageServiceImpl implements IForumPostImageService {
 
     private final IForumPostImageRepository forumPostImageRepository;
@@ -30,7 +34,7 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
     private final ForumPostImageMapper forumPostImageMapper = ForumPostImageMapper.INSTANCE;
 
     @Override
-    public List<ForumPostImageDTO> getAllImagesByPost(Integer postId) {
+    public List<ForumPostImageDTO> getALlImagesByPost(Integer postId) {
         List<ForumPostImage> images = forumPostImageRepository.findByPostIdOrderByDisplayOrderAsc(postId);
         return forumPostImageMapper.toDTOList(images);
     }
@@ -90,11 +94,14 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
         }
 
         // Upload ảnh lên Cloudinary
-        String imageUrl = cloudinaryService.uploadImage(imageFile, "forum-posts/" + postId);
+        Map<String, String> uploadResult = upload(imageFile);
+        String imageUrl = uploadResult.get("secure_url");
+        String publicId = uploadResult.get("public_id");
 
         // Tạo đối tượng DTO
         ForumPostImageDTO imageDTO = ForumPostImageDTO.builder()
                 .imageUrl(imageUrl)
+                .publicId(publicId)
                 .build();
 
         // Gọi phương thức addImageToPost để lưu vào database
@@ -112,11 +119,14 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
         for (MultipartFile imageFile : imageFiles) {
             if (imageFile != null && !imageFile.isEmpty()) {
                 // Upload ảnh lên Cloudinary
-                String imageUrl = cloudinaryService.uploadImage(imageFile, "forum-posts/" + postId);
+                Map<String, String> uploadResult = upload(imageFile);
+                String imageUrl = uploadResult.get("secure_url");
+                String publicId = uploadResult.get("public_id");
 
                 // Tạo đối tượng DTO
                 ForumPostImageDTO imageDTO = ForumPostImageDTO.builder()
                         .imageUrl(imageUrl)
+                        .publicId(publicId)
                         .build();
 
                 imageDTOs.add(imageDTO);
@@ -147,14 +157,14 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
         ForumPostImage image = forumPostImageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ảnh với ID: " + imageId));
 
-        // Xóa ảnh khỏi Cloudinary (nếu cần)
-        try {
-            String publicId = extractPublicIdFromUrl(image.getImageUrl());
-            if (publicId != null) {
-                cloudinaryService.deleteImage(publicId);
+        // Xóa ảnh khỏi Cloudinary nếu có publicId
+        if (image.getPublicId() != null && !image.getPublicId().isEmpty()) {
+            try {
+                delete(image.getPublicId());
+            } catch (IOException e) {
+                log.error("Lỗi khi xóa ảnh khỏi Cloudinary", e);
+                // Vẫn tiếp tục xóa trong database
             }
-        } catch (Exception e) {
-            // Xử lý lỗi khi xóa ảnh từ Cloudinary
         }
 
         // Xóa khỏi database
@@ -166,19 +176,19 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
     public void deleteAllImagesOfPost(Integer postId) {
         List<ForumPostImage> images = forumPostImageRepository.findByPostIdOrderByDisplayOrderAsc(postId);
 
-        // Xóa ảnh khỏi Cloudinary (nếu cần)
+        // Xóa từng ảnh khỏi Cloudinary trước
         for (ForumPostImage image : images) {
-            try {
-                String publicId = extractPublicIdFromUrl(image.getImageUrl());
-                if (publicId != null) {
-                    cloudinaryService.deleteImage(publicId);
+            if (image.getPublicId() != null && !image.getPublicId().isEmpty()) {
+                try {
+                    delete(image.getPublicId());
+                } catch (IOException e) {
+                    log.error("Lỗi khi xóa ảnh khỏi Cloudinary", e);
+                    // Vẫn tiếp tục xóa các ảnh khác
                 }
-            } catch (Exception e) {
-                // Xử lý lỗi khi xóa ảnh từ Cloudinary
             }
         }
 
-        // Xóa khỏi database
+        // Xóa tất cả khỏi database
         forumPostImageRepository.deleteByPostId(postId);
     }
 
@@ -254,6 +264,48 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
             return filenamePart;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    @Override
+    @Transactional
+    public ForumPostImageDTO saveImage(Integer postId, MultipartFile imageFile) {
+        try {
+            return uploadImageToPost(postId, imageFile);
+        } catch (IOException e) {
+            log.error("Lỗi khi lưu ảnh", e);
+            throw new BadRequestException("Không thể lưu ảnh: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<ForumPostImageDTO> getImagesByPostId(Integer postId) {
+        return getALlImagesByPost(postId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllImagesByPostId(Integer postId) {
+        deleteAllImagesOfPost(postId);
+    }
+
+    // Thêm phương thức wrapper cho cloudinaryService.uploadImage
+    @Override
+    public Map<String, String> upload(MultipartFile file) throws IOException {
+        String url = cloudinaryService.uploadImage(file, "forum-posts");
+        String publicId = cloudinaryService.extractPublicIdFromUrl(url);
+        
+        return Map.of(
+            "secure_url", url,
+            "public_id", publicId
+        );
+    }
+    
+    // Thêm phương thức wrapper cho cloudinaryService.deleteImage
+    @Override
+    public void delete(String publicId) throws IOException {
+        if (publicId != null && !publicId.isEmpty()) {
+            cloudinaryService.deleteImage(publicId);
         }
     }
 } 
