@@ -67,8 +67,16 @@ public class UserService implements IUserService {
 
     @Override
     public Optional<UserDTO> findById(int id) {
-        return userRepository.findById(id)
-                .map(userMapper::toDTO); // ✅ Dùng UserMapper để chuyển đổi
+        System.out.println("Tìm người dùng với ID: " + id);
+        Optional<User> userOptional = userRepository.findById(id);
+        
+        if (userOptional.isPresent()) {
+            System.out.println("Tìm thấy người dùng: " + userOptional.get().getUsername());
+            return userOptional.map(userMapper::toDTO);
+        } else {
+            System.out.println("Không tìm thấy người dùng với ID: " + id);
+            return Optional.empty();
+        }
     }
 
 

@@ -41,6 +41,9 @@ public interface IForumPostService {
     // Lấy bài viết theo hashtag
     Page<ForumPostDTO> getPostsByHashtag(String hashtag, Pageable pageable);
     
+    // Lấy bài viết từ những người đã kết nối
+    Page<ForumPostDTO> getPostsFromConnections(Integer userId, Pageable pageable);
+    
     // Thêm lượt xem cho bài viết
     void incrementViewCount(Integer postId, Integer userId);
     

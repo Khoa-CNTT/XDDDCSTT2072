@@ -63,4 +63,12 @@ public interface IUserConnectionRepository extends JpaRepository<UserConnection,
      */
     @Query("SELECT COUNT(c) FROM UserConnection c WHERE (c.user.id = :userId OR c.connectedUser.id = :userId) AND c.status = 'ACCEPTED'")
     long countConnectionsByUserId(@Param("userId") Integer userId);
+    
+    /**
+     * Lấy danh sách ID của tất cả người dùng đã kết nối với một người dùng (cả chiều đi và chiều đến)
+     */
+    @Query("SELECT DISTINCT CASE WHEN c.user.id = :userId THEN c.connectedUser.id ELSE c.user.id END " + 
+           "FROM UserConnection c " + 
+           "WHERE (c.user.id = :userId OR c.connectedUser.id = :userId) AND c.status = 'ACCEPTED'")
+    List<Integer> findConnectedUserIds(@Param("userId") Integer userId);
 } 
