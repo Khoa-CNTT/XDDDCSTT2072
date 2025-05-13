@@ -496,7 +496,21 @@ public class ForumPostService implements IForumPostService {
     
     @Override
     public Page<ForumPostDTO> searchPosts(String keyword, Pageable pageable) {
-        return forumPostRepository.searchByTitleOrContent(keyword, pageable)
-                .map(forumPostMapper::toDTO);
+        Page<ForumPost> posts = forumPostRepository.searchByTitleOrContent(keyword, pageable);
+        return posts.map(forumPostMapper::toDTO);
+    }
+    
+    @Override
+    public Page<ForumPostDTO> getPostsFromConnections(Integer userId, Pageable pageable) {
+        // Lấy danh sách ID người dùng đã kết nối
+        List<Integer> connectedUserIds = userConnectionRepository.findConnectedUserIds(userId);
+        
+        // Thêm ID của người dùng hiện tại để hiển thị cả bài viết của họ
+        connectedUserIds.add(userId);
+        
+        // Lấy bài viết từ những người đã kết nối và bài viết công khai
+        Page<ForumPost> posts = forumPostRepository.findPostsVisibleToUser(userId, connectedUserIds, pageable);
+        
+        return posts.map(forumPostMapper::toDTO);
     }
 }

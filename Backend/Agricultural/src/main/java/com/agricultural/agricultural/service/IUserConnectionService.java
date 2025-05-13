@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IUserConnectionService {
     
@@ -102,4 +103,23 @@ public interface IUserConnectionService {
      * @return Danh sách ID người dùng đã kết nối
      */
     List<Integer> getConnectedUserIds(Integer userId);
+    
+    /**
+     * Kiểm tra trạng thái kết nối chi tiết giữa hai người dùng
+     * 
+     * @param userId ID người dùng hiện tại
+     * @param targetUserId ID người dùng cần kiểm tra
+     * @return Thông tin chi tiết về trạng thái kết nối
+     */
+    Map<String, Object> checkConnectionStatus(Integer userId, Integer targetUserId);
+    
+    /**
+     * Lấy tất cả kết nối của người dùng từ cả hai hướng (user_id và connected_user_id)
+     * với trạng thái cụ thể
+     * 
+     * @param userId ID người dùng cần lấy danh sách kết nối
+     * @param status Trạng thái kết nối cần lọc (mặc định là ACCEPTED)
+     * @return Danh sách kết nối của người dùng từ cả hai hướng
+     */
+    List<UserConnectionDTO> getAllUserConnections(Integer userId, String status);
 } 

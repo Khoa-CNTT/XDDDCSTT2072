@@ -354,4 +354,28 @@ public class ForumPostController {
         
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bài viết theo mức độ riêng tư thành công", posts));
     }
+
+    /**
+     * Lấy bài viết của người dùng và người dùng đã kết nối
+     * @param page Số trang
+     * @param size Kích thước trang
+     * @param user Người dùng hiện tại
+     * @return Danh sách bài viết từ những người đã kết nối
+     */
+    @GetMapping("/connections")
+    public ResponseEntity<ApiResponse<Page<ForumPostDTO>>> getPostsFromConnections(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal User user) {
+        
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "Người dùng chưa đăng nhập", null));
+        }
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<ForumPostDTO> posts = forumPostService.getPostsFromConnections(user.getId(), pageable);
+        
+        return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bài viết từ những người kết nối thành công", posts));
+    }
 }

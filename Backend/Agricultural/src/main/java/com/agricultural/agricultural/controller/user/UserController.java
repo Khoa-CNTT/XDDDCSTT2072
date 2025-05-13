@@ -34,10 +34,36 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable int id) {
-        return userService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body((UserDTO) Map.of("error", "User not found with ID: " + id)));
+        System.out.println("Nhận request lấy thông tin người dùng ID: " + id);
+        try {
+            return userService.findById(id)
+                    .map(user -> {
+                        System.out.println("Tìm thấy người dùng ID " + id + ": " + user.getUserName());
+                        return ResponseEntity.ok(Map.of(
+                            "success", true,
+                            "message", "Lấy thông tin người dùng thành công",
+                            "data", user
+                        ));
+                    })
+                    .orElseGet(() -> {
+                        System.out.println("Không tìm thấy người dùng với ID: " + id);
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(Map.of(
+                                    "success", false,
+                                    "message", "Không tìm thấy người dùng với ID: " + id,
+                                    "data", null
+                                ));
+                    });
+        } catch (Exception e) {
+            System.err.println("Lỗi khi xử lý request lấy thông tin người dùng ID " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                        "success", false,
+                        "message", "Lỗi khi xử lý yêu cầu: " + e.getMessage(),
+                        "data", null
+                    ));
+        }
     }
 
     @GetMapping("/findByName")

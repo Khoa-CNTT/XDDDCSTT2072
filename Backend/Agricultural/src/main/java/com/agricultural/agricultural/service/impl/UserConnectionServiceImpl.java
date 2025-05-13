@@ -15,7 +15,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -230,6 +233,53 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
     }
 
     @Override
+    public Map<String, Object> checkConnectionStatus(Integer userId, Integer targetUserId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // Kiểm tra kết nối từ người dùng hiện tại đến người dùng mục tiêu
+        Optional<UserConnection> connection = userConnectionRepository
+                .findByUserIdAndConnectedUserId(userId, targetUserId);
+        
+        // Kiểm tra kết nối từ người dùng mục tiêu đến người dùng hiện tại
+        Optional<UserConnection> reverseConnection = userConnectionRepository
+                .findByUserIdAndConnectedUserId(targetUserId, userId);
+        
+        // Xác định trạng thái kết nối
+        if (connection.isPresent()) {
+            UserConnection conn = connection.get();
+            if (conn.getStatus() == UserConnection.ConnectionStatus.ACCEPTED) {
+                result.put("status", "CONNECTED");
+            } else if (conn.getStatus() == UserConnection.ConnectionStatus.PENDING) {
+                result.put("status", "PENDING_SENT");
+            } else if (conn.getStatus() == UserConnection.ConnectionStatus.BLOCKED) {
+                result.put("status", "BLOCKED");
+            } else {
+                result.put("status", "NONE");
+            }
+        } else if (reverseConnection.isPresent()) {
+            UserConnection revConn = reverseConnection.get();
+            if (revConn.getStatus() == UserConnection.ConnectionStatus.ACCEPTED) {
+                result.put("status", "CONNECTED");
+            } else if (revConn.getStatus() == UserConnection.ConnectionStatus.PENDING) {
+                result.put("status", "PENDING_RECEIVED");
+            } else if (revConn.getStatus() == UserConnection.ConnectionStatus.BLOCKED) {
+                result.put("status", "BLOCKED_BY_TARGET");
+            } else {
+                result.put("status", "NONE");
+            }
+        } else {
+            result.put("status", "NONE");
+        }
+        
+        result.put("isConnected", "CONNECTED".equals(result.get("status")));
+        result.put("isPendingSent", "PENDING_SENT".equals(result.get("status")));
+        result.put("isPendingReceived", "PENDING_RECEIVED".equals(result.get("status")));
+        result.put("isBlocked", "BLOCKED".equals(result.get("status")) || "BLOCKED_BY_TARGET".equals(result.get("status")));
+        
+        return result;
+    }
+
+    @Override
     public long countUserConnections(Integer userId) {
         return userConnectionRepository.countConnectionsByUserId(userId);
     }
@@ -237,6 +287,37 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
     @Override
     public List<Integer> getConnectedUserIds(Integer userId) {
         return userConnectionRepository.findConnectedUserIdsByUserId(userId);
+    }
+
+    @Override
+    public List<UserConnectionDTO> getAllUserConnections(Integer userId, String status) {
+        UserConnection.ConnectionStatus connectionStatus;
+        try {
+            connectionStatus = UserConnection.ConnectionStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            log.warn("Trạng thái kết nối không hợp lệ: {}, sử dụng mặc định ACCEPTED", status);
+            connectionStatus = UserConnection.ConnectionStatus.ACCEPTED;
+        }
+        
+        // Lấy kết nối từ cả hai hướng
+        List<UserConnection> outgoingConnections = userConnectionRepository
+                .findAllByUserIdAndStatus(userId, connectionStatus);
+                
+        List<UserConnection> incomingConnections = userConnectionRepository
+                .findAllByConnectedUserIdAndStatus(userId, connectionStatus);
+        
+        // Gộp và chuyển đổi thành DTO
+        List<UserConnectionDTO> allConnections = new ArrayList<>();
+        
+        allConnections.addAll(outgoingConnections.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList()));
+                
+        allConnections.addAll(incomingConnections.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList()));
+        
+        return allConnections;
     }
 
     // Helper method để chuyển đổi từ entity sang DTO
