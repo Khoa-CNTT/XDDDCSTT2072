@@ -334,6 +334,15 @@ const ProductDetail = () => {
   // Thêm vào giỏ hàng
   const addToCart = async () => {
     try {
+      // Kiểm tra đăng nhập
+      if (!auth?.accessToken) {
+        toast.info("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+        navigate("/account/login", {
+          state: { from: { pathname: `/farmhub2/product/${id}` } },
+        });
+        return;
+      }
+
       // Tạo dữ liệu giỏ hàng
       const cartData = {
         productId: product.id,
@@ -365,6 +374,15 @@ const ProductDetail = () => {
   // Mua ngay
   const buyNow = async () => {
     try {
+      // Kiểm tra đăng nhập
+      if (!auth?.accessToken) {
+        toast.info("Vui lòng đăng nhập để mua sản phẩm");
+        navigate("/account/login", {
+          state: { from: { pathname: `/farmhub2/product/${id}` } },
+        });
+        return;
+      }
+
       // Tạo dữ liệu giỏ hàng
       const cartData = {
         productId: product.id,

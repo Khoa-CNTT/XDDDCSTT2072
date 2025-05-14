@@ -53,6 +53,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const axiosPrivate = useAxiosPrivate();
@@ -64,6 +65,7 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [filteredPosts, setFilteredPosts] = useState([]);
+  const navigate = useNavigate();
 
   // Fetch forum posts
   const {
@@ -423,6 +425,13 @@ const Home = () => {
 
   // Handle post comment
   const handleComment = async (postId, content, parentId = null) => {
+    // Kiểm tra đăng nhập trước khi thêm bình luận
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để bình luận");
+      navigate("/account/login", { state: { from: { pathname: "/home" } } });
+      return null;
+    }
+
     try {
       const response = await addForumComment(
         axiosPrivate,
@@ -473,10 +482,12 @@ const Home = () => {
             })
           );
         }
+        return response;
       }
     } catch (err) {
       console.error("Lỗi khi thêm bình luận:", err);
       toast.error("Không thể thêm bình luận. Vui lòng thử lại!");
+      return null;
     }
   };
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Loading from "@/components/shared/Loading";
 import { useCartActions } from "@/hooks/useCartActions";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
+import useAuth from "@/hooks/useAuth";
 import { getProductById } from "@/services/productService";
 import { createPayment } from "../services/PaymentService";
 import { createOrder } from "../services/OrderService";
@@ -28,6 +29,18 @@ const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const axiosPrivate = useAxiosPrivate();
+  const { auth } = useAuth();
+
+  // Kiểm tra đăng nhập ngay khi vào trang thanh toán
+  useEffect(() => {
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để tiến hành thanh toán");
+      navigate("/account/login", {
+        state: { from: { pathname: "/checkout" } },
+      });
+      return;
+    }
+  }, [auth, navigate]);
 
   // Kiểm tra xem có phải đang mua ngay không
   const isBuyNow = location?.state?.fromBuyNow || false;

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import useAuth from "@/hooks/useAuth";
 
 const ProductInfo = ({ product }) => {
   const navigate = useNavigate();
+  const { auth } = useAuth();
   const {
     id: productId,
     productName,
@@ -30,6 +32,15 @@ const ProductInfo = ({ product }) => {
   };
 
   const handleClickAddCart = () => {
+    // Kiểm tra đăng nhập
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+      navigate("/account/login", {
+        state: { from: { pathname: `/farmhub2/product/${productId}` } },
+      });
+      return;
+    }
+
     createCartMuation.mutate(quantity, {
       onSuccess: () => {
         toast.success("Sản phẩm đã được thêm vào giỏ hàng");
@@ -39,12 +50,21 @@ const ProductInfo = ({ product }) => {
       },
     });
   };
-  
+
   // Xử lý Mua ngay - chuyển thẳng đến checkout với sản phẩm hiện tại
   const handleBuyNow = () => {
+    // Kiểm tra đăng nhập
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để mua sản phẩm");
+      navigate("/account/login", {
+        state: { from: { pathname: `/farmhub2/product/${productId}` } },
+      });
+      return;
+    }
+
     // Dùng state để chuyển thông tin sản phẩm đến trang checkout
     const actualPrice = onSale ? salePrice : price;
-    
+
     navigate("/checkout", {
       state: {
         buyNow: true,
@@ -54,9 +74,9 @@ const ProductInfo = ({ product }) => {
           quantity,
           unitPrice: actualPrice,
           productImage: imageUrl,
-          totalPrice: actualPrice * quantity
-        }
-      }
+          totalPrice: actualPrice * quantity,
+        },
+      },
     });
   };
 
@@ -132,7 +152,7 @@ const ProductInfo = ({ product }) => {
           Thêm vào giỏ hàng
         </Button>
 
-        <Button 
+        <Button
           onClick={handleBuyNow}
           className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-xl"
         >

@@ -1,10 +1,8 @@
 import { axiosPrivate } from "@/services/api/axios";
 import { useEffect } from "react";
 import useAuth from "./useAuth";
-import { useNavigate } from "react-router";
 
 const useAxiosPrivate = () => {
-  const navigate = useNavigate();
   const { auth } = useAuth();
 
   useEffect(() => {
@@ -45,9 +43,8 @@ const useAxiosPrivate = () => {
           console.error(`Response error ${error.response.status}:`, error.response.data);
           
           // Xử lý lỗi 401 Unauthorized
-          if (error.response.status === 403) {
+          if (error.response.status === 401) {
             console.error("Unauthorized error - Invalid or expired token");
-            navigate("/account/login");
             // Thêm xử lý refresh token ở đây nếu cần
           }
         } else if (error.request) {
@@ -64,7 +61,7 @@ const useAxiosPrivate = () => {
       axiosPrivate.interceptors.request.eject(requestIntercept);
       axiosPrivate.interceptors.response.eject(responseIntercept);
     };
-  }, [auth, navigate]);
+  }, [auth]);
   
   return axiosPrivate;
 };

@@ -13,10 +13,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ThumbsUp, MessageSquare, Share, Send, Smile, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getComments } from "@/services/forumService";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "react-toastify";
+import useAuth from "@/hooks/useAuth";
 
 const CommentDialog = ({
   post,
@@ -36,6 +38,8 @@ const CommentDialog = ({
 
   const axiosPrivate = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { auth } = useAuth();
 
   // Tải bình luận khi dialog mở
   useEffect(() => {
@@ -125,6 +129,13 @@ const CommentDialog = ({
     e.preventDefault();
     if (!commentText.trim()) return;
 
+    // Kiểm tra đăng nhập trước khi thêm bình luận
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để bình luận");
+      navigate("/account/login", { state: { from: { pathname: "/home" } } });
+      return;
+    }
+
     // Tạo comment tạm thời
     const tempComment = {
       id: `temp-${Date.now()}`,
@@ -159,6 +170,13 @@ const CommentDialog = ({
   const handleReplySubmit = (e, commentId) => {
     e.preventDefault();
     if (!replyText.trim()) return;
+
+    // Kiểm tra đăng nhập trước khi thêm phản hồi
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để phản hồi bình luận");
+      navigate("/account/login", { state: { from: { pathname: "/home" } } });
+      return;
+    }
 
     const parentComment = comments.find((c) => c.id === commentId);
     const replyContent = `@${
@@ -538,22 +556,30 @@ const CommentDialog = ({
               <Textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Viết bình luận..."
+                placeholder={
+                  auth?.accessToken
+                    ? "Viết bình luận..."
+                    : "Vui lòng đăng nhập để bình luận"
+                }
                 className="min-h-[40px] pr-12 py-2 rounded-full resize-none bg-gray-100"
                 rows={1}
+                disabled={!auth?.accessToken}
               />
               <div className="absolute right-3 bottom-2 flex gap-2">
                 <button
                   type="button"
                   className="text-gray-500 hover:text-yellow-500"
+                  disabled={!auth?.accessToken}
                 >
                   <Smile size={18} />
                 </button>
                 <button
                   type="submit"
-                  disabled={!commentText.trim()}
+                  disabled={!commentText.trim() || !auth?.accessToken}
                   className={`${
-                    commentText.trim() ? "text-blue-500" : "text-gray-400"
+                    commentText.trim() && auth?.accessToken
+                      ? "text-blue-500"
+                      : "text-gray-400"
                   }`}
                 >
                   <Send size={18} />
