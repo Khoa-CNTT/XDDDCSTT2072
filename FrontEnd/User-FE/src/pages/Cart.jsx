@@ -18,6 +18,16 @@ const Cart = () => {
   const navigate = useNavigate();
   const axiosPrivate = useAxiosPrivate();
   const { auth } = useAuth();
+
+  // Kiểm tra đăng nhập ngay khi vào trang giỏ hàng
+  useEffect(() => {
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để xem giỏ hàng của bạn");
+      navigate("/account/login", { state: { from: { pathname: "/cart" } } });
+      return;
+    }
+  }, [auth, navigate]);
+
   const { getCartQuery, isLoading } = useCartActions();
   const { data: cart } = getCartQuery;
   const cartItems = cart?.cartItems || [];

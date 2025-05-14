@@ -2,18 +2,32 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/layout/Header";
 import { Button } from "@/components/ui/button";
+import useAuth from "@/hooks/useAuth";
+import { toast } from "react-toastify";
 
 const OrderHistory = () => {
   const navigate = useNavigate();
+  const { auth } = useAuth();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
+  // Kiểm tra đăng nhập ngay khi vào trang lịch sử đơn hàng
+  useEffect(() => {
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để xem lịch sử đơn hàng");
+      navigate("/account/login", {
+        state: { from: { pathname: "/order-history" } },
+      });
+      return;
+    }
+  }, [auth, navigate]);
+
   // Lấy đơn hàng từ localStorage khi component mount
   useEffect(() => {
     // Giả lập loading để UX tốt hơn
     const timer = setTimeout(() => {
       try {
-        const storedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const storedOrders = JSON.parse(localStorage.getItem("orders") || "[]");
         console.log("Đơn hàng từ localStorage:", storedOrders);
         setOrders(storedOrders);
       } catch (error) {
@@ -22,46 +36,72 @@ const OrderHistory = () => {
       }
       setIsLoading(false);
     }, 800);
-    
+
     return () => clearTimeout(timer);
   }, []);
-  
+
   // Format date
   const formatDate = (dateString) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleString('vi-VN', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      return date.toLocaleString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch (error) {
       return dateString;
     }
   };
-  
+
   // Get status badge
   const getStatusBadge = (status) => {
     const statusMap = {
-      'PENDING': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ xác nhận' },
-      'PROCESSING': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Đang xử lý' },
-      'SHIPPING': { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Đang giao hàng' },
-      'COMPLETED': { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
-      'CANCELLED': { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã hủy' },
-      'WAITING_PAYMENT': { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Chờ thanh toán' },
+      PENDING: {
+        bg: "bg-yellow-100",
+        text: "text-yellow-800",
+        label: "Chờ xác nhận",
+      },
+      PROCESSING: {
+        bg: "bg-blue-100",
+        text: "text-blue-800",
+        label: "Đang xử lý",
+      },
+      SHIPPING: {
+        bg: "bg-purple-100",
+        text: "text-purple-800",
+        label: "Đang giao hàng",
+      },
+      COMPLETED: {
+        bg: "bg-green-100",
+        text: "text-green-800",
+        label: "Hoàn thành",
+      },
+      CANCELLED: { bg: "bg-red-100", text: "text-red-800", label: "Đã hủy" },
+      WAITING_PAYMENT: {
+        bg: "bg-orange-100",
+        text: "text-orange-800",
+        label: "Chờ thanh toán",
+      },
     };
-    
-    const statusInfo = statusMap[status] || { bg: 'bg-gray-100', text: 'text-gray-800', label: status || 'Không xác định' };
-    
+
+    const statusInfo = statusMap[status] || {
+      bg: "bg-gray-100",
+      text: "text-gray-800",
+      label: status || "Không xác định",
+    };
+
     return (
-      <span className={`${statusInfo.bg} ${statusInfo.text} text-xs font-medium px-2.5 py-0.5 rounded-full`}>
+      <span
+        className={`${statusInfo.bg} ${statusInfo.text} text-xs font-medium px-2.5 py-0.5 rounded-full`}
+      >
         {statusInfo.label}
       </span>
     );
   };
-  
+
   if (isLoading) {
     return (
       <>
@@ -77,13 +117,13 @@ const OrderHistory = () => {
       </>
     );
   }
-  
+
   return (
     <>
       <Header />
       <div className="max-w-6xl mx-auto mt-28 px-4 py-8">
         <h2 className="text-2xl font-bold mb-8">Lịch sử đơn hàng</h2>
-        
+
         {orders.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <p className="text-gray-500 mb-4">Bạn chưa có đơn hàng nào.</p>

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
+import FarmHub from "./pages/FarmHub";
 import ChatAI from "./pages/ChatAI";
 import News from "./pages/News";
 import NewsDetail from "./pages/NewsDetail";
@@ -47,6 +48,12 @@ function App() {
     <>
       <Router>
         <Routes>
+          <Route path="account">
+            <Route path="register" element={<Register />} />
+            <Route path="login" element={<Login />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
+          </Route>
           <Route path="/" element={<Main />}>
             <Route index element={<Home />} />
             <Route path="home" element={<Home />} />
@@ -56,12 +63,6 @@ function App() {
             <Route path="weather" element={<WeatherDashboard />} />
             <Route path="subscriptions" element={<Subscriptions />} />
             <Route path="subscriptions/:id" element={<SubscriptionDetails />} />
-            <Route path="account">
-              <Route path="register" element={<Register />} />
-              <Route path="login" element={<Login />} />
-              <Route path="forgot-password" element={<ForgotPassword />} />
-              <Route path="reset-password" element={<ResetPassword />} />
-            </Route>
             <Route element={<RequireAuth allowedRoles={[ROLES.User]} />}>
               <Route path="profile/:userId" element={<UserProfile />} />
               <Route path="profile/edit" element={<EditProfile />} />
@@ -85,6 +86,7 @@ function App() {
                 <Route path="recently-updated" element={<FeaturedProducts />} />
               </Route>
               <Route path="farmhub2/product/:id" element={<ProductDetail />} />
+              <Route path="farmhub" element={<FarmHub />} />
               <Route path="chat-ai" element={<ChatAI />} />
               <Route path="coupons" element={<Coupons />} />
               <Route path="cart" element={<Cart />} />
