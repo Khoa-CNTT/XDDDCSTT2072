@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RestController
@@ -94,13 +95,37 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable int id, @Valid @RequestBody UserDTO userDTO, BindingResult result) {
-        if (result.hasErrors()) {
+        // Bỏ qua lỗi validation cho trường password nếu đang cập nhật và keepExistingPassword = true
+        if (userDTO.isKeepExistingPassword() && result.hasFieldErrors("password")) {
+            // Lọc bỏ các lỗi liên quan đến password
+            List<FieldError> nonPasswordErrors = result.getFieldErrors().stream()
+                    .filter(error -> !error.getField().equals("password"))
+                    .collect(Collectors.toList());
+            
+            // Nếu còn lỗi khác, trả về lỗi
+            if (!nonPasswordErrors.isEmpty()) {
+                Map<String, String> errors = new HashMap<>();
+                for (FieldError error : nonPasswordErrors) {
+                    errors.put(error.getField(), error.getDefaultMessage());
+                }
+                return ResponseEntity.badRequest().body(errors);
+            }
+        } else if (result.hasErrors()) {
             return ResponseEntity.badRequest().body(getValidationErrors(result));
         }
+
+        try {
+            System.out.println("Cập nhật thông tin người dùng ID: " + id);
+            System.out.println("keepExistingPassword: " + userDTO.isKeepExistingPassword());
 
         User userToUpdate = userMapper.toEntity(userDTO); // ✅ Dùng Mapper để chuyển đổi DTO → Entity
         UserDTO updatedUser = userService.updateUser(id, userToUpdate);
         return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi cập nhật người dùng: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Lỗi khi cập nhật người dùng: " + e.getMessage()));
+        }
     }
 
 

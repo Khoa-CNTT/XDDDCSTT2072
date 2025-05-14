@@ -69,6 +69,8 @@ public class OrderDTO {
     
     private String notes;
     
+    private String couponCode;
+    
     private String invoiceNumber;
     
     private LocalDate invoiceDate;

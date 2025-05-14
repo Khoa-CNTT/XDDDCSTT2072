@@ -24,10 +24,9 @@ public class CorsConfig {
         // Cho phép các origins cụ thể
         config.addAllowedOrigin("http://localhost:5173"); // Frontend URL
         config.addAllowedOrigin("http://127.0.0.1:5173");
-        config.addAllowedOrigin("http://localhost:3000"); // Frontend URL
+        config.addAllowedOrigin("http://localhost:3000"); // Frontend URL cũ
         config.addAllowedOrigin("http://127.0.0.1:3000");
-        // Thêm ngrok URL
-        config.addAllowedOrigin("https://e42a-14-191-241-100.ngrok-free.app");
+        // Không cần URL ngrok nữa
         
         // Cho phép tất cả headers
         config.addAllowedHeader("*");
@@ -50,8 +49,7 @@ public class CorsConfig {
                 registry.addMapping("/**")
                         .allowedOrigins(
                             "http://localhost:5173", 
-                            "http://127.0.0.1:5173", 
-                            "https://e42a-14-191-241-100.ngrok-free.app"
+                            "http://127.0.0.1:5173"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")

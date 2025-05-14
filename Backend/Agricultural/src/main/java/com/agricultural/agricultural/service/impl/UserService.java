@@ -209,9 +209,13 @@ public class UserService implements IUserService {
                     existingUser.setEmail(newUser.getEmail());
                     existingUser.setPhone(newUser.getPhone());
 
-                    if (newUser.getPassword() != null && !newUser.getPassword().isEmpty()) {
+                    // Kiểm tra để xử lý cập nhật mật khẩu
+                    if (newUser.getPassword() != null && !newUser.getPassword().isEmpty() && 
+                        !newUser.getPassword().equals("********")) {
+                        // Nếu có mật khẩu mới thì mã hóa và cập nhật
                         existingUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
                     }
+                    // Trường hợp keepExistingPassword = true hoặc mật khẩu là dấu sao thì giữ nguyên mật khẩu hiện tại
 
                     if (newUser.getRole() != null) {
                         existingUser.setRole(newUser.getRole());
@@ -276,5 +280,20 @@ public class UserService implements IUserService {
                 .stream()
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void changePassword(int userId, String currentPassword, String newPassword) throws Exception {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại với id: " + userId));
+        
+        // Kiểm tra mật khẩu hiện tại
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadCredentialsException("Mật khẩu hiện tại không đúng");
+        }
+        
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

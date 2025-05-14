@@ -38,6 +38,7 @@ public interface IUserService {
     void deleteUser(int id);
 
     List<UserDTO> getAllUsers();
-
+    
+    void changePassword(int userId, String currentPassword, String newPassword) throws Exception;
 
 }

@@ -10,6 +10,9 @@ import com.agricultural.agricultural.dto.response.PaymentViewResponse;
 import com.agricultural.agricultural.entity.Order;
 import com.agricultural.agricultural.entity.Payment;
 import com.agricultural.agricultural.entity.User;
+import com.agricultural.agricultural.entity.OrderDetail;
+import com.agricultural.agricultural.entity.Cart;
+import com.agricultural.agricultural.entity.CartItem;
 import com.agricultural.agricultural.entity.enumeration.OrderStatus;
 import com.agricultural.agricultural.entity.enumeration.PaymentStatus;
 import com.agricultural.agricultural.exception.BadRequestException;
@@ -17,6 +20,7 @@ import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.repository.IOrderRepository;
 import com.agricultural.agricultural.repository.IPaymentRepository;
 import com.agricultural.agricultural.repository.IUserRepository;
+import com.agricultural.agricultural.repository.ICartRepository;
 import com.agricultural.agricultural.service.IPaymentService;
 import com.agricultural.agricultural.utils.VNPayUtils;
 import com.agricultural.agricultural.utils.QRCodeUtils;
@@ -45,6 +49,7 @@ public class PaymentServiceImpl implements IPaymentService {
     private final IOrderRepository orderRepository;
     private final IPaymentRepository paymentRepository;
     private final IUserRepository userRepository;
+    private final ICartRepository cartRepository;
     private final VNPAYConfig vnPayConfig;
     private final VNPayUtils vnPayUtils;
     private final QRCodeUtils qrCodeUtils;
@@ -154,7 +159,7 @@ public class PaymentServiceImpl implements IPaymentService {
         log.info("Đã tạo bản ghi Payment: orderId={}, amount={}, transactionId={}, paymentId={}", 
                  payment.getOrderId(), payment.getAmount(), payment.getTransactionId(), payment.getPaymentId());
 
-        String returnUrl = backendBaseUrl + "/api/v1/payment/vnpay-return";
+        String returnUrl = "http://localhost:5173/payment/result";
         String ipAddress = paymentRequest.getClientIp() != null ? paymentRequest.getClientIp() : "127.0.0.1";
 
         // Tạo URL thanh toán với VNPAY
@@ -322,21 +327,101 @@ public class PaymentServiceImpl implements IPaymentService {
         log.info("Kiểm tra trạng thái thanh toán cho giao dịch: {}", transactionId);
         
         try {
-            Payment payment = paymentRepository.findByTransactionId(transactionId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giao dịch với ID: " + transactionId));
+            Optional<Payment> paymentOpt;
             
-            log.info("Giao dịch [{}]: phương thức={}, trạng thái={}, số tiền={}", 
-                     transactionId, payment.getPaymentMethod(), payment.getStatus(), payment.getAmount());
+            // Nếu là số, có thể là vnp_TransactionNo 
+            if (transactionId.matches("\\d+")) {
+                log.info("Tham số có vẻ là vnp_TransactionNo, tìm kiếm theo vnp_TransactionNo");
+                paymentOpt = paymentRepository.findByVnpTransactionNo(transactionId);
+                
+                if (paymentOpt.isEmpty()) {
+                    // Thử tìm theo transactionReference
+                    log.info("Thử tìm kiếm theo transactionReference");
+                    paymentOpt = paymentRepository.findByTransactionReference(transactionId);
+                }
+            } else {
+                // Tìm kiếm payment theo transactionId chuẩn (UUID)
+                paymentOpt = paymentRepository.findByTransactionId(transactionId);
+            }
+            
+            // Nếu vẫn không tìm thấy, thử tìm theo cách khác
+            if (paymentOpt.isEmpty()) {
+                log.info("Thử tìm payment theo phương thức tổng hợp với từ khóa: {}", transactionId);
+                paymentOpt = paymentRepository.findByAnyTransactionReference(transactionId);
+            }
+            
+            // Nếu vẫn không tìm thấy, thử tìm theo payment note
+            if (paymentOpt.isEmpty()) {
+                log.info("Thử tìm payment theo payment note với từ khóa: {}", transactionId);
+                try {
+                    paymentOpt = findPaymentByNoteKeywordSafe(transactionId);
+                } catch (Exception e) {
+                    log.warn("Lỗi khi tìm kiếm payment theo note: {}", e.getMessage());
+                }
+            }
+            
+            if (paymentOpt.isEmpty()) {
+                log.warn("Không tìm thấy thanh toán với mã giao dịch: {}", transactionId);
+                throw new ResourceNotFoundException("Không tìm thấy giao dịch với ID: " + transactionId);
+            }
+            
+            Payment payment = paymentOpt.get();
+            
+            log.info("Đã tìm thấy giao dịch - [{}]: phương thức={}, trạng thái={}, số tiền={}", 
+                     payment.getTransactionId(), payment.getPaymentMethod(), payment.getStatus(), payment.getAmount());
             
             // Lấy thông tin đơn hàng
             Order order = orderRepository.findById(payment.getOrderId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng với ID: " + payment.getOrderId()));
+            
+            // Kiểm tra xem nếu là giao dịch VNPAY và đang ở trạng thái PENDING, 
+            // và có transaction reference (vnp_TransactionNo), thì cập nhật thành COMPLETED
+            boolean wasUpdated = false;
+            
+            if ("VNPAY".equals(payment.getPaymentMethod()) 
+                    && payment.getStatus() == PaymentStatus.PENDING 
+                    && (payment.getTransactionReference() != null || transactionId.matches("\\d+"))) {
+                
+                log.info("Phát hiện giao dịch VNPAY đang ở trạng thái PENDING. Tiến hành cập nhật.");
+                
+                // Cập nhật transaction reference nếu chưa có
+                if (payment.getTransactionReference() == null && transactionId.matches("\\d+")) {
+                    payment.setTransactionReference(transactionId);
+                    log.info("Đã cập nhật transaction reference: {}", transactionId);
+                }
+                
+                // Cập nhật trạng thái thanh toán thành COMPLETED
+                payment.setStatus(PaymentStatus.COMPLETED);
+                payment.setPaymentNote((payment.getPaymentNote() != null ? payment.getPaymentNote() : "") 
+                    + " | Auto-updated to COMPLETED at " + LocalDateTime.now());
+                
+                if (payment.getPaymentNote() == null || !payment.getPaymentNote().contains("vnp_TransactionNo=")) {
+                    // Thêm vnp_TransactionNo vào paymentNote nếu chưa có
+                    payment.setPaymentNote((payment.getPaymentNote() != null ? payment.getPaymentNote() : "") 
+                        + " | vnp_TransactionNo=" + transactionId);
+                    log.info("Đã thêm vnp_TransactionNo vào payment note");
+                }
+                
+                paymentRepository.save(payment);
+                
+                // Cập nhật trạng thái đơn hàng
+                order.setStatus(OrderStatus.PROCESSING);
+                orderRepository.save(order);
+                
+                log.info("Đã cập nhật trạng thái thanh toán từ PENDING sang COMPLETED");
+                log.info("Đã cập nhật trạng thái đơn hàng sang PROCESSING");
+                
+                wasUpdated = true;
+            }
             
             Map<String, Object> additionalInfo = new HashMap<>();
             additionalInfo.put("orderId", order.getId());
             additionalInfo.put("orderStatus", order.getStatus());
             additionalInfo.put("paymentId", payment.getPaymentId());
             additionalInfo.put("createdAt", payment.getCreatedAt());
+            additionalInfo.put("wasUpdated", wasUpdated);
+            additionalInfo.put("status", payment.getStatus().toString());
+            additionalInfo.put("transaction_id", payment.getTransactionId());
             
             if (payment.getPaymentNote() != null) {
                 additionalInfo.put("paymentNote", payment.getPaymentNote());
@@ -350,8 +435,8 @@ public class PaymentServiceImpl implements IPaymentService {
 
             return PaymentResponse.builder()
                     .success(payment.getStatus() == PaymentStatus.COMPLETED)
-                    .message("Trạng thái thanh toán: " + payment.getStatus().name())
-                    .transactionId(transactionId)
+                    .message("Trạng thái thanh toán: " + payment.getStatus().name() + (wasUpdated ? " (Đã cập nhật)" : ""))
+                    .transactionId(payment.getTransactionId())
                     .paymentMethod(payment.getPaymentMethod())
                     .amount(payment.getAmount())
                     .timestamp(LocalDateTime.now())
@@ -483,9 +568,22 @@ public class PaymentServiceImpl implements IPaymentService {
         
         // Lưu thêm thông tin giao dịch vào paymentNote
         String existingNote = payment.getPaymentNote() != null ? payment.getPaymentNote() : "";
-        payment.setPaymentNote(existingNote + " | Return: vnp_TxnRef=" + vnp_TxnRef + 
-            ", vnp_TransactionNo=" + vnp_TransactionNo + ", vnp_ResponseCode=" + vnp_ResponseCode);
-
+        StringBuilder noteBuilder = new StringBuilder(existingNote);
+        
+        // Thêm vnp_TxnRef nếu chưa có
+        if (!existingNote.contains("vnp_TxnRef=")) {
+            noteBuilder.append(" | vnp_TxnRef=").append(vnp_TxnRef);
+        }
+        
+        // Thêm vnp_TransactionNo nếu có và chưa có trong note
+        if (vnp_TransactionNo != null && !existingNote.contains("vnp_TransactionNo=")) {
+            noteBuilder.append(" | vnp_TransactionNo=").append(vnp_TransactionNo);
+        }
+        
+        // Thêm thông tin callback
+        noteBuilder.append(" | Return: vnp_ResponseCode=").append(vnp_ResponseCode);
+        
+        payment.setPaymentNote(noteBuilder.toString());
         paymentRepository.save(payment);
 
         if (isSuccess) {
@@ -651,9 +749,22 @@ public class PaymentServiceImpl implements IPaymentService {
             
             // Lưu thêm thông tin giao dịch vào paymentNote
             String existingNote = payment.getPaymentNote() != null ? payment.getPaymentNote() : "";
-            payment.setPaymentNote(existingNote + " | IPN: vnp_TxnRef=" + vnp_TxnRef + 
-                ", vnp_TransactionNo=" + vnp_TransactionNo + ", vnp_ResponseCode=" + vnp_ResponseCode);
-
+            StringBuilder noteBuilder = new StringBuilder(existingNote);
+            
+            // Thêm vnp_TxnRef nếu chưa có
+            if (!existingNote.contains("vnp_TxnRef=")) {
+                noteBuilder.append(" | vnp_TxnRef=").append(vnp_TxnRef);
+            }
+            
+            // Thêm vnp_TransactionNo nếu có và chưa có trong note
+            if (vnp_TransactionNo != null && !existingNote.contains("vnp_TransactionNo=")) {
+                noteBuilder.append(" | vnp_TransactionNo=").append(vnp_TransactionNo);
+            }
+            
+            // Thêm thông tin callback
+            noteBuilder.append(" | IPN: vnp_ResponseCode=").append(vnp_ResponseCode);
+            
+            payment.setPaymentNote(noteBuilder.toString());
             paymentRepository.save(payment);
 
             if (isSuccess) {
@@ -742,7 +853,7 @@ public class PaymentServiceImpl implements IPaymentService {
             
             // Chuẩn bị thông tin
             String returnUrl = paymentRequest.getReturnUrl() != null ? 
-                    paymentRequest.getReturnUrl() : backendBaseUrl + "/api/v1/payment/vnpay-return";
+                    paymentRequest.getReturnUrl() : "http://localhost:5173/payment/result";
             String ipAddress = paymentRequest.getClientIp() != null ? 
                     paymentRequest.getClientIp() : "127.0.0.1";
             
@@ -802,6 +913,17 @@ public class PaymentServiceImpl implements IPaymentService {
         Order order = orderRepository.findById(finalOrderId).orElse(null);
 
         if (order != null) {
+            // Nếu thanh toán thành công, xóa các sản phẩm đã thanh toán khỏi giỏ hàng
+            if (paymentSuccessful) {
+                try {
+                    // Xóa các sản phẩm khỏi giỏ hàng
+                    clearPaidItemsFromCart(order);
+                    log.info("Đã xóa các sản phẩm đã thanh toán khỏi giỏ hàng cho đơn hàng: {}", order.getId());
+                } catch (Exception e) {
+                    log.error("Lỗi khi xóa sản phẩm đã thanh toán khỏi giỏ hàng: {}", e.getMessage(), e);
+                }
+            }
+
             String title = paymentSuccessful ? "Thanh toán thành công" : "Thanh toán thất bại";
             String message = paymentSuccessful
                 ? "Đơn hàng #" + order.getOrderNumber() + " đã được thanh toán thành công"
@@ -819,53 +941,134 @@ public class PaymentServiceImpl implements IPaymentService {
         }
     }
 
+    /**
+     * Xóa các sản phẩm đã thanh toán khỏi giỏ hàng
+     * 
+     * @param order Đơn hàng đã thanh toán
+     */
+    private void clearPaidItemsFromCart(Order order) {
+        if (order == null || order.getBuyerId() == null) {
+            log.warn("Không thể xóa sản phẩm khỏi giỏ hàng: Đơn hàng hoặc người mua không hợp lệ");
+            return;
+        }
+
+        try {
+            // Tìm giỏ hàng của người dùng
+            User buyer = userRepository.findById(order.getBuyerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + order.getBuyerId()));
+            
+            Optional<Cart> cartOpt = cartRepository.findByUserIdWithCartItems(buyer.getId());
+            if (cartOpt.isEmpty()) {
+                log.info("Không tìm thấy giỏ hàng cho người dùng: {}", buyer.getId());
+                return;
+            }
+            
+            Cart cart = cartOpt.get();
+            List<CartItem> itemsToRemove = new ArrayList<>();
+            
+            // Tìm các sản phẩm trong giỏ hàng trùng với sản phẩm trong đơn hàng
+            if (order.getOrderDetails() != null && !order.getOrderDetails().isEmpty()) {
+                for (OrderDetail orderDetail : order.getOrderDetails()) {
+                    // Tìm các sản phẩm trong giỏ hàng có cùng productId và variantId (nếu có)
+                    cart.getCartItems().stream()
+                            .filter(cartItem -> {
+                                boolean productMatch = cartItem.getProduct().getId().equals(orderDetail.getProductId());
+                                // Nếu cả hai đều có variantId, kiểm tra khớp
+                                if (orderDetail.getVariantId() != null && cartItem.getVariant() != null) {
+                                    return productMatch && cartItem.getVariant().getId().equals(orderDetail.getVariantId());
+                                }
+                                // Nếu cả hai đều không có variantId, kiểm tra khớp chỉ dựa trên productId
+                                else if (orderDetail.getVariantId() == null && cartItem.getVariant() == null) {
+                                    return productMatch;
+                                }
+                                return false;
+                            })
+                            .forEach(itemsToRemove::add);
+                }
+            }
+            
+            // Xóa các sản phẩm khỏi giỏ hàng
+            if (!itemsToRemove.isEmpty()) {
+                log.info("Xóa {} sản phẩm khỏi giỏ hàng của người dùng {}", itemsToRemove.size(), buyer.getId());
+                for (CartItem item : itemsToRemove) {
+                    cart.removeItem(item);
+                }
+                
+                cartRepository.save(cart);
+                log.info("Đã xóa các sản phẩm đã thanh toán khỏi giỏ hàng");
+            } else {
+                log.info("Không tìm thấy sản phẩm cần xóa trong giỏ hàng");
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa sản phẩm đã thanh toán khỏi giỏ hàng: {}", e.getMessage(), e);
+        }
+    }
+
     @Override
     public Optional<PaymentDTO> findPaymentByTransactionRef(String transactionRef) {
         log.info("Tìm thanh toán theo mã giao dịch: {}", transactionRef);
         
-        // Thử tìm theo transactionId
-        Optional<Payment> paymentOpt = paymentRepository.findByTransactionId(transactionRef);
-        if (paymentOpt.isPresent()) {
-            log.info("Tìm thấy thanh toán theo transactionId");
-            return paymentOpt.map(PaymentDTO::fromEntity);
-        }
-        
-        // Thử tìm theo transactionReference (vnp_TransactionNo)
-        paymentOpt = paymentRepository.findByTransactionReference(transactionRef);
-        if (paymentOpt.isPresent()) {
-            log.info("Tìm thấy thanh toán theo transactionReference");
-            return paymentOpt.map(PaymentDTO::fromEntity);
-        }
-        
-        // Thử tìm theo paymentNote (có thể chứa vnp_TxnRef)
         try {
-            Optional<Payment> paymentByNote = findPaymentByNoteKeywordSafe("vnp_TxnRef=" + transactionRef);
-            if (paymentByNote.isPresent()) {
-                log.info("Tìm thấy thanh toán theo paymentNote");
-                return Optional.of(PaymentDTO.fromEntity(paymentByNote.get()));
+            // Sử dụng method tìm kiếm tổng hợp mới - thử dùng findByAllReferences thay vì findByAnyTransactionReference
+            Optional<Payment> paymentOpt = paymentRepository.findByAllReferences(transactionRef);
+            if (paymentOpt.isPresent()) {
+                log.info("Tìm thấy thanh toán theo mã giao dịch tổng hợp");
+                return Optional.of(PaymentDTO.fromEntity(paymentOpt.get()));
             }
+            
+            // Fallback: Thử từng phương thức riêng lẻ
+            // Thử tìm theo transactionId
+            paymentOpt = paymentRepository.findByTransactionId(transactionRef);
+            if (paymentOpt.isPresent()) {
+                log.info("Tìm thấy thanh toán theo transactionId");
+                return Optional.of(PaymentDTO.fromEntity(paymentOpt.get()));
+            }
+            
+            // Thử tìm theo transactionReference (vnp_TransactionNo)
+            paymentOpt = paymentRepository.findByTransactionReference(transactionRef);
+            if (paymentOpt.isPresent()) {
+                log.info("Tìm thấy thanh toán theo transactionReference");
+                return Optional.of(PaymentDTO.fromEntity(paymentOpt.get()));
+            }
+            
+            // Thử tìm theo vnp_TransactionNo trong paymentNote
+            paymentOpt = paymentRepository.findByVnpTransactionNo(transactionRef);
+            if (paymentOpt.isPresent()) {
+                log.info("Tìm thấy thanh toán theo vnp_TransactionNo trong paymentNote");
+                return Optional.of(PaymentDTO.fromEntity(paymentOpt.get()));
+            }
+            
+            // Thử tìm theo paymentNote (có thể chứa vnp_TxnRef)
+            try {
+                Optional<Payment> paymentByNote = findPaymentByNoteKeywordSafe("vnp_TxnRef=" + transactionRef);
+                if (paymentByNote.isPresent()) {
+                    log.info("Tìm thấy thanh toán theo paymentNote");
+                    return Optional.of(PaymentDTO.fromEntity(paymentByNote.get()));
+                }
+            } catch (Exception e) {
+                log.error("Lỗi khi tìm payment theo note: {}", e.getMessage());
+                // Nếu lỗi, thử tìm bằng cách khác
+                List<Payment> recentPayments = paymentRepository.findAllByPaymentNoteKeyword(transactionRef);
+                if (!recentPayments.isEmpty()) {
+                    log.info("Tìm thấy thanh toán theo paymentNote sau khi xử lý lỗi");
+                    return Optional.of(PaymentDTO.fromEntity(recentPayments.get(0)));
+                }
+            }
+            
+            log.info("Không tìm thấy thanh toán với mã giao dịch: {}", transactionRef);
+            return Optional.empty();
         } catch (Exception e) {
-            log.error("Lỗi khi tìm payment theo note: {}", e.getMessage());
-            // Nếu lỗi, thử tìm bằng cách khác
-            List<Payment> recentPayments = paymentRepository.findAllByPaymentNoteKeyword(transactionRef);
-            if (!recentPayments.isEmpty()) {
-                log.info("Tìm thấy thanh toán theo paymentNote sau khi xử lý lỗi");
-                return Optional.of(PaymentDTO.fromEntity(recentPayments.get(0)));
-            }
+            log.error("Lỗi khi tìm kiếm thanh toán: {}", e.getMessage());
+            return Optional.empty();
         }
-        
-        log.info("Không tìm thấy thanh toán với mã giao dịch: {}", transactionRef);
-        return Optional.empty();
     }
     
     @Override
     public Map<String, Object> queryVnpayTransaction(String transactionRef) {
-        log.info("Truy vấn kết quả giao dịch VNPAY: {}", transactionRef);
-        
+        log.info("Truy vấn giao dịch VNPAY với mã: {}", transactionRef);
         Map<String, Object> result = new HashMap<>();
         
         try {
-            // Tạo tham số truy vấn
             Map<String, String> queryParams = new HashMap<>();
             
             // Các tham số bắt buộc
@@ -913,6 +1116,74 @@ public class PaymentServiceImpl implements IPaymentService {
             result.put("message", "Giao dịch thành công");
             result.put("amount", 10000);
             result.put("transactionNo", "12345678");
+            
+            // Sau khi truy vấn thành công, tiến hành cập nhật trạng thái trong database
+            if ("00".equals(result.get("status"))) {
+                log.info("Giao dịch thành công theo VNPay, tiến hành cập nhật trạng thái thanh toán");
+                
+                // Tìm thanh toán trong database
+                Optional<PaymentDTO> paymentDtoOpt = findPaymentByTransactionRef(transactionRef);
+                
+                if (paymentDtoOpt.isPresent()) {
+                    PaymentDTO paymentDto = paymentDtoOpt.get();
+                    
+                    // Lấy entity từ database
+                    Optional<Payment> paymentOpt = paymentRepository.findById(paymentDto.getId());
+                    if (!paymentOpt.isPresent()) {
+                        log.warn("Không tìm thấy payment entity với ID: {}", paymentDto.getId());
+                        result.put("paymentUpdated", false);
+                        result.put("error", "Payment entity not found");
+                        return result;
+                    }
+                    
+                    Payment payment = paymentOpt.get();
+                    
+                    // Chỉ cập nhật nếu đang ở trạng thái PENDING
+                    if (payment.getStatus() == PaymentStatus.PENDING) {
+                        // Cập nhật trạng thái thanh toán
+                        payment.setStatus(PaymentStatus.COMPLETED);
+                        payment.setPaymentNote((payment.getPaymentNote() != null ? payment.getPaymentNote() : "") 
+                            + " | Auto-updated to COMPLETED by query at " + LocalDateTime.now());
+                        
+                        // Cập nhật transactionReference nếu có trong kết quả
+                        String transactionNo = result.get("transactionNo") != null ? 
+                            result.get("transactionNo").toString() : null;
+                        
+                        if (transactionNo != null && payment.getTransactionReference() == null) {
+                            payment.setTransactionReference(transactionNo);
+                        }
+                        
+                        paymentRepository.save(payment);
+                        log.info("Đã cập nhật trạng thái thanh toán từ PENDING sang COMPLETED cho giao dịch ID: {}", payment.getTransactionId());
+                        
+                        // Cập nhật trạng thái đơn hàng
+                        try {
+                            Order order = orderRepository.findById(payment.getOrderId())
+                                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng với ID: " + payment.getOrderId()));
+                            
+                            order.setStatus(OrderStatus.PROCESSING);
+                            orderRepository.save(order);
+                            log.info("Đã cập nhật trạng thái đơn hàng sang PROCESSING");
+                            
+                            result.put("orderUpdated", true);
+                        } catch (Exception e) {
+                            log.error("Lỗi khi cập nhật trạng thái đơn hàng: {}", e.getMessage());
+                            result.put("orderUpdated", false);
+                            result.put("orderUpdateError", e.getMessage());
+                        }
+                        
+                        result.put("paymentUpdated", true);
+                    } else {
+                        log.info("Thanh toán đã ở trạng thái {}, không cần cập nhật", payment.getStatus());
+                        result.put("paymentUpdated", false);
+                        result.put("currentStatus", payment.getStatus().toString());
+                    }
+                } else {
+                    log.warn("Không tìm thấy thanh toán với mã giao dịch: {}", transactionRef);
+                    result.put("paymentUpdated", false);
+                    result.put("error", "Payment not found");
+                }
+            }
             
             log.info("Kết quả truy vấn VNPAY: {}", result);
             return result;
@@ -1209,37 +1480,77 @@ public class PaymentServiceImpl implements IPaymentService {
     }
 
     /**
-     * Tìm payment dựa trên từ khóa trong paymentNote một cách an toàn
-     * Sử dụng SQL native query để tránh lỗi "Query did not return a unique result"
-     * 
-     * @param keyword Từ khóa cần tìm
-     * @return Optional<Payment> Bản ghi payment tìm thấy (mới nhất) hoặc Optional.empty()
+     * Phương thức an toàn để tìm kiếm payment theo từ khóa trong payment_note
+     * Trả về Optional.empty() nếu có lỗi thay vì ném exception
      */
     private Optional<Payment> findPaymentByNoteKeywordSafe(String keyword) {
-        log.debug("Tìm payment an toàn theo keyword: {}", keyword);
         try {
-            // Sử dụng SQL native query với LIMIT 1 để luôn trả về tối đa một kết quả
+            // Thử tìm trong payment note
             return paymentRepository.findLatestByPaymentNoteKeyword(keyword);
         } catch (Exception e) {
-            log.error("Lỗi khi tìm payment theo note với keyword [{}]: {}", keyword, e.getMessage());
-            
-            // Trong trường hợp lỗi, thử tìm thủ công
-            try {
-                // Lấy tất cả payment có chứa keyword
-                List<Payment> matchingPayments = paymentRepository.findAllByPaymentNoteKeyword(keyword);
-                
-                if (!matchingPayments.isEmpty()) {
-                    // Sắp xếp theo thời gian giảm dần và lấy bản ghi đầu tiên
-                    matchingPayments.sort((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()));
-                    log.debug("Tìm thấy {} payment khớp keyword, lấy bản ghi mới nhất", matchingPayments.size());
-                    return Optional.of(matchingPayments.get(0));
-                }
-            } catch (Exception ex) {
-                log.error("Không thể thực hiện tìm kiếm thủ công: {}", ex.getMessage());
-            }
-            
+            log.warn("Lỗi khi tìm kiếm payment theo keyword trong note: {}", e.getMessage());
             return Optional.empty();
         }
+    }
+
+    /**
+     * Cập nhật trạng thái thanh toán
+     * 
+     * @param paymentId ID thanh toán cần cập nhật
+     * @param newStatus Trạng thái mới
+     * @param note Ghi chú bổ sung
+     * @return true nếu cập nhật thành công, false nếu không
+     */
+    @Override
+    public boolean updatePaymentStatus(Long paymentId, PaymentStatus newStatus, String note) {
+        log.info("Cập nhật trạng thái thanh toán ID {}: {} - {}", paymentId, newStatus, note);
+        
+        Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+        if (!paymentOpt.isPresent()) {
+            log.warn("Không tìm thấy thanh toán với ID: {}", paymentId);
+            return false;
+        }
+        
+        Payment payment = paymentOpt.get();
+        
+        // Kiểm tra xem trạng thái mới có khác trạng thái hiện tại không
+        if (payment.getStatus() == newStatus) {
+            log.info("Thanh toán đã ở trạng thái {}, không cần cập nhật", newStatus);
+            return true;
+        }
+        
+        // Cập nhật trạng thái
+        payment.setStatus(newStatus);
+        payment.setUpdatedAt(LocalDateTime.now());
+        
+        // Cập nhật ghi chú
+        if (note != null && !note.isEmpty()) {
+            String updatedNote = payment.getPaymentNote();
+            if (updatedNote == null) {
+                updatedNote = "";
+            } else if (!updatedNote.isEmpty()) {
+                updatedNote += "; ";
+            }
+            updatedNote += note + " at " + LocalDateTime.now();
+            payment.setPaymentNote(updatedNote);
+        }
+        
+        // Lưu thanh toán
+        paymentRepository.save(payment);
+        
+        // Nếu trạng thái là COMPLETED, cập nhật trạng thái đơn hàng
+        if (newStatus == PaymentStatus.COMPLETED) {
+            try {
+                handlePaymentCallback(payment.getOrderId().intValue(), true);
+                log.info("Đã cập nhật trạng thái đơn hàng sau khi thanh toán thành công");
+            } catch (Exception e) {
+                log.error("Lỗi khi cập nhật trạng thái đơn hàng: {}", e.getMessage());
+                // Vẫn trả về true vì thanh toán đã được cập nhật thành công
+            }
+        }
+        
+        log.info("Đã cập nhật thanh toán ID {} sang trạng thái: {}", paymentId, newStatus);
+        return true;
     }
 }
 

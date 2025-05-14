@@ -158,9 +158,35 @@ public class PaymentController {
 
     @GetMapping("/check/{transactionId}")
     public ResponseEntity<ApiResponse<PaymentResponse>> checkPaymentStatus(@PathVariable String transactionId) {
-        log.info("Kiểm tra trạng thái thanh toán cho giao dịch: {}", transactionId);
-        PaymentResponse response = paymentService.checkPaymentStatus(transactionId);
-        return ResponseEntity.ok(new ApiResponse<>(response.isSuccess(), response.getMessage(), response));
+        log.info("Kiểm tra trạng thái thanh toán với transaction ID: {}", transactionId);
+        
+        try {
+            // Lưu transaction_id vào localStorage để sử dụng sau này
+            PaymentResponse response = paymentService.checkPaymentStatus(transactionId);
+            
+            // Kiểm tra và bổ sung vnp_TransactionNo nếu có trong data nhận về
+            Map<String, Object> additionalInfo = response.getAdditionalInfo();
+            if (additionalInfo != null && additionalInfo.containsKey("vnp_TransactionNo")) {
+                String vnpTransactionNo = (String) additionalInfo.get("vnp_TransactionNo");
+                log.info("Đã tìm thấy vnp_TransactionNo: {} từ giao dịch: {}", vnpTransactionNo, transactionId);
+                
+                // Bổ sung thông tin này vào response để frontend có thể sử dụng
+                additionalInfo.put("transaction_no", vnpTransactionNo);
+            }
+            
+            return ResponseEntity.ok(new ApiResponse<>(
+                response.isSuccess(),
+                response.getMessage(),
+                response
+            ));
+        } catch (Exception e) {
+            log.error("Lỗi khi kiểm tra trạng thái thanh toán: {}", e.getMessage(), e);
+            return ResponseEntity.ok(new ApiResponse<>(
+                false,
+                "Lỗi khi kiểm tra trạng thái thanh toán: " + e.getMessage(),
+                null
+            ));
+        }
     }
 
     /**
@@ -718,6 +744,28 @@ public class PaymentController {
             Optional<PaymentDTO> paymentOpt = paymentService.findPaymentByTransactionRef(transactionId);
             
             if (paymentOpt.isEmpty()) {
+                log.info("Không tìm thấy giao dịch theo transaction ref, thử kiểm tra trạng thái...");
+                
+                try {
+                    // Thử gọi checkPaymentStatus để tìm kiếm bằng các cách khác nhau
+                    PaymentResponse checkResponse = paymentService.checkPaymentStatus(transactionId);
+                    if (checkResponse.isSuccess()) {
+                        result.put("found", true);
+                        result.put("payment", checkResponse.getAdditionalInfo());
+                        result.put("updated", checkResponse.getAdditionalInfo().getOrDefault("wasUpdated", false));
+                        result.put("newStatus", checkResponse.getAdditionalInfo().get("status"));
+                        result.put("message", checkResponse.getMessage());
+                        
+                        return ResponseEntity.ok(new ApiResponse<>(
+                            true, 
+                            "Truy vấn kết quả giao dịch thành công", 
+                            result
+                        ));
+                    }
+                } catch (Exception e) {
+                    log.error("Lỗi khi thử kiểm tra trạng thái: {}", e.getMessage());
+                }
+                
                 result.put("found", false);
                 result.put("message", "Không tìm thấy giao dịch trong hệ thống");
                 return ResponseEntity.ok(new ApiResponse<>(false, "Không tìm thấy giao dịch", result));
@@ -727,12 +775,66 @@ public class PaymentController {
             result.put("found", true);
             result.put("payment", payment);
             
-            // 2. Truy vấn kết quả giao dịch từ VNPAY (chỉ áp dụng cho giao dịch VNPAY)
+            // 2. Kiểm tra và cập nhật trạng thái thanh toán nếu cần
+            if ("VNPAY".equalsIgnoreCase(payment.getPaymentMethod()) && 
+                PaymentStatus.PENDING.equals(payment.getStatus())) {
+                
+                log.info("Phát hiện giao dịch VNPAY đang ở trạng thái PENDING, tiến hành cập nhật...");
+                
+                // Gọi service để kiểm tra và cập nhật trạng thái
+                PaymentResponse checkResponse = paymentService.checkPaymentStatus(payment.getTransactionId());
+                result.put("updated", checkResponse.getAdditionalInfo().getOrDefault("wasUpdated", false));
+                result.put("newStatus", payment.getStatus());
+                
+                // Sau khi cập nhật, lấy lại thông tin payment mới nhất
+                paymentOpt = paymentService.findPaymentByTransactionRef(transactionId);
+                if (paymentOpt.isPresent()) {
+                    result.put("payment", paymentOpt.get());
+                }
+            }
+            
+            // 3. Truy vấn kết quả giao dịch từ VNPAY (chỉ áp dụng cho giao dịch VNPAY)
             if ("VNPAY".equalsIgnoreCase(payment.getPaymentMethod())) {
                 try {
                     // Gọi service để truy vấn VNPAY
                     Map<String, Object> vnpayResult = paymentService.queryVnpayTransaction(transactionId);
                     result.put("vnpayResult", vnpayResult);
+                    
+                    // Kiểm tra kết quả truy vấn và cập nhật trạng thái nếu cần
+                    if (vnpayResult.containsKey("vnp_TransactionStatus") && 
+                        "00".equals(vnpayResult.get("vnp_TransactionStatus")) && 
+                        payment.getStatus() != PaymentStatus.COMPLETED) {
+                        
+                        // Sử dụng service thay vì cập nhật đối tượng trực tiếp
+                        boolean updated = paymentService.updatePaymentStatus(payment.getId(), PaymentStatus.COMPLETED, "Cập nhật trạng thái từ VNPAY API: 00 (Thành công)");
+                        
+                        if (updated) {
+                            log.info("API đã cập nhật trạng thái thanh toán sang COMPLETED");
+                            result.put("updated", true);
+                            result.put("newStatus", "COMPLETED");
+                            
+                            // Refresh lại thông tin thanh toán mới nhất
+                            paymentOpt = paymentService.findPaymentByTransactionRef(transactionId);
+                            if (paymentOpt.isPresent()) {
+                                result.put("payment", paymentOpt.get());
+                            }
+                        } else {
+                            log.warn("Không thể cập nhật trạng thái thanh toán");
+                            result.put("updated", false);
+                            result.put("updateError", "Không thể cập nhật trạng thái thanh toán");
+                        }
+                    } else if (vnpayResult.containsKey("payment_updated") && (Boolean)vnpayResult.get("payment_updated")) {
+                        // Nếu đã được cập nhật trong quá trình truy vấn VNPAY
+                        log.info("Trạng thái thanh toán đã được cập nhật trong quá trình truy vấn VNPAY");
+                        result.put("updated", true);
+                        result.put("newStatus", "COMPLETED");
+                        
+                        // Refresh lại thông tin thanh toán mới nhất
+                        paymentOpt = paymentService.findPaymentByTransactionRef(transactionId);
+                        if (paymentOpt.isPresent()) {
+                            result.put("payment", paymentOpt.get());
+                        }
+                    }
                     
                     return ResponseEntity.ok(new ApiResponse<>(
                         true, 
@@ -975,43 +1077,49 @@ public class PaymentController {
         log.info("Cập nhật trạng thái thanh toán ID: {} thành {}", id, request.get("status"));
         
         try {
-            Optional<Payment> paymentOpt = paymentRepository.findById(id);
-            
-            if (paymentOpt.isEmpty()) {
-                return ResponseEntity.ok(new ApiResponse<>(false, "Không tìm thấy thanh toán với ID: " + id, null));
+            String newStatus = request.get("status");
+            if (newStatus == null || newStatus.isEmpty()) {
+                return ResponseEntity.ok(new ApiResponse<>(false, "Trạng thái không được để trống", null));
             }
             
-            Payment payment = paymentOpt.get();
-            
-            // Cập nhật trạng thái
-            String newStatus = request.get("status");
-            if (newStatus != null && !newStatus.isEmpty()) {
-                try {
-                    PaymentStatus status = PaymentStatus.valueOf(newStatus);
-                    payment.setStatus(status);
-                    payment.setUpdatedAt(LocalDateTime.now());
-                    
-                    paymentRepository.save(payment);
-                    
-                    PaymentDTO paymentDTO = PaymentDTO.builder()
-                        .id(payment.getId())
-                        .orderId(payment.getOrderId())
-                        .amount(payment.getAmount())
-                        .paymentMethod(payment.getPaymentMethod())
-                        .status(PaymentStatus.valueOf(payment.getStatus().toString()))
-                        .transactionId(payment.getTransactionId())
-                        .createdAt(payment.getCreatedAt())
-                        .updatedAt(payment.getUpdatedAt())
-                        .description(payment.getDescription())
-                        .paymentNote(payment.getPaymentNote())
-                        .build();
-                    
-                    return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật trạng thái thanh toán thành công", paymentDTO));
-                } catch (IllegalArgumentException e) {
-                    return ResponseEntity.ok(new ApiResponse<>(false, "Trạng thái không hợp lệ: " + newStatus, null));
+            try {
+                PaymentStatus status = PaymentStatus.valueOf(newStatus);
+                
+                // Sử dụng service để cập nhật trạng thái
+                String note = request.get("note");
+                if (note == null || note.isEmpty()) {
+                    note = "Cập nhật thủ công bởi admin";
                 }
-            } else {
-                return ResponseEntity.ok(new ApiResponse<>(false, "Trạng thái không được để trống", null));
+                
+                boolean updated = paymentService.updatePaymentStatus(id, status, note);
+                
+                if (!updated) {
+                    return ResponseEntity.ok(new ApiResponse<>(false, "Không tìm thấy thanh toán với ID: " + id, null));
+                }
+                
+                // Lấy thông tin thanh toán mới nhất sau khi cập nhật
+                Optional<Payment> paymentOpt = paymentRepository.findById(id);
+                if (paymentOpt.isEmpty()) {
+                    return ResponseEntity.ok(new ApiResponse<>(false, "Không tìm thấy thanh toán sau khi cập nhật", null));
+                }
+                
+                Payment payment = paymentOpt.get();
+                PaymentDTO paymentDTO = PaymentDTO.builder()
+                    .id(payment.getId())
+                    .orderId(payment.getOrderId())
+                    .amount(payment.getAmount())
+                    .paymentMethod(payment.getPaymentMethod())
+                    .status(payment.getStatus())
+                    .transactionId(payment.getTransactionId())
+                    .createdAt(payment.getCreatedAt())
+                    .updatedAt(payment.getUpdatedAt())
+                    .description(payment.getDescription())
+                    .paymentNote(payment.getPaymentNote())
+                    .build();
+                
+                return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật trạng thái thanh toán thành công", paymentDTO));
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.ok(new ApiResponse<>(false, "Trạng thái không hợp lệ: " + newStatus, null));
             }
         } catch (Exception e) {
             log.error("Lỗi khi cập nhật trạng thái thanh toán: {}", e.getMessage(), e);
