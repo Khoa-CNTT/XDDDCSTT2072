@@ -47,6 +47,9 @@ public class OrderDetailDTO {
     @PositiveOrZero(message = "Giảm giá không được âm")
     private BigDecimal discountAmount;
     
+    @PositiveOrZero(message = "Tổng tiền không được âm")
+    private BigDecimal totalPrice;
+    
     @NotNull(message = "Trạng thái không được để trống")
     private OrderStatus status;
     

@@ -1,5 +1,6 @@
 package com.agricultural.agricultural.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -70,6 +71,15 @@ public class User extends BaseEntity implements UserDetails {
     @JoinColumn(name = "role_id", referencedColumnName = "id")
     @JsonIgnoreProperties({"users", "hibernateLazyInitializer", "handler"})
     private Role role;
+
+    @Setter
+    @JsonIgnore
+    @Transient
+    private boolean keepExistingPassword;
+
+    public boolean isKeepExistingPassword() {
+        return keepExistingPassword;
+    }
 
     /**
      * Lấy danh sách quyền của người dùng

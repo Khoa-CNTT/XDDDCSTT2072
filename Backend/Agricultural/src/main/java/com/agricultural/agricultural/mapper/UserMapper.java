@@ -20,6 +20,7 @@ public interface UserMapper {
 
     @Mapping(target = "role", ignore = true) // Vì role không có sẵn trong DTO
     @Mapping(source = "userName", target = "userName")
+    @Mapping(target = "keepExistingPassword", source = "keepExistingPassword")
     User toEntity(UserDTO userDTO);
 
     // ✅ Định nghĩa phương thức ánh xạ role → roleName

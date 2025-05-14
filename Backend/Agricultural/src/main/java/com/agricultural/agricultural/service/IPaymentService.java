@@ -10,6 +10,7 @@ import com.agricultural.agricultural.dto.response.PaymentViewResponse;
 import com.agricultural.agricultural.dto.response.PaymentStatusResponse;
 import com.agricultural.agricultural.entity.Payment;
 
+import com.agricultural.agricultural.entity.enumeration.PaymentStatus;
 import org.springframework.data.domain.Page;
 import java.util.List;
 import java.util.Map;
@@ -157,4 +158,8 @@ public interface IPaymentService {
      * @return Kết quả mô phỏng
      */
     Map<String, Object> simulateVnpayIpn(Map<String, String> params);
-} 
+
+    // Cập nhật trạng thái thanh toán
+    boolean updatePaymentStatus(Long paymentId, PaymentStatus newStatus, String note);
+
+}
