@@ -2,6 +2,7 @@ package com.agricultural.agricultural.service;
 
 import com.agricultural.agricultural.dto.CartDTO;
 import com.agricultural.agricultural.dto.CartItemDTO;
+import com.agricultural.agricultural.dto.CartResponseDTO;
 
 import java.util.List;
 
@@ -71,4 +72,45 @@ public interface ICartService {
      * @return Thông tin giỏ hàng với phí vận chuyển
      */
     CartDTO calculateShippingFee(Integer addressId);
+    
+    /**
+     * Chọn/bỏ chọn các sản phẩm trong giỏ hàng
+     * 
+     * @param cartItemIds Danh sách ID sản phẩm trong giỏ hàng
+     * @param selected True nếu muốn chọn, False nếu muốn bỏ chọn
+     * @return Thông tin giỏ hàng sau khi cập nhật
+     */
+    CartDTO selectCartItems(List<Integer> cartItemIds, boolean selected);
+    
+    /**
+     * Chọn/bỏ chọn tất cả sản phẩm trong giỏ hàng
+     * 
+     * @param selected True nếu muốn chọn tất cả, False nếu muốn bỏ chọn tất cả
+     * @return Thông tin giỏ hàng sau khi cập nhật
+     */
+    CartDTO selectAllCartItems(boolean selected);
+    
+    /**
+     * Áp dụng mã giảm giá (voucher) vào giỏ hàng
+     * 
+     * @param voucherCode Mã giảm giá
+     * @return Thông tin giỏ hàng sau khi áp dụng voucher
+     */
+    CartDTO applyVoucher(String voucherCode);
+    
+    /**
+     * Hủy bỏ mã giảm giá (voucher) đã áp dụng
+     * 
+     * @param type Loại voucher (PLATFORM, SHOP, SHIPPING)
+     * @param shopId ID của shop (chỉ cần thiết khi type = SHOP)
+     * @return Thông tin giỏ hàng sau khi hủy voucher
+     */
+    CartDTO removeVoucher(String type, Integer shopId);
+    
+    /**
+     * Lấy thông tin giỏ hàng dạng phân nhóm shop giống Shopee
+     * 
+     * @return Thông tin giỏ hàng được phân nhóm theo shop
+     */
+    CartResponseDTO getCartResponse();
 } 

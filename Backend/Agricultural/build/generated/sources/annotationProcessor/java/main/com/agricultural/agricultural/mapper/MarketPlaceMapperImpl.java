@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-04-24T16:04:11+0700",
+    date = "2025-05-08T02:40:56+0700",
     comments = "version: 1.5.5.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-8.12.1.jar, environment: Java 23.0.2 (Oracle Corporation)"
 )
 @Component
@@ -31,6 +31,8 @@ public class MarketPlaceMapperImpl implements MarketPlaceMapper {
         marketPlaceDTO.userId( marketPlaceUserId( marketPlace ) );
         marketPlaceDTO.sellerName( marketPlaceUserUsername( marketPlace ) );
         marketPlaceDTO.categoryId( marketPlaceCategoryId( marketPlace ) );
+        marketPlaceDTO.imageUrl( marketPlace.getImageUrl() );
+        marketPlaceDTO.stockStatus( marketPlace.getStockStatus() );
         marketPlaceDTO.id( marketPlace.getId() );
         marketPlaceDTO.productName( marketPlace.getProductName() );
         marketPlaceDTO.description( marketPlace.getDescription() );
@@ -42,7 +44,6 @@ public class MarketPlaceMapperImpl implements MarketPlaceMapper {
         marketPlaceDTO.salePrice( marketPlace.getSalePrice() );
         marketPlaceDTO.saleStartDate( marketPlace.getSaleStartDate() );
         marketPlaceDTO.saleEndDate( marketPlace.getSaleEndDate() );
-        marketPlaceDTO.imageUrl( marketPlace.getImageUrl() );
         marketPlaceDTO.sku( marketPlace.getSku() );
         marketPlaceDTO.weight( marketPlace.getWeight() );
         marketPlaceDTO.dimensions( marketPlace.getDimensions() );
@@ -75,6 +76,7 @@ public class MarketPlaceMapperImpl implements MarketPlaceMapper {
         marketPlace.sku( marketPlaceDTO.getSku() );
         marketPlace.weight( marketPlaceDTO.getWeight() );
         marketPlace.dimensions( marketPlaceDTO.getDimensions() );
+        marketPlace.stockStatus( marketPlaceDTO.getStockStatus() );
         if ( marketPlaceDTO.getAverageRating() != null ) {
             marketPlace.averageRating( BigDecimal.valueOf( marketPlaceDTO.getAverageRating() ) );
         }
@@ -121,6 +123,9 @@ public class MarketPlaceMapperImpl implements MarketPlaceMapper {
         }
         if ( marketPlaceDTO.getDimensions() != null ) {
             marketPlace.setDimensions( marketPlaceDTO.getDimensions() );
+        }
+        if ( marketPlaceDTO.getStockStatus() != null ) {
+            marketPlace.setStockStatus( marketPlaceDTO.getStockStatus() );
         }
         if ( marketPlaceDTO.getAverageRating() != null ) {
             marketPlace.setAverageRating( BigDecimal.valueOf( marketPlaceDTO.getAverageRating() ) );

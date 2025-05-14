@@ -2,9 +2,16 @@ package com.agricultural.agricultural.service;
 
 import com.agricultural.agricultural.dto.request.PaymentRequest;
 import com.agricultural.agricultural.dto.request.RefundRequest;
-import com.agricultural.agricultural.dto.response.*;
-import org.springframework.data.domain.Page;
+import com.agricultural.agricultural.dto.response.PaymentDTO;
+import com.agricultural.agricultural.dto.response.PaymentResponse;
+import com.agricultural.agricultural.dto.response.PaymentUrlResponse;
+import com.agricultural.agricultural.dto.response.PaymentQRDTO;
+import com.agricultural.agricultural.dto.response.PaymentViewResponse;
+import com.agricultural.agricultural.dto.response.PaymentStatusResponse;
+import com.agricultural.agricultural.entity.Payment;
 
+import com.agricultural.agricultural.entity.enumeration.PaymentStatus;
+import org.springframework.data.domain.Page;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,4 +104,62 @@ public interface IPaymentService {
      * @return Thông tin mã QR thanh toán
      */
     PaymentQRDTO createPaymentQRCode(PaymentRequest paymentRequest);
-} 
+
+    void handlePaymentCallback(Integer orderId, boolean paymentSuccessful);
+
+    /**
+     * Tìm thanh toán theo mã giao dịch
+     * 
+     * @param transactionRef Mã giao dịch
+     * @return Optional của đối tượng thanh toán
+     */
+    Optional<PaymentDTO> findPaymentByTransactionRef(String transactionRef);
+    
+    /**
+     * Truy vấn kết quả giao dịch từ VNPAY
+     * 
+     * @param transactionRef Mã giao dịch VNPAY
+     * @return Kết quả truy vấn
+     */
+    Map<String, Object> queryVnpayTransaction(String transactionRef);
+    
+    /**
+     * Lấy ID người dùng đang đăng nhập hiện tại
+     * 
+     * @return ID người dùng hoặc null nếu không có người dùng đăng nhập
+     */
+    Integer getCurrentUserId();
+    
+    /**
+     * Tạo bản ghi thanh toán test
+     * 
+     * @param orderId ID đơn hàng
+     * @param amount Số tiền
+     * @param status Trạng thái
+     * @return Thông tin thanh toán đã tạo
+     */
+    Map<String, Object> createTestPayment(Integer orderId, Long amount, String status);
+    
+    /**
+     * Tạo URL thanh toán VNPAY test
+     * 
+     * @param orderId ID đơn hàng
+     * @param amount Số tiền
+     * @param description Mô tả
+     * @param ipAddress Địa chỉ IP
+     * @return Thông tin URL thanh toán và dữ liệu liên quan
+     */
+    Map<String, Object> createTestVnpayUrl(Long orderId, Long amount, String description, String ipAddress);
+    
+    /**
+     * Mô phỏng IPN từ VNPAY để test
+     * 
+     * @param params Tham số IPN
+     * @return Kết quả mô phỏng
+     */
+    Map<String, Object> simulateVnpayIpn(Map<String, String> params);
+
+    // Cập nhật trạng thái thanh toán
+    boolean updatePaymentStatus(Long paymentId, PaymentStatus newStatus, String note);
+
+}

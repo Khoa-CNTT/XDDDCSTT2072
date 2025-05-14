@@ -1,11 +1,11 @@
 package com.agricultural.agricultural.service.impl;
 
-import com.agricultural.agricultural.components.JwtTokenUtil;
-import com.agricultural.agricultural.dto.UserDTO;
-import com.agricultural.agricultural.dto.response.LoginResponse;
 import com.agricultural.agricultural.entity.RefreshToken;
 import com.agricultural.agricultural.entity.Role;
 import com.agricultural.agricultural.entity.User;
+import com.agricultural.agricultural.components.JwtTokenUtil;
+import com.agricultural.agricultural.dto.response.LoginResponse;
+import com.agricultural.agricultural.dto.UserDTO;
 import com.agricultural.agricultural.exception.BusinessException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.UserMapper;
@@ -26,7 +26,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -68,8 +67,16 @@ public class UserService implements IUserService {
 
     @Override
     public Optional<UserDTO> findById(int id) {
-        return userRepository.findById(id)
-                .map(userMapper::toDTO); // ✅ Dùng UserMapper để chuyển đổi
+        System.out.println("Tìm người dùng với ID: " + id);
+        Optional<User> userOptional = userRepository.findById(id);
+        
+        if (userOptional.isPresent()) {
+            System.out.println("Tìm thấy người dùng: " + userOptional.get().getUsername());
+            return userOptional.map(userMapper::toDTO);
+        } else {
+            System.out.println("Không tìm thấy người dùng với ID: " + id);
+            return Optional.empty();
+        }
     }
 
 
@@ -202,9 +209,13 @@ public class UserService implements IUserService {
                     existingUser.setEmail(newUser.getEmail());
                     existingUser.setPhone(newUser.getPhone());
 
-                    if (newUser.getPassword() != null && !newUser.getPassword().isEmpty()) {
+                    // Kiểm tra để xử lý cập nhật mật khẩu
+                    if (newUser.getPassword() != null && !newUser.getPassword().isEmpty() && 
+                        !newUser.getPassword().equals("********")) {
+                        // Nếu có mật khẩu mới thì mã hóa và cập nhật
                         existingUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
                     }
+                    // Trường hợp keepExistingPassword = true hoặc mật khẩu là dấu sao thì giữ nguyên mật khẩu hiện tại
 
                     if (newUser.getRole() != null) {
                         existingUser.setRole(newUser.getRole());
@@ -269,5 +280,20 @@ public class UserService implements IUserService {
                 .stream()
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void changePassword(int userId, String currentPassword, String newPassword) throws Exception {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Người dùng không tồn tại với id: " + userId));
+        
+        // Kiểm tra mật khẩu hiện tại
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadCredentialsException("Mật khẩu hiện tại không đúng");
+        }
+        
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

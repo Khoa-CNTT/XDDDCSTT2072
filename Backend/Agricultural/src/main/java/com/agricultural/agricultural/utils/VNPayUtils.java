@@ -1,19 +1,19 @@
 package com.agricultural.agricultural.utils;
 
 import com.agricultural.agricultural.config.VNPAYConfig;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import jakarta.servlet.http.HttpServletRequest;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.Normalizer;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.text.Normalizer;
 
 @Slf4j
 @Component
@@ -296,10 +296,11 @@ public class VNPayUtils {
             log.info("HMAC-SHA512 - Data: [{}]", data);
             
             final Mac hmac = Mac.getInstance("HmacSHA512");
-            final SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), "HmacSHA512");
+            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+            final SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "HmacSHA512");
             hmac.init(secretKey);
             
-            byte[] hmacData = hmac.doFinal(data.getBytes());
+            byte[] hmacData = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
             
             // Chuyển byte array thành chuỗi hex
             StringBuilder sb = new StringBuilder();
@@ -405,5 +406,9 @@ public class VNPayUtils {
         String temp = Normalizer.normalize(s, Normalizer.Form.NFD);
         Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
         return pattern.matcher(temp).replaceAll("").replaceAll("Đ", "D").replaceAll("đ", "d");
+    }
+
+    public VNPAYConfig getVnpayConfig() {
+        return this.vnpayConfig;
     }
 } 

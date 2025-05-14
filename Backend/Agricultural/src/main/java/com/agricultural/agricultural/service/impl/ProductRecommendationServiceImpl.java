@@ -1,11 +1,10 @@
 package com.agricultural.agricultural.service.impl;
-
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import com.agricultural.agricultural.entity.MarketPlace;
 import com.agricultural.agricultural.entity.ProductRelationship;
-import com.agricultural.agricultural.entity.ProductRelationship.RelationshipType;
 import com.agricultural.agricultural.entity.UserProductInteraction;
 import com.agricultural.agricultural.entity.UserProductInteraction.InteractionType;
+import com.agricultural.agricultural.entity.ProductRelationship.RelationshipType;
 import com.agricultural.agricultural.mapper.MarketPlaceMapper;
 import com.agricultural.agricultural.repository.IMarketPlaceRepository;
 import com.agricultural.agricultural.repository.IProductRelationshipRepository;
@@ -14,6 +13,8 @@ import com.agricultural.agricultural.service.IProductRecommendationService;
 import com.agricultural.agricultural.service.recommendation.CollaborativeFilter;
 import com.agricultural.agricultural.service.recommendation.ContentBasedFilter;
 import com.agricultural.agricultural.service.recommendation.SeasonalAnalyzer;
+import com.agricultural.agricultural.dto.NotificationDTO;
+import com.agricultural.agricultural.service.INotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +40,7 @@ public class ProductRecommendationServiceImpl implements IProductRecommendationS
     private final CollaborativeFilter collaborativeFilter;
     private final ContentBasedFilter contentBasedFilter;
     private final SeasonalAnalyzer seasonalAnalyzer;
+    private final INotificationService notificationService;
     
     // Điểm số tương tác
     private static final Map<InteractionType, Integer> INTERACTION_SCORES = Map.of(
@@ -84,6 +86,17 @@ public class ProductRecommendationServiceImpl implements IProductRecommendationS
         }
         
         recommendedProductIds.removeAll(interactedProductIds);
+        
+        if (!recommendedProductIds.isEmpty()) {
+            NotificationDTO notification = NotificationDTO.builder()
+                .userId(userId)
+                .title("Có sản phẩm mới phù hợp với bạn!")
+                .message("Hệ thống vừa tìm thấy sản phẩm mới phù hợp với bạn. Hãy xem ngay mục gợi ý!")
+                .type("PRODUCT_RECOMMENDATION")
+                .redirectUrl("/recommendations")
+                .build();
+            notificationService.sendRealTimeNotification(notification);
+        }
         
         if (recommendedProductIds.isEmpty()) {
             log.info("Không tìm được gợi ý cho người dùng ID: {}. Trả về sản phẩm phổ biến", userId);
@@ -443,11 +456,28 @@ public class ProductRecommendationServiceImpl implements IProductRecommendationS
         log.info("Lấy danh sách nông sản theo mùa vụ hiện tại");
         
         List<MarketPlace> allProducts = marketPlaceRepository.findAll();
+        log.info("Tổng số sản phẩm trong cơ sở dữ liệu: {}", allProducts.size());
+        
+        // Nếu không có sản phẩm nào trong database, trả về page rỗng
+        if (allProducts.isEmpty()) {
+            log.warn("Không có sản phẩm nào trong cơ sở dữ liệu");
+            return Page.empty(pageable);
+        }
+        
         LocalDateTime now = LocalDateTime.now();
         
+        // Lọc sản phẩm theo mùa vụ
         List<MarketPlace> seasonalProducts = allProducts.stream()
             .filter(product -> seasonalAnalyzer.isInSeason(product, now))
             .collect(Collectors.toList());
+        
+        log.info("Số sản phẩm phù hợp với mùa vụ hiện tại: {}", seasonalProducts.size());
+        
+        // Nếu không tìm thấy sản phẩm theo mùa vụ, trả về tất cả sản phẩm
+        if (seasonalProducts.isEmpty()) {
+            log.warn("Không tìm thấy sản phẩm theo mùa vụ, trả về tất cả sản phẩm");
+            seasonalProducts = allProducts;
+        }
             
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), seasonalProducts.size());

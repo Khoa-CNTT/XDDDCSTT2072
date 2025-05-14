@@ -1,11 +1,11 @@
 package com.agricultural.agricultural.entity;
 
 import com.agricultural.agricultural.enums.FlashSaleStatus;
-import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -56,6 +56,12 @@ public class FlashSale extends BaseEntity {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "is_notified")
+    private Boolean isNotified = false;
+    
+    @Column(name = "is_start_notified")
+    private Boolean isStartNotified = false;
 
     // Phương thức kiểm tra flash sale có đang hoạt động không
     @Transient

@@ -1,7 +1,7 @@
 package com.agricultural.agricultural.service;
 
-import com.agricultural.agricultural.dto.request.FlashSaleItemRequest;
 import com.agricultural.agricultural.dto.request.FlashSaleRequest;
+import com.agricultural.agricultural.dto.request.FlashSaleItemRequest;
 import com.agricultural.agricultural.dto.response.FlashSaleResponse;
 import com.agricultural.agricultural.enums.FlashSaleStatus;
 

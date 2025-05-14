@@ -82,4 +82,29 @@ public class AuthController {
                         .build()
         );
     }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordDTO changePasswordDTO) {
+        try {
+            userService.changePassword(
+                changePasswordDTO.getUserId(),
+                changePasswordDTO.getCurrentPassword(),
+                changePasswordDTO.getNewPassword()
+            );
+            
+            return ResponseEntity.ok(
+                ResponseObject.builder()
+                    .status("OK")
+                    .message("Đổi mật khẩu thành công!")
+                    .data(null)
+                    .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.builder()
+                    .error(true)
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
 }

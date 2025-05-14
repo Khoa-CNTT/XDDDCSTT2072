@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
 @Builder
@@ -28,4 +29,18 @@ public class PaymentRequest {
     private String buyerEmail;
     private String buyerPhone;
     private String clientIp; // Địa chỉ IP của người dùng, cần thiết cho VNPAY
+    
+    // Danh sách các mặt hàng trong đơn hàng (cho thanh toán nhiều mặt hàng)
+    private List<Item> items;
+    
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Item {
+        private String name;      // Tên sản phẩm
+        private int quantity;     // Số lượng
+        private long price;       // Giá sản phẩm (đơn vị VND)
+        private String productId; // ID của sản phẩm
+    }
 } 

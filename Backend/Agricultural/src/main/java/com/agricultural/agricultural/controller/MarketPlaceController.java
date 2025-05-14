@@ -2,32 +2,70 @@ package com.agricultural.agricultural.controller;
 
 import com.agricultural.agricultural.dto.MarketPlaceDTO;
 import com.agricultural.agricultural.exception.BadRequestException;
-import com.agricultural.agricultural.service.impl.MarketPlaceServiceImpl;
+import com.agricultural.agricultural.exception.ResourceNotFoundException;
+import com.agricultural.agricultural.service.IMarketPlaceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("${api.prefix}/marketplace")
 @RequiredArgsConstructor
 public class MarketPlaceController {
-    private final MarketPlaceServiceImpl marketPlaceService;
+    private final IMarketPlaceService marketPlaceService;
 
-    @PostMapping("/create")
-    public ResponseEntity<MarketPlaceDTO> createProduct(@RequestBody MarketPlaceDTO productDTO) {
-        MarketPlaceDTO createdProduct = marketPlaceService.createProduct(productDTO);
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MarketPlaceDTO> createProduct(
+            @ModelAttribute MarketPlaceDTO productDTO) throws IOException {
+        
+        System.out.println("\n===== REQUEST DATA CHO CREATE PRODUCT =====");
+        System.out.println("Product Name: " + productDTO.getProductName());
+        System.out.println("Description: " + productDTO.getDescription());
+        System.out.println("Price: " + productDTO.getPrice());
+        System.out.println("Quantity: " + productDTO.getQuantity());
+        System.out.println("Category ID: " + productDTO.getCategoryId());
+        System.out.println("Image File: " + (productDTO.getImageFile() != null ? 
+                           productDTO.getImageFile().getOriginalFilename() : "null"));
+        
+        // Validate dữ liệu đầu vào
+        if (productDTO.getProductName() == null || productDTO.getProductName().trim().isEmpty()) {
+            throw new BadRequestException("Tên sản phẩm không được để trống");
+        }
+        
+        if (productDTO.getPrice() == null || productDTO.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Giá sản phẩm phải lớn hơn 0");
+        }
+        
+        // Gọi service để xử lý tạo sản phẩm với ảnh
+        MarketPlaceDTO createdProduct = marketPlaceService.createProductWithImage(
+                productDTO.getProductName(), 
+                productDTO.getDescription(), 
+                productDTO.getShortDescription(), 
+                productDTO.getQuantity(), 
+                productDTO.getPrice(), 
+                productDTO.getSalePrice(),
+                productDTO.getSaleStartDate(), 
+                productDTO.getSaleEndDate(), 
+                productDTO.getCategoryId(), 
+                productDTO.getSku(), 
+                productDTO.getWeight(), 
+                productDTO.getDimensions(), 
+                productDTO.getImageFile());
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
-    }
-
-    @PutMapping("/update/{id}")
-    public ResponseEntity<MarketPlaceDTO> updateProduct(@PathVariable Integer id, @RequestBody MarketPlaceDTO productDTO) throws BadRequestException {
-        MarketPlaceDTO updatedProduct = marketPlaceService.updateProduct(id, productDTO);
-        return ResponseEntity.ok(updatedProduct);
     }
 
     @DeleteMapping("/delete/{id}")
@@ -116,11 +154,174 @@ public class MarketPlaceController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "false") boolean onSaleOnly,
+            @RequestParam(required = false, defaultValue = "newest") String sortBy,
             Pageable pageable) {
         
+        System.out.println("\n===== ADVANCED SEARCH REQUEST =====");
+        System.out.println("categoryId: " + categoryId);
+        System.out.println("keyword: " + keyword);
+        System.out.println("onSaleOnly: " + onSaleOnly);
+        System.out.println("sortBy: " + sortBy);
+        
         Page<MarketPlaceDTO> products = marketPlaceService.advancedSearch(
-                categoryId, minPrice, maxPrice, keyword, onSaleOnly, pageable);
+                categoryId, minPrice, maxPrice, keyword, onSaleOnly, sortBy, pageable);
         
         return ResponseEntity.ok(products);
+    }
+
+    @PostMapping("/product/{id}")
+    public ResponseEntity<?> updateProductWithImage(
+            @PathVariable Integer id,
+            @ModelAttribute MarketPlaceDTO productDTO) {
+        try {
+            // Log dữ liệu nhận được
+            System.out.println("\n===== REQUEST DATA CHO UPDATE PRODUCT WITH IMAGE =====");
+            System.out.println("ID: " + id);
+            System.out.println("Product Name: " + productDTO.getProductName());
+            System.out.println("Quantity: " + productDTO.getQuantity());
+            System.out.println("salePrice raw: " + productDTO.getSalePrice());
+            System.out.println("saleStartDate raw: " + productDTO.getSaleStartDate());
+            System.out.println("saleEndDate raw: " + productDTO.getSaleEndDate());
+            System.out.println("Image File: " + (productDTO.getImageFile() != null ? 
+                                productDTO.getImageFile().getOriginalFilename() : "null"));
+            
+            // Gọi service, tất cả xử lý dữ liệu nằm trong service
+            MarketPlaceDTO updatedProduct = marketPlaceService.updateProduct(id, productDTO);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (BadRequestException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi cập nhật sản phẩm với ảnh: " + ex.getMessage());
+        }
+    }
+
+    @PutMapping("/product/{id}")
+    public ResponseEntity<?> updateProduct(@PathVariable Integer id, @RequestBody MarketPlaceDTO productDTO) {
+        try {
+            // Log dữ liệu nhận được
+            System.out.println("\n===== REQUEST DATA CHO UPDATE PRODUCT =====");
+            System.out.println("ID: " + id);
+            System.out.println("Product Name: " + productDTO.getProductName());
+            System.out.println("salePrice: " + productDTO.getSalePrice());
+            System.out.println("saleStartDate: " + productDTO.getSaleStartDate());
+            System.out.println("saleEndDate: " + productDTO.getSaleEndDate());
+            
+            // Gọi service, tất cả xử lý dữ liệu nằm trong service
+            MarketPlaceDTO updatedProduct = marketPlaceService.updateProduct(id, productDTO);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (ResourceNotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        } catch (BadRequestException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi cập nhật sản phẩm: " + ex.getMessage());
+        }
+    }
+
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MarketPlaceDTO> updateProductWithImage(
+            @PathVariable Integer id,
+            @RequestParam(value = "productName", required = false) String productName,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "shortDescription", required = false) String shortDescription,
+            @RequestParam(value = "quantity", required = false) Integer quantity,
+            @RequestParam(value = "price", required = false) BigDecimal price,
+            @RequestParam(value = "salePrice", required = false) BigDecimal salePrice,
+            @RequestParam(value = "saleStartDate", required = false) String saleStartDateStr,
+            @RequestParam(value = "saleEndDate", required = false) String saleEndDateStr,
+            @RequestParam(value = "categoryId", required = false) Integer categoryId,
+            @RequestParam(value = "sku", required = false) String sku,
+            @RequestParam(value = "weight", required = false) Double weight,
+            @RequestParam(value = "dimensions", required = false) String dimensions,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "timestamp", required = false) String timestamp) throws IOException {
+        
+        log.info("Nhận yêu cầu cập nhật sản phẩm ID={} với timestamp={}", id, timestamp);
+        
+        // Chuyển đổi các chuỗi ngày tháng sang LocalDateTime
+        LocalDateTime saleStartDate = null;
+        LocalDateTime saleEndDate = null;
+        
+        if (saleStartDateStr != null && !saleStartDateStr.equalsIgnoreCase("null")) {
+            try {
+                saleStartDate = LocalDateTime.parse(saleStartDateStr, DateTimeFormatter.ISO_DATE_TIME);
+                log.info("Đã chuyển đổi saleStartDate: {}", saleStartDate);
+            } catch (Exception e) {
+                log.error("Lỗi khi chuyển đổi saleStartDate: {}", e.getMessage());
+                throw new BadRequestException("Định dạng ngày bắt đầu giảm giá không hợp lệ");
+            }
+        }
+        
+        if (saleEndDateStr != null && !saleEndDateStr.equalsIgnoreCase("null")) {
+            try {
+                saleEndDate = LocalDateTime.parse(saleEndDateStr, DateTimeFormatter.ISO_DATE_TIME);
+                log.info("Đã chuyển đổi saleEndDate: {}", saleEndDate);
+            } catch (Exception e) {
+                log.error("Lỗi khi chuyển đổi saleEndDate: {}", e.getMessage());
+                throw new BadRequestException("Định dạng ngày kết thúc giảm giá không hợp lệ");
+            }
+        }
+        
+        // Xử lý trường salePrice đặc biệt
+        if (salePrice != null && salePrice.toString().equalsIgnoreCase("null")) {
+            salePrice = null;
+            log.info("Đã đặt salePrice = null từ chuỗi 'null'");
+        }
+        
+        // Gọi service để xử lý
+        MarketPlaceDTO updatedProduct = marketPlaceService.updateProduct(
+                id, productName, description, shortDescription, quantity, price, 
+                salePrice, saleStartDate, saleEndDate, categoryId, sku, weight, dimensions, imageFile);
+                
+        log.info("Cập nhật sản phẩm thành công: id={}, tên={}", updatedProduct.getId(), updatedProduct.getProductName());
+        
+        return ResponseEntity.ok(updatedProduct);
+    }
+
+    @PostMapping("/admin/refresh-stock-status")
+    public ResponseEntity<?> refreshStockStatus() {
+        try {
+            System.out.println("\n===== YÊU CẦU LÀM MỚI TRẠNG THÁI HÀNG VÀ THÔNG TIN GIẢM GIÁ =====");
+            List<MarketPlaceDTO> updatedProducts = marketPlaceService.refreshAllStockStatus();
+            
+            return ResponseEntity.ok(
+                Map.of(
+                    "success", true,
+                    "message", "Đã làm mới trạng thái cho " + updatedProducts.size() + " sản phẩm",
+                    "products", updatedProducts
+                )
+            );
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "success", false,
+                    "message", "Lỗi khi làm mới trạng thái: " + ex.getMessage()
+                ));
+        }
+    }
+
+    @PostMapping("/admin/refresh-products")
+    public ResponseEntity<?> refreshProductsData() {
+        try {
+            System.out.println("===== NHẬN YÊU CẦU LÀM MỚI DỮ LIỆU SẢN PHẨM =====");
+            List<MarketPlaceDTO> refreshedProducts = marketPlaceService.refreshAllProducts();
+            return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "Đã làm mới dữ liệu của " + refreshedProducts.size() + " sản phẩm",
+                "products", refreshedProducts
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "status", "error",
+                    "message", "Lỗi khi làm mới dữ liệu sản phẩm: " + e.getMessage()
+                ));
+        }
     }
 }

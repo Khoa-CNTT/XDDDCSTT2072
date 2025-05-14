@@ -27,6 +27,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
 	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
@@ -63,9 +64,15 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'  // Thêm vào phần dependencies
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+	// Support for Java 8 time
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
 	// Springdoc OpenAPI
 	implementation 'com.squareup.okhttp3:okhttp:4.10.0'
 	implementation 'com.google.code.gson:gson:2.10.1'
+
+	// JSoup for HTML parsing
+	implementation 'org.jsoup:jsoup:1.16.2'
 }
 
 tasks.named('test') {

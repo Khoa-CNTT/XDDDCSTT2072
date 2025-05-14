@@ -39,6 +39,12 @@ public class OrderDetail {
     @Column(name = "variant_name")
     private String variantName;
     
+    @Column(name = "shop_id")
+    private Integer shopId;
+    
+    @Column(name = "shop_name")
+    private String shopName;
+    
     @Column(name = "original_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal originalPrice;
 
@@ -49,6 +55,13 @@ public class OrderDetail {
     @Builder.Default
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
+    @Column(name = "voucher_code")
+    private String voucherCode;
+    
+    @Column(name = "voucher_discount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal voucherDiscount = BigDecimal.ZERO;
+    
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
     
@@ -96,7 +109,15 @@ public class OrderDetail {
             this.discountAmount = BigDecimal.ZERO;
         }
         
-        BigDecimal finalPrice = this.price.subtract(this.discountAmount);
+        if (this.voucherDiscount == null) {
+            this.voucherDiscount = BigDecimal.ZERO;
+        }
+        
+        BigDecimal finalPrice = this.price.subtract(this.discountAmount).subtract(this.voucherDiscount);
+        if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
+            finalPrice = BigDecimal.ZERO;
+        }
+        
         this.totalPrice = finalPrice.multiply(new BigDecimal(this.quantity));
     }
 } 

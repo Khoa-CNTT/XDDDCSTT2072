@@ -75,6 +75,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     User userDetails = (User) userDetailsService.loadUserByUsername(email);
                     
                     if (jwtTokenUtil.validateToken(token, userDetails.getEmail())) {
+                        // DEBUG ROLE
+                        System.out.println("===== JWT FILTER DEBUG =====");
+                        System.out.println("EMAIL: " + email);
+                        System.out.println("USER ROLE: " + userDetails.getRole().getRoleName());
+                        System.out.println("USER AUTHORITIES: " + userDetails.getAuthorities());
+                        
                         // Chỉ sử dụng các thuộc tính eager của User, không truy cập các thuộc tính lazy
                         UsernamePasswordAuthenticationToken authenticationToken =
                                 new UsernamePasswordAuthenticationToken(
@@ -151,6 +157,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 // Chỉ bypass các API công khai liên quan đến thời tiết
                 Pair.of(String.format("%s/weather/locations", apiPrefix), "GET"),
                 Pair.of(String.format("%s/weather/locations/[0-9]+$", apiPrefix), "GET"),
+                Pair.of(String.format("%s/weather/current", apiPrefix), "GET"),
+                Pair.of(String.format("%s/weather/forecast", apiPrefix), "GET"),
                 
                 // Tạm thời bypass để debug
                 Pair.of(String.format("%s/weather-subscriptions", apiPrefix), "GET"),

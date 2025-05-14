@@ -1,8 +1,8 @@
 package com.agricultural.agricultural.service;
 
+import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.dto.UserDTO;
 import com.agricultural.agricultural.dto.response.LoginResponse;
-import com.agricultural.agricultural.entity.User;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -38,6 +38,7 @@ public interface IUserService {
     void deleteUser(int id);
 
     List<UserDTO> getAllUsers();
-
+    
+    void changePassword(int userId, String currentPassword, String newPassword) throws Exception;
 
 }

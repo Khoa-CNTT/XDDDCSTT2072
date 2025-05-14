@@ -18,7 +18,7 @@ public class OrderTrackingController {
     private final IOrderTrackingService orderTrackingService;
     
     @GetMapping("/order/{orderId}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<List<OrderTrackingDTO>> getTrackingHistoryByOrderId(@PathVariable Integer orderId) {
         try {
             return ResponseEntity.ok(orderTrackingService.getTrackingHistoryByOrderId(orderId));
@@ -28,7 +28,7 @@ public class OrderTrackingController {
     }
     
     @GetMapping("/order/{orderId}/latest")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<OrderTrackingDTO> getLatestTrackingByOrderId(@PathVariable Integer orderId) {
         try {
             OrderTrackingDTO latestTracking = orderTrackingService.getLatestTrackingByOrderId(orderId);
@@ -44,7 +44,7 @@ public class OrderTrackingController {
     }
     
     @PostMapping
-    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('Seller', 'Admin')")
     public ResponseEntity<OrderTrackingDTO> addTrackingStatus(@RequestBody OrderTrackingDTO trackingDTO) {
         try {
             return ResponseEntity.ok(orderTrackingService.addTrackingStatus(trackingDTO));

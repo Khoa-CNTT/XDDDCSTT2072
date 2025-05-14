@@ -1,48 +1,52 @@
 package com.agricultural.agricultural.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product_images")
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class ProductImage {
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
+
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private MarketPlace product;
-    
+
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
-    
-    @Column(name = "is_primary")
-    @Builder.Default
-    private Boolean isPrimary = false;
-    
-    @Column(name = "display_order")
-    @Builder.Default
-    private Integer displayOrder = 0;
-    
+
     @Column(name = "alt_text")
     private String altText;
-    
+
     @Column(name = "title")
     private String title;
-    
+
+    @Column(name = "is_primary")
+    private Boolean isPrimary;
+
+    @Column(name = "display_order")
+    private Integer displayOrder;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
     
     // Phương thức kiểm tra xem có phải ảnh chính không
     public boolean isPrimary() {
