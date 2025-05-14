@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   getProductById,
@@ -9,6 +9,10 @@ import {
 } from "@/services/productService";
 import { createCart } from "@/services/cartService";
 import { getCouponsForProduct, validateCoupon } from "@/services/couponService";
+import {
+  getProductFeedbackStats,
+  checkCanReviewProduct,
+} from "@/services/feedbackService";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import useAuth from "@/hooks/useAuth";
 import Loading from "@/components/shared/Loading";
@@ -24,7 +28,6 @@ import {
   FaTruck,
   FaShieldAlt,
   FaUndo,
-  FaCheckCircle,
   FaExclamationTriangle,
   FaTag,
   FaArrowRight,
@@ -37,6 +40,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Header from "@/layout/Header";
 import Footer from "@/layout/Footer";
 import CouponList from "@/components/product/CouponList";
+import ReviewsSection from "@/components/product/ReviewsSection";
 
 // Ảnh mặc định khi ảnh sản phẩm không tải được
 const DEFAULT_PRODUCT_IMAGE = "https://placehold.co/600x600?text=No+Image";
@@ -65,6 +69,47 @@ const ProductDetail = () => {
   });
   const [flashSalePrice, setFlashSalePrice] = useState(null);
   const [flashSalePercentage, setFlashSalePercentage] = useState(0);
+
+  const location = useLocation();
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  // Kiểm tra người dùng có thể đánh giá không
+  const { data: canReviewData } = useQuery({
+    queryKey: ["canReviewProduct", id],
+    queryFn: () => checkCanReviewProduct(axiosPrivate, id),
+    enabled: !!id && !!auth?.accessToken,
+    retry: 1,
+    onError: (error) => {
+      console.error("Lỗi khi kiểm tra quyền đánh giá:", error);
+    },
+  });
+
+  // Lấy thông tin thống kê đánh giá
+  const { data: statsContent } = useQuery({
+    queryKey: ["reviewStats", id],
+    queryFn: () => getProductFeedbackStats(axiosPrivate, id),
+    enabled: !!id,
+    retry: 1,
+    onError: (error) => {
+      console.error("Lỗi khi tải thống kê đánh giá:", error);
+    },
+  });
+
+  // Kiểm tra nếu có yêu cầu hiển thị form đánh giá từ location state
+  useEffect(() => {
+    if (location.state?.showReviewForm) {
+      // Chỉ hiển thị form đánh giá nếu người dùng đã mua sản phẩm
+      if (canReviewData?.data?.canReview) {
+        setShowReviewForm(true);
+      } else if (canReviewData?.data) {
+        if (!canReviewData.data.hasPurchased) {
+          toast.error("Bạn cần mua sản phẩm này trước khi đánh giá");
+        } else if (canReviewData.data.hasReviewed) {
+          toast.info("Bạn đã đánh giá sản phẩm này rồi");
+        }
+      }
+    }
+  }, [location.state, canReviewData]);
 
   // Xử lý lỗi ảnh
   const handleImageError = () => {
@@ -755,7 +800,10 @@ const ProductDetail = () => {
                       <FaStar
                         key={star}
                         className={`${
-                          star <= (product.averageRating || 4)
+                          star <=
+                          (product.averageRating ||
+                            statsContent?.data?.averageRating ||
+                            0)
                             ? "text-yellow-400"
                             : "text-gray-300"
                         }`}
@@ -763,7 +811,15 @@ const ProductDetail = () => {
                     ))}
                   </div>
                   <span className="text-gray-500">
-                    {product.averageRating || 4}/5 ({product.totalReviews || 0}{" "}
+                    {(
+                      product.averageRating ||
+                      statsContent?.data?.averageRating ||
+                      0
+                    ).toFixed(1)}
+                    /5 (
+                    {product.totalReviews ||
+                      statsContent?.data?.totalReviews ||
+                      0}{" "}
                     đánh giá)
                   </span>
                 </div>
@@ -870,91 +926,121 @@ const ProductDetail = () => {
             </div>
 
             {/* Tabs thông tin chi tiết */}
-            <Tabs defaultValue="description" className="mb-12">
-              <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex gap-2 p-1 rounded-lg bg-gray-100">
-                <TabsTrigger
-                  value="description"
-                  className="px-4 py-2 data-[state=active]:bg-white rounded-md"
-                >
-                  Mô tả
-                </TabsTrigger>
-                <TabsTrigger
-                  value="specifications"
-                  className="px-4 py-2 data-[state=active]:bg-white rounded-md"
-                >
-                  Thông số kỹ thuật
-                </TabsTrigger>
-                <TabsTrigger
-                  value="reviews"
-                  className="px-4 py-2 data-[state=active]:bg-white rounded-md"
-                >
-                  Đánh giá
-                </TabsTrigger>
-              </TabsList>
+            <div className="mt-10">
+              <Tabs defaultValue="description" className="w-full">
+                <TabsList className="mb-4 border-b w-full justify-start rounded-none bg-transparent p-0">
+                  <TabsTrigger
+                    value="description"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-700 bg-transparent py-3 px-4 text-sm font-medium text-gray-600"
+                  >
+                    Mô tả sản phẩm
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="specifications"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-700 bg-transparent py-3 px-4 text-sm font-medium text-gray-600"
+                  >
+                    Thông số kỹ thuật
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="reviews"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-700 bg-transparent py-3 px-4 text-sm font-medium text-gray-600"
+                  >
+                    Đánh giá (
+                    {statsContent?.data?.totalReviews ||
+                      product?.totalReviews ||
+                      0}
+                    )
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent
-                value="description"
-                className="mt-6 p-6 bg-white rounded-lg shadow-sm"
-              >
-                <h3 className="text-xl font-bold mb-4">Mô tả sản phẩm</h3>
-                <div className="prose max-w-full">
-                  <p>{product.description || "Không có mô tả sản phẩm"}</p>
-                </div>
-              </TabsContent>
+                <TabsContent value="description" className="py-4">
+                  <h3 className="text-xl font-bold mb-4">Mô tả sản phẩm</h3>
+                  <div className="prose max-w-full">
+                    <p>{product.description || "Không có mô tả sản phẩm"}</p>
+                  </div>
+                </TabsContent>
 
-              <TabsContent
-                value="specifications"
-                className="mt-6 p-6 bg-white rounded-lg shadow-sm"
-              >
-                <h3 className="text-xl font-bold mb-4">Thông số kỹ thuật</h3>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full table-auto">
-                    <tbody className="divide-y">
-                      <tr className="bg-gray-50">
-                        <td className="p-3 font-medium">Mã sản phẩm</td>
-                        <td className="p-3">{product.id}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 font-medium">Danh mục</td>
-                        <td className="p-3">{product.categoryName}</td>
-                      </tr>
-                      <tr className="bg-gray-50">
-                        <td className="p-3 font-medium">Số lượng trong kho</td>
-                        <td className="p-3">{product.quantity} sản phẩm</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 font-medium">Trọng lượng</td>
-                        <td className="p-3">{product.weight || "N/A"} kg</td>
-                      </tr>
-                      <tr className="bg-gray-50">
-                        <td className="p-3 font-medium">Kích thước</td>
-                        <td className="p-3">{product.dimensions || "N/A"}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </TabsContent>
+                <TabsContent value="specifications" className="py-4">
+                  <h3 className="text-xl font-bold mb-4">Thông số kỹ thuật</h3>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full table-auto">
+                      <tbody className="divide-y">
+                        <tr className="bg-gray-50">
+                          <td className="p-3 font-medium">Mã sản phẩm</td>
+                          <td className="p-3">{product.id}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-medium">Danh mục</td>
+                          <td className="p-3">{product.categoryName}</td>
+                        </tr>
+                        <tr className="bg-gray-50">
+                          <td className="p-3 font-medium">
+                            Số lượng trong kho
+                          </td>
+                          <td className="p-3">{product.quantity} sản phẩm</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-medium">Trọng lượng</td>
+                          <td className="p-3">{product.weight || "N/A"} kg</td>
+                        </tr>
+                        <tr className="bg-gray-50">
+                          <td className="p-3 font-medium">Kích thước</td>
+                          <td className="p-3">{product.dimensions || "N/A"}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </TabsContent>
 
-              <TabsContent
-                value="reviews"
-                className="mt-6 p-6 bg-white rounded-lg shadow-sm"
-              >
-                <h3 className="text-xl font-bold mb-4">
-                  Đánh giá từ khách hàng
-                </h3>
-                <div className="text-center py-8">
-                  <FaStar className="text-4xl text-yellow-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">
-                    {product.totalReviews
-                      ? `${product.totalReviews} đánh giá`
-                      : "Chưa có đánh giá nào cho sản phẩm này"}
-                  </p>
-                  <button className="bg-green-50 text-green-600 hover:bg-green-100 px-4 py-2 rounded-md">
-                    Viết đánh giá
-                  </button>
-                </div>
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="reviews" className="py-4">
+                  {product && (
+                    <ReviewsSection
+                      productId={product.id}
+                      productName={product.productName}
+                      showReviewForm={showReviewForm}
+                      setShowReviewForm={(value) => {
+                        // Kiểm tra kỹ trước khi mở form đánh giá
+                        if (value === true) {
+                          // Kiểm tra đăng nhập
+                          if (!auth?.accessToken) {
+                            toast.info("Vui lòng đăng nhập để đánh giá");
+                            navigate("/account/login", {
+                              state: { from: location.pathname },
+                            });
+                            return;
+                          }
+
+                          // Kiểm tra quyền đánh giá
+                          if (canReviewData?.data) {
+                            if (!canReviewData.data.hasPurchased) {
+                              toast.error(
+                                "Bạn chưa mua sản phẩm này nên không thể đánh giá"
+                              );
+                              return;
+                            }
+
+                            if (canReviewData.data.hasReviewed) {
+                              toast.info("Bạn đã đánh giá sản phẩm này rồi");
+                              return;
+                            }
+
+                            if (!canReviewData.data.canReview) {
+                              toast.error(
+                                "Bạn không có quyền đánh giá sản phẩm này"
+                              );
+                              return;
+                            }
+                          }
+                        }
+
+                        // Nếu kiểm tra qua hết, hoặc đang đóng form, thì thực hiện
+                        setShowReviewForm(value);
+                      }}
+                    />
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
 
             {/* Sản phẩm liên quan */}
             {relatedProducts.length > 0 && (

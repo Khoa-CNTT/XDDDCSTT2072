@@ -48,6 +48,12 @@ import {
   Newspaper,
   Home as HomeIcon,
   AlertTriangle,
+  ChevronRight,
+  Leaf,
+  Sparkles,
+  SunMedium,
+  BarChart3,
+  Shield,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -718,73 +724,185 @@ const Home = () => {
   return (
     <>
       <Header />
-      <main className="flex-1 container mx-auto px-2 md:px-4 py-4 mt-14">
+
+      {/* Hero Section - Thêm mới */}
+      <div className="bg-gradient-to-r from-green-500 via-teal-500 to-emerald-500 pt-20 pb-10 text-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+            <div className="md:col-span-7 space-y-6 py-6">
+              <div className="inline-block bg-white/20 backdrop-blur-sm rounded-full px-4 py-1 text-sm font-medium mb-2">
+                <span className="flex items-center gap-1">
+                  <Sparkles size={14} className="text-yellow-200" />
+                  Cộng đồng nông nghiệp Việt Nam
+                </span>
+              </div>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
+                Kết nối, chia sẻ & phát triển <br />
+                <span className="text-yellow-200">
+                  cùng cộng đồng nông nghiệp
+                </span>
+              </h1>
+              <p className="text-white/90 text-lg max-w-lg">
+                Chia sẻ kinh nghiệm, tìm kiếm giải pháp và kết nối với những nhà
+                nông, chuyên gia hàng đầu trong lĩnh vực nông nghiệp.
+              </p>
+              <div className="flex flex-wrap gap-4 pt-2">
+                <Button className="bg-white text-green-600 hover:bg-green-100 font-medium rounded-full px-6 h-11 shadow-lg transition-all">
+                  <PenTool size={18} className="mr-2" />
+                  Đăng bài viết
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-white/30 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white rounded-full px-6 h-11"
+                >
+                  <Users size={18} className="mr-2" />
+                  Tìm kiếm kết nối
+                </Button>
+              </div>
+            </div>
+            <div className="md:col-span-5 flex justify-center">
+              <div className="relative w-full max-w-md">
+                <div className="absolute -top-6 -left-6 w-20 h-20 bg-yellow-400/20 backdrop-blur-sm rounded-2xl"></div>
+                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-blue-400/20 backdrop-blur-sm rounded-2xl"></div>
+                <img
+                  src="/assets/hero-image.jpg"
+                  alt="Nông nghiệp thông minh"
+                  className="w-full h-auto object-cover rounded-2xl shadow-2xl relative z-10"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src =
+                      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1932&q=80";
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 rounded-full p-2">
+                  <Users size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-white/80">Thành viên</p>
+                  <p className="text-xl font-bold">24,500+</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 rounded-full p-2">
+                  <Newspaper size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-white/80">Bài viết</p>
+                  <p className="text-xl font-bold">8,200+</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 rounded-full p-2">
+                  <Leaf size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-white/80">Nhà nông</p>
+                  <p className="text-xl font-bold">15,300+</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 rounded-full p-2">
+                  <Shield size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-white/80">Chuyên gia</p>
+                  <p className="text-xl font-bold">1,200+</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-1 container mx-auto px-2 md:px-4 py-4">
         {/* Sticky Search bar with shortcuts - Cải tiến */}
-        <div className="sticky top-16 z-10 bg-white backdrop-blur-sm bg-opacity-90 shadow-md p-3 mb-5 rounded-xl flex items-center gap-2 transition-all duration-300">
+        <div className="sticky top-16 z-10 bg-white/95 backdrop-blur-md p-4 mb-5 rounded-xl flex items-center gap-3 transition-all duration-300 shadow-lg border border-gray-100">
           <div className="relative flex-1 group">
             <Search
-              size={18}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 social-search-icon"
+              size={20}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-green-500 transition-colors duration-200"
             />
             <Input
               placeholder="Tìm kiếm bài viết, hashtag..."
-              className="pl-10 social-search-input"
+              className="pl-10 h-12 bg-gray-50 border-0 focus-visible:ring-2 focus-visible:ring-green-500/50 rounded-xl"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Button
             variant="outline"
-            className="gap-1 rounded-lg font-medium border-gray-100 shadow-sm hover:bg-green-50 hover:border-green-300 transition-all btn-interactive"
+            className="gap-2 rounded-xl font-medium border-gray-100 shadow-sm hover:bg-green-50 hover:border-green-300 transition-all btn-interactive h-12"
             onClick={() =>
               document
                 .getElementById("post-filters")
                 .scrollIntoView({ behavior: "smooth" })
             }
           >
-            <Filter size={16} className="text-green-600" />
+            <Filter size={18} className="text-green-600" />
             <span className="hidden sm:inline">Lọc</span>
           </Button>
           <Button
             variant="outline"
-            className="gap-1 rounded-lg font-medium border-gray-100 shadow-sm hover:bg-green-50 hover:border-green-300 transition-all btn-interactive"
+            className="gap-2 rounded-xl font-medium border-gray-100 shadow-sm hover:bg-green-50 hover:border-green-300 transition-all btn-interactive h-12"
             onClick={() => handleFilterChange("new")}
           >
-            <TrendingUp size={16} className="text-green-600" />
+            <TrendingUp size={18} className="text-green-600" />
             <span className="hidden sm:inline">Xu hướng</span>
           </Button>
           <Button
             variant="outline"
-            className="gap-1 rounded-lg font-medium border-gray-100 shadow-sm hover:bg-green-50 hover:border-green-300 transition-all btn-interactive"
+            className="gap-2 rounded-xl font-medium border-gray-100 shadow-sm hover:bg-green-50 hover:border-green-300 transition-all btn-interactive h-12"
             onClick={() => setSearchTerm("#")}
           >
-            <Hash size={16} className="text-green-600" />
+            <Hash size={18} className="text-green-600" />
             <span className="hidden sm:inline">Hashtag</span>
           </Button>
         </div>
 
         {/* Tìm kiếm và thông tin nhanh - Cải tiến */}
-        <div className="hidden md:flex justify-between items-center mb-5">
-          <div className="flex gap-4">
+        <div className="hidden md:flex flex-wrap justify-between items-center mb-5 gap-3">
+          <div className="flex flex-wrap gap-3">
             <Badge
               variant="outline"
-              className="bg-gradient-to-r from-green-50 to-green-100 text-green-700 hover:from-green-100 hover:to-green-200 cursor-pointer px-3 py-2 rounded-lg shadow-sm border-green-200 transition-all duration-200"
+              className="bg-gradient-to-r from-green-50 to-green-100 text-green-700 hover:from-green-100 hover:to-green-200 cursor-pointer px-4 py-2 rounded-lg shadow-sm border-green-200 transition-all duration-200 flex items-center"
             >
-              <Zap size={16} className="mr-1 text-green-600" />
+              <Zap size={16} className="mr-2 text-green-600" />
               <span className="font-medium">Nông nghiệp thông minh</span>
             </Badge>
             <Badge
               variant="outline"
-              className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 hover:from-blue-100 hover:to-blue-200 cursor-pointer px-3 py-2 rounded-lg shadow-sm border-blue-200 transition-all duration-200"
+              className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 hover:from-blue-100 hover:to-blue-200 cursor-pointer px-4 py-2 rounded-lg shadow-sm border-blue-200 transition-all duration-200 flex items-center"
             >
-              <Award size={16} className="mr-1 text-blue-600" />
+              <Award size={16} className="mr-2 text-blue-600" />
               <span className="font-medium">Sản phẩm chất lượng cao</span>
+            </Badge>
+            <Badge
+              variant="outline"
+              className="bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 hover:from-amber-100 hover:to-amber-200 cursor-pointer px-4 py-2 rounded-lg shadow-sm border-amber-200 transition-all duration-200 flex items-center"
+            >
+              <SunMedium size={16} className="mr-2 text-amber-600" />
+              <span className="font-medium">Mùa vụ và thời tiết</span>
             </Badge>
           </div>
 
-          <Button className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white shadow-md flex items-center gap-2 rounded-full px-4">
+          <Button className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white shadow-md flex items-center gap-2 rounded-full px-5 py-2 h-auto">
             <Newspaper size={18} />
             <span>Tin mới nhất</span>
+            <ChevronRight size={16} />
           </Button>
         </div>
 
@@ -792,13 +910,16 @@ const Home = () => {
           {/* Left Sidebar */}
           <div className="hidden md:block md:col-span-3 space-y-5">
             {/* User Profile Card - Cải tiến */}
-            <div className="card-3d overflow-hidden">
+            <div className="card-3d overflow-hidden bg-gradient-to-br from-white to-gray-50 border border-gray-100">
               <div className="relative">
-                <div className="h-24 bg-gradient-to-r from-green-400 via-teal-400 to-cyan-400"></div>
-                <div className="absolute -bottom-6 left-4">
-                  <Avatar className="h-16 w-16 border-4 border-white shadow-md">
+                <div className="h-28 bg-gradient-to-r from-green-400 via-teal-400 to-cyan-400"></div>
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 transform">
+                  <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
                     <AvatarImage
                       src={auth?.user?.imageUrl || "/placeholder-user.jpg"}
+                      alt={
+                        auth?.user?.username || auth?.user?.userName || "User"
+                      }
                     />
                     <AvatarFallback className="bg-gradient-to-br from-green-400 to-teal-400 text-white text-xl font-bold">
                       {auth?.user?.username?.charAt(0) ||
@@ -808,13 +929,22 @@ const Home = () => {
                   </Avatar>
                 </div>
               </div>
-              <div className="pt-10 pb-4 px-4">
+              <div className="pt-12 pb-4 px-4 text-center">
                 <h3 className="text-lg font-semibold text-gray-800">
                   {auth?.user?.username || auth?.user?.userName || "Người dùng"}
                 </h3>
                 <p className="text-gray-500 text-sm">
                   {auth?.user?.email || ""}
                 </p>
+                <Badge className="mt-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 border-blue-100">
+                  {auth?.user?.role === "FARMER"
+                    ? "Nhà nông"
+                    : auth?.user?.role === "EXPERT"
+                    ? "Chuyên gia"
+                    : auth?.user?.role === "SUPPLIER"
+                    ? "Nhà cung cấp"
+                    : "Người dùng"}
+                </Badge>
               </div>
               <div className="border-t border-b border-gray-100 px-4 py-3 bg-gray-50">
                 <div className="flex justify-between items-center">
@@ -830,24 +960,30 @@ const Home = () => {
                 </div>
               </div>
               <div className="px-4 py-3">
-                <div className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
+                <div className="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
                   <Bookmark size={18} className="text-teal-500" />
-                  <span>Lưu bài viết</span>
+                  <span>Bài viết đã lưu</span>
+                  <Badge className="ml-auto bg-green-100 text-green-700 font-normal">
+                    4
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
+                <div className="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
                   <Users size={18} className="text-blue-500" />
-                  <span>Nhóm</span>
+                  <span>Kết nối của tôi</span>
+                  <Badge className="ml-auto bg-blue-100 text-blue-700 font-normal">
+                    12
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
-                  <Calendar size={18} className="text-amber-500" />
-                  <span>Sự kiện</span>
+                <div className="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
+                  <BarChart3 size={18} className="text-purple-500" />
+                  <span>Hoạt động</span>
                 </div>
               </div>
             </div>
 
             {/* Trending Hashtags - Cải tiến */}
-            <div className="card-3d p-4">
-              <h3 className="font-semibold mb-3 text-gray-800 flex items-center">
+            <div className="card-3d p-5 bg-gradient-to-br from-white to-gray-50 border border-gray-100">
+              <h3 className="font-semibold mb-4 text-gray-800 flex items-center">
                 <TrendingUp size={18} className="mr-2 text-green-600" />
                 Chủ đề thịnh hành
               </h3>
@@ -866,10 +1002,10 @@ const Home = () => {
                   hashtags.map((tag, index) => (
                     <div
                       key={tag?.id || index}
-                      className="gradient-border flex items-center text-sm hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-all duration-200"
+                      className="group flex items-center text-sm hover:bg-gray-50 p-3 rounded-lg cursor-pointer transition-all duration-200 border border-gray-100 hover:border-green-100 hover:shadow-md"
                     >
                       <div className="flex-1">
-                        <p className="font-medium text-blue-600">
+                        <p className="font-medium text-blue-600 group-hover:text-blue-700">
                           #{tag?.name || "hashtag"}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -889,9 +1025,9 @@ const Home = () => {
                     !Array.isArray(hashtags) ||
                     hashtags.length === 0) && (
                     <div className="space-y-3">
-                      <div className="gradient-border flex items-center text-sm hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-all duration-200">
+                      <div className="group flex items-center text-sm hover:bg-gray-50 p-3 rounded-lg cursor-pointer transition-all duration-200 border border-gray-100 hover:border-green-100 hover:shadow-md">
                         <div className="flex-1">
-                          <p className="font-medium text-blue-600">
+                          <p className="font-medium text-blue-600 group-hover:text-blue-700">
                             #nôngnghiệp
                           </p>
                           <p className="text-xs text-gray-500">124 bài viết</p>
@@ -900,9 +1036,9 @@ const Home = () => {
                           Theo dõi
                         </Badge>
                       </div>
-                      <div className="gradient-border flex items-center text-sm hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-all duration-200">
+                      <div className="group flex items-center text-sm hover:bg-gray-50 p-3 rounded-lg cursor-pointer transition-all duration-200 border border-gray-100 hover:border-green-100 hover:shadow-md">
                         <div className="flex-1">
-                          <p className="font-medium text-blue-600">
+                          <p className="font-medium text-blue-600 group-hover:text-blue-700">
                             #caytrongvumua
                           </p>
                           <p className="text-xs text-gray-500">98 bài viết</p>
@@ -911,9 +1047,9 @@ const Home = () => {
                           Theo dõi
                         </Badge>
                       </div>
-                      <div className="gradient-border flex items-center text-sm hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-all duration-200">
+                      <div className="group flex items-center text-sm hover:bg-gray-50 p-3 rounded-lg cursor-pointer transition-all duration-200 border border-gray-100 hover:border-green-100 hover:shadow-md">
                         <div className="flex-1">
-                          <p className="font-medium text-blue-600">
+                          <p className="font-medium text-blue-600 group-hover:text-blue-700">
                             #nongsanthuanviet
                           </p>
                           <p className="text-xs text-gray-500">76 bài viết</p>
@@ -928,9 +1064,10 @@ const Home = () => {
             </div>
 
             {/* Dark Mode Toggle */}
-            <div className="card-3d p-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">
-                Dark Mode
+            <div className="card-3d p-4 flex items-center justify-between bg-gradient-to-br from-white to-gray-50 border border-gray-100">
+              <span className="text-sm font-medium text-gray-700 flex items-center">
+                <SunMedium size={18} className="mr-2 text-amber-500" />
+                Chế độ sáng
               </span>
               <button
                 className="theme-toggle"
@@ -947,36 +1084,43 @@ const Home = () => {
           {/* Main Content */}
           <div className="col-span-1 md:col-span-6 space-y-5">
             {/* Tabs - Cải tiến */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
               <Tabs defaultValue="trangchu" className="w-full">
                 <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-gradient-to-r from-gray-50 to-gray-100">
                   <TabsTrigger
                     value="trangchu"
                     className="py-4 px-6 social-tab"
                   >
+                    <HomeIcon size={18} className="mr-2" />
                     Trang chủ
                   </TabsTrigger>
                   <TabsTrigger
                     value="ketnoicuatoi"
                     className="py-4 px-6 social-tab"
                   >
+                    <Users size={18} className="mr-2" />
                     Kết nối của tôi
                   </TabsTrigger>
                   <TabsTrigger value="phobien" className="py-4 px-6 social-tab">
+                    <TrendingUp size={18} className="mr-2" />
                     Phổ biến
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="trangchu" className="m-0 p-0">
                   {/* Bộ lọc bài viết - Cải tiến */}
-                  <div id="post-filters" className="bg-white mb-5 p-4 border-b">
-                    <h3 className="font-medium text-gray-700 mb-3">
+                  <div
+                    id="post-filters"
+                    className="bg-white mb-5 p-5 border-b border-gray-100"
+                  >
+                    <h3 className="font-medium text-gray-700 mb-4 flex items-center">
+                      <Filter size={18} className="mr-2 text-green-600" />
                       Lọc bài viết
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       <Badge
                         variant="outline"
-                        className={`cursor-pointer px-3 py-2 transition-all duration-200 btn-interactive ${
+                        className={`cursor-pointer px-4 py-2 transition-all duration-200 btn-interactive ${
                           activeFilter === "all"
                             ? "bg-gradient-to-r from-green-100 to-teal-100 text-teal-700 border-teal-200"
                             : "hover:bg-gradient-to-r hover:from-green-50 hover:to-teal-50 hover:text-teal-700"
@@ -987,7 +1131,7 @@ const Home = () => {
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={`cursor-pointer px-3 py-2 transition-all duration-200 btn-interactive ${
+                        className={`cursor-pointer px-4 py-2 transition-all duration-200 btn-interactive ${
                           activeFilter === "new"
                             ? "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-blue-200"
                             : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700"
@@ -998,7 +1142,7 @@ const Home = () => {
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={`cursor-pointer px-3 py-2 transition-all duration-200 btn-interactive ${
+                        className={`cursor-pointer px-4 py-2 transition-all duration-200 btn-interactive ${
                           activeFilter === "smart"
                             ? "bg-gradient-to-r from-green-100 to-green-200 text-green-700 border-green-200"
                             : "hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700"
@@ -1009,7 +1153,7 @@ const Home = () => {
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={`cursor-pointer px-3 py-2 transition-all duration-200 btn-interactive ${
+                        className={`cursor-pointer px-4 py-2 transition-all duration-200 btn-interactive ${
                           activeFilter === "growing"
                             ? "bg-gradient-to-r from-amber-100 to-amber-200 text-amber-700 border-amber-200"
                             : "hover:bg-gradient-to-r hover:from-amber-50 hover:to-amber-100 hover:text-amber-700"
@@ -1020,7 +1164,7 @@ const Home = () => {
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={`cursor-pointer px-3 py-2 transition-all duration-200 btn-interactive ${
+                        className={`cursor-pointer px-4 py-2 transition-all duration-200 btn-interactive ${
                           activeFilter === "animal"
                             ? "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 border-purple-200"
                             : "hover:bg-gradient-to-r hover:from-purple-50 hover:to-purple-100 hover:text-purple-700"
@@ -1038,6 +1182,11 @@ const Home = () => {
                       <Avatar className="h-12 w-12 border-2 border-green-100 shadow-sm">
                         <AvatarImage
                           src={auth?.user?.imageUrl || "/placeholder-user.jpg"}
+                          alt={
+                            auth?.user?.username ||
+                            auth?.user?.userName ||
+                            "User"
+                          }
                         />
                         <AvatarFallback className="bg-gradient-to-br from-green-400 to-teal-400 text-white text-lg font-bold">
                           {auth?.user?.username?.charAt(0) ||
@@ -1053,9 +1202,9 @@ const Home = () => {
                         <DialogTrigger asChild>
                           <Button
                             variant="outline"
-                            className="flex-1 justify-start font-normal text-gray-500 post-input-box h-12 px-5"
+                            className="flex-1 justify-start font-normal text-gray-500 border border-gray-200 hover:border-green-200 hover:bg-green-50 h-12 px-5 rounded-full shadow-sm transition-all"
                           >
-                            Bạn đang nghĩ gì?
+                            Bạn đang nghĩ gì về nông nghiệp hôm nay?
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-xl rounded-xl">
@@ -1072,7 +1221,7 @@ const Home = () => {
                     <div className="flex mt-4 pt-3 border-t">
                       <Button
                         variant="ghost"
-                        className="flex-1 text-gray-600 gap-2 post-action-button"
+                        className="flex-1 text-gray-600 gap-2 hover:bg-green-50 hover:text-green-700 transition-all rounded-lg"
                         onClick={() => setIsCreatePostOpen(true)}
                       >
                         <Image size={18} className="text-blue-500" />
@@ -1080,7 +1229,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="ghost"
-                        className="flex-1 text-gray-600 gap-2 post-action-button"
+                        className="flex-1 text-gray-600 gap-2 hover:bg-green-50 hover:text-green-700 transition-all rounded-lg"
                         onClick={() => setIsCreatePostOpen(true)}
                       >
                         <Calendar size={18} className="text-green-500" />
@@ -1088,7 +1237,7 @@ const Home = () => {
                       </Button>
                       <Button
                         variant="ghost"
-                        className="flex-1 text-gray-600 gap-2 post-action-button"
+                        className="flex-1 text-gray-600 gap-2 hover:bg-green-50 hover:text-green-700 transition-all rounded-lg"
                         onClick={() => setIsCreatePostOpen(true)}
                       >
                         <PenTool size={18} className="text-amber-500" />
@@ -1121,62 +1270,76 @@ const Home = () => {
 
                   {/* Post Feed - Cải tiến */}
                   {isLoadingPosts ? (
-                    <div className="bg-white p-8 text-center rounded-xl shadow-md">
-                      <div className="animate-pulse flex flex-col space-y-5">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-12 rounded-full bg-gray-200"></div>
-                          <div className="flex-1">
-                            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/6"></div>
+                    <div className="space-y-6">
+                      {[1, 2, 3].map((index) => (
+                        <div
+                          key={`skeleton-${index}`}
+                          className="bg-white p-6 rounded-xl shadow-md border border-gray-100"
+                        >
+                          <div className="animate-pulse flex flex-col space-y-5">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-12 h-12 rounded-full bg-gray-200"></div>
+                              <div className="flex-1">
+                                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-1/6"></div>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                              <div className="h-4 bg-gray-200 rounded"></div>
+                              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                            </div>
+                            <div className="h-52 bg-gray-200 rounded-lg"></div>
+                            <div className="flex justify-between pt-4 border-t border-gray-100">
+                              <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                              <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                              <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                            </div>
                           </div>
                         </div>
-                        <div className="h-5 bg-gray-200 rounded w-3/4"></div>
-                        <div className="h-40 bg-gray-200 rounded-lg"></div>
-                        <div className="flex justify-between mt-4">
-                          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-                          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-                          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-                        </div>
-                      </div>
-                      <p className="text-gray-500 mt-4 font-medium">
-                        Đang tải bài viết...
-                      </p>
+                      ))}
                     </div>
                   ) : postsError ? (
-                    <div className="bg-white p-8 text-center rounded-xl shadow-md">
-                      <p className="text-red-500 mb-4">
-                        Có lỗi xảy ra khi tải bài viết.
-                      </p>
-                      <Button
-                        variant="outline"
-                        className="bg-gradient-to-r from-red-50 to-red-100 text-red-600 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm mt-2"
-                        onClick={() =>
-                          queryClient.invalidateQueries({
-                            queryKey: ["forumPosts"],
-                          })
-                        }
-                      >
-                        Thử lại
-                      </Button>
+                    <div className="bg-white p-8 text-center rounded-xl shadow-md border border-red-100">
+                      <div className="flex flex-col items-center">
+                        <div className="p-3 bg-red-50 rounded-full mb-4">
+                          <AlertTriangle size={24} className="text-red-500" />
+                        </div>
+                        <p className="text-red-500 mb-4 font-medium">
+                          Có lỗi xảy ra khi tải bài viết.
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="bg-gradient-to-r from-red-50 to-red-100 text-red-600 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm mt-2"
+                          onClick={() =>
+                            queryClient.invalidateQueries({
+                              queryKey: ["forumPosts"],
+                            })
+                          }
+                        >
+                          Thử lại
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       {searchTerm && (
-                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 text-blue-700 mb-4">
-                          <p className="flex items-center">
-                            <Search size={16} className="mr-2" />
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-700 mb-5 flex items-center">
+                          <Search size={18} className="mr-2 flex-shrink-0" />
+                          <p className="flex-1">
                             Kết quả tìm kiếm cho:{" "}
                             <span className="font-medium ml-1">
                               &quot;{searchTerm}&quot;
                             </span>
-                            <Button
-                              variant="ghost"
-                              className="ml-auto text-xs hover:bg-blue-100"
-                              onClick={() => setSearchTerm("")}
-                            >
-                              Xóa
-                            </Button>
                           </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-auto text-xs hover:bg-blue-100 h-8 px-2"
+                            onClick={() => setSearchTerm("")}
+                          >
+                            Xóa
+                          </Button>
                         </div>
                       )}
 
@@ -1212,30 +1375,36 @@ const Home = () => {
                           console.log("Bài viết đã xử lý:", enhancedPost);
 
                           return (
-                            <PostCard
+                            <div
                               key={post.id}
-                              post={enhancedPost}
-                              currentUser={auth?.user}
-                              onReact={handleReaction}
-                              onComment={handleComment}
-                              onShare={handleShare}
-                              onEdit={handleEdit}
-                              onDelete={handleDelete}
-                            />
+                              className="farmhub-animate-fadeIn hover:-translate-y-1 transition-transform duration-300"
+                            >
+                              <PostCard
+                                post={enhancedPost}
+                                currentUser={auth?.user}
+                                onReact={handleReaction}
+                                onComment={handleComment}
+                                onShare={handleShare}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                              />
+                            </div>
                           );
                         })
                       ) : (
-                        <div className="bg-white p-8 text-center rounded-xl shadow-md">
+                        <div className="bg-white p-8 text-center rounded-xl shadow-md border border-gray-100">
                           <div className="flex flex-col items-center">
-                            <Search size={48} className="text-gray-300 mb-4" />
-                            <p className="text-gray-500 mb-4 text-lg">
+                            <div className="p-4 bg-gray-50 rounded-full mb-4">
+                              <Search size={32} className="text-gray-300" />
+                            </div>
+                            <p className="text-gray-500 mb-5 text-lg font-medium">
                               {searchTerm
                                 ? "Không tìm thấy bài viết nào phù hợp với từ khóa."
                                 : "Chưa có bài viết nào phù hợp với bộ lọc."}
                             </p>
                             <Button
                               variant="outline"
-                              className="gap-2 px-6"
+                              className="gap-2 px-6 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 transition-all"
                               onClick={() => {
                                 setSearchTerm("");
                                 setActiveFilter("all");
@@ -1257,7 +1426,7 @@ const Home = () => {
                       {[1, 2, 3].map((index) => (
                         <div
                           key={`skeleton-${index}`}
-                          className="bg-white rounded-xl shadow-md p-5 card-3d"
+                          className="bg-white rounded-xl shadow-md p-5 border border-gray-100"
                         >
                           <div className="flex items-center gap-3 mb-4 skeleton-loader h-12 rounded-full"></div>
                           <div className="space-y-2">
@@ -1265,7 +1434,7 @@ const Home = () => {
                             <div className="skeleton-loader h-4 rounded"></div>
                             <div className="skeleton-loader h-4 rounded w-5/6"></div>
                           </div>
-                          <div className="skeleton-loader h-40 rounded-lg mt-4"></div>
+                          <div className="skeleton-loader h-44 rounded-lg mt-4"></div>
                           <div className="flex justify-between mt-4">
                             <div className="skeleton-loader h-8 rounded w-1/4"></div>
                             <div className="skeleton-loader h-8 rounded w-1/4"></div>
@@ -1275,7 +1444,7 @@ const Home = () => {
                       ))}
                     </div>
                   ) : connectionPostsError ? (
-                    <div className="bg-white p-8 text-center rounded-xl shadow-md m-5 card-3d">
+                    <div className="bg-white p-8 text-center rounded-xl shadow-md m-5 border border-red-100">
                       <div className="flex flex-col items-center">
                         <div className="mb-4 text-red-500 bg-red-50 w-16 h-16 rounded-full flex items-center justify-center">
                           <AlertTriangle size={32} />
@@ -1286,7 +1455,7 @@ const Home = () => {
                         </p>
                         <Button
                           variant="outline"
-                          className="bg-gradient-to-r from-red-50 to-red-100 text-red-600 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm btn-interactive"
+                          className="bg-gradient-to-r from-red-50 to-red-100 text-red-600 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm"
                           onClick={() => {
                             queryClient.invalidateQueries({
                               queryKey: ["connectionPosts"],
@@ -1375,7 +1544,7 @@ const Home = () => {
                             return (
                               <div
                                 key={post.id}
-                                className={`post-card ${postTopic}`}
+                                className={`post-card ${postTopic} farmhub-animate-fadeIn hover:-translate-y-1 transition-transform duration-300`}
                               >
                                 <PostCard
                                   post={enhancedPost}
@@ -1398,9 +1567,9 @@ const Home = () => {
                           connectionPostsData.content.every(
                             (post) => post.userId === auth?.user?.id
                           )) && (
-                          <div className="card-3d p-8 text-center rounded-xl farmhub-animate-fadeIn">
+                          <div className="card-3d p-8 text-center rounded-xl farmhub-animate-fadeIn bg-gradient-to-br from-white to-gray-50 border border-gray-100">
                             <div className="flex flex-col items-center">
-                              <div className="bg-blue-50 rounded-full p-4 mb-4">
+                              <div className="bg-blue-50 rounded-full p-5 mb-4">
                                 <Users size={48} className="text-blue-500" />
                               </div>
                               <h3 className="text-gray-800 mb-3 text-xl font-semibold">
@@ -1414,14 +1583,14 @@ const Home = () => {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
                                 <Button
                                   variant="default"
-                                  className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md gap-2 px-6 py-2 btn-interactive"
+                                  className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md gap-2 px-6 py-2"
                                 >
                                   <Users size={18} />
                                   Tìm người để kết nối
                                 </Button>
                                 <Button
                                   variant="outline"
-                                  className="border-blue-200 text-blue-600 hover:bg-blue-50 gap-2 px-6 py-2 btn-interactive"
+                                  className="border-blue-200 text-blue-600 hover:bg-blue-50 gap-2 px-6 py-2"
                                 >
                                   <PenTool size={18} />
                                   Tạo bài viết mới
@@ -1444,7 +1613,7 @@ const Home = () => {
                                         .map((user) => (
                                           <div
                                             key={user.id}
-                                            className="connection-card flex items-center gap-2 p-3"
+                                            className="connection-card flex items-center gap-2 p-3 border border-gray-100 hover:border-blue-100 hover:shadow-md"
                                           >
                                             <Avatar className="h-10 w-10">
                                               <AvatarImage
@@ -1452,8 +1621,9 @@ const Home = () => {
                                                   user.imageUrl ||
                                                   user.avatarUrl
                                                 }
+                                                alt={user.userName || "User"}
                                               />
-                                              <AvatarFallback className="bg-gradient-to-br from-blue-400 to-indigo-400">
+                                              <AvatarFallback className="bg-gradient-to-br from-blue-400 to-indigo-400 text-white">
                                                 {user.userName?.charAt(0) ||
                                                   "U"}
                                               </AvatarFallback>
@@ -1472,7 +1642,7 @@ const Home = () => {
                                               onClick={() =>
                                                 handleConnect(user.id)
                                               }
-                                              className="h-8 px-2 text-xs btn-interactive"
+                                              className="h-8 px-2 text-xs border-blue-200 text-blue-600 hover:bg-blue-50"
                                             >
                                               Kết nối
                                             </Button>
@@ -1596,7 +1766,7 @@ const Home = () => {
             </div>
 
             {/* Tin tức và sự kiện */}
-            <div className="card-3d p-5">
+            <div className="card-3d p-5 bg-gradient-to-br from-white to-gray-50 border border-gray-100">
               <h3 className="font-semibold mb-4 text-gray-800 flex items-center">
                 <Bell size={18} className="mr-2 text-amber-600" />
                 Tin tức và sự kiện
@@ -1606,13 +1776,13 @@ const Home = () => {
                 {latestNews.map((news) => (
                   <div
                     key={news.id}
-                    className="hover:bg-gray-50 p-3 rounded-lg cursor-pointer border border-gray-50 transition-all duration-200 gradient-border"
+                    className="hover:bg-gray-50 p-3 rounded-lg cursor-pointer border border-gray-50 hover:border-amber-100 hover:shadow-md transition-all duration-200"
                   >
                     <p className="font-medium text-sm text-gray-800">
                       {news.title}
                     </p>
                     <p className="text-xs text-gray-500 mt-2 flex items-center">
-                      <Calendar size={12} className="mr-1 text-green-500" />
+                      <Calendar size={12} className="mr-1 text-amber-500" />
                       {news.date}
                     </p>
                   </div>
@@ -1621,24 +1791,48 @@ const Home = () => {
 
               <Button
                 variant="link"
-                className="w-full text-blue-600 hover:text-blue-700 mt-3 font-medium transition-colors btn-interactive"
+                className="w-full text-blue-600 hover:text-blue-700 mt-3 font-medium transition-colors flex items-center justify-center"
               >
-                Xem tất cả
+                <span>Xem tất cả</span>
+                <ChevronRight size={16} className="ml-1" />
               </Button>
             </div>
 
             {/* Cộng đồng */}
-            <div className="card-3d p-5">
-              <h3 className="font-semibold mb-4 text-gray-800">
+            <div className="card-3d p-5 bg-gradient-to-br from-white to-gray-50 border border-gray-100">
+              <h3 className="font-semibold mb-4 text-gray-800 flex items-center">
+                <Leaf size={18} className="mr-2 text-green-600" />
                 Cộng đồng nông nghiệp
               </h3>
-              <div className="p-4 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl border border-green-100">
-                <p className="text-sm text-gray-700 mb-3">
-                  Kết nối với hơn 5,000 nông dân và chuyên gia nông nghiệp!
-                </p>
-                <Button className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white shadow-md btn-interactive">
-                  Tham gia ngay
-                </Button>
+              <div className="overflow-hidden rounded-xl">
+                <div className="relative">
+                  <img
+                    src="/assets/community-banner.jpg"
+                    alt="Cộng đồng nông nghiệp"
+                    className="w-full h-36 object-cover rounded-t-xl"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src =
+                        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1932&q=80";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-t-xl"></div>
+                  <div className="absolute bottom-3 left-3 text-white">
+                    <p className="text-sm font-medium">
+                      Cộng đồng nông nghiệp Việt Nam
+                    </p>
+                    <p className="text-xs opacity-80">5,000+ thành viên</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-gradient-to-r from-green-50 to-teal-50 rounded-b-xl border-t border-green-100">
+                  <p className="text-sm text-gray-700 mb-3">
+                    Kết nối với hơn 5,000 nông dân và chuyên gia nông nghiệp!
+                  </p>
+                  <Button className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white shadow-md flex items-center justify-center gap-2">
+                    <Users size={16} />
+                    <span>Tham gia ngay</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -1646,7 +1840,7 @@ const Home = () => {
       </main>
 
       {/* Mobile Menu */}
-      <div className="md:hidden mobile-menu">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 mobile-menu">
         <div className="mobile-menu-item active">
           <HomeIcon size={20} className="mobile-menu-icon" />
           <span>Trang chủ</span>
@@ -1665,8 +1859,11 @@ const Home = () => {
         </div>
         <div className="mobile-menu-item">
           <Avatar className="mobile-menu-icon h-6 w-6">
-            <AvatarImage src={auth?.user?.imageUrl} />
-            <AvatarFallback className="bg-green-500 text-white text-xs">
+            <AvatarImage
+              src={auth?.user?.imageUrl}
+              alt={auth?.user?.userName || "User"}
+            />
+            <AvatarFallback className="bg-gradient-to-br from-green-400 to-teal-400 text-white text-xs">
               {auth?.user?.userName?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
@@ -1678,5 +1875,24 @@ const Home = () => {
     </>
   );
 };
+
+// Dữ liệu tin tức mẫu
+const latestNews = [
+  {
+    id: 1,
+    title: "Hội nghị nông nghiệp thông minh 2023 diễn ra tại Hà Nội",
+    date: "20/06/2023",
+  },
+  {
+    id: 2,
+    title: "5 phương pháp canh tác bền vững cho nông dân",
+    date: "15/06/2023",
+  },
+  {
+    id: 3,
+    title: "Kỹ thuật mới trong phòng trừ sâu bệnh cho cây trồng",
+    date: "10/06/2023",
+  },
+];
 
 export default Home;

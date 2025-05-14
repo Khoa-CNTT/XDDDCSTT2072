@@ -14,6 +14,7 @@ import SubscriptionDetails from "@/pages/SubscriptionDetails";
 import SubscriptionPayment from "@/pages/SubscriptionPayment";
 import SubscriptionPlans from "@/pages/admin/SubscriptionPlans";
 import PaymentResult from "@/pages/PaymentResult";
+import UnreviewedProducts from "@/pages/UnreviewedProducts";
 
 const router = createBrowserRouter([
   {
@@ -75,6 +76,10 @@ const router = createBrowserRouter([
       {
         path: "payment/result",
         element: <PaymentResult />,
+      },
+      {
+        path: "reviews/pending",
+        element: <UnreviewedProducts />,
       },
     ],
   },

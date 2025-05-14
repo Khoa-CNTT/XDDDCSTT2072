@@ -25,6 +25,8 @@ import SubscriptionDetails from "./pages/SubscriptionDetails";
 import SubscriptionPayment from "./pages/SubscriptionPayment";
 import SubscriptionPlans from "./pages/admin/SubscriptionPlans";
 import PaymentResult from "./pages/PaymentResult";
+import ReviewNotification from "./components/product/ReviewNotification";
+import { getUnreviewedProducts } from "./services/feedbackService";
 
 import Category from "./components/farmhub2/Category";
 import NewProducts from "./components/farmhub2/NewProducts";
@@ -107,6 +109,9 @@ function App() {
             <Route path="*" element={<NoFoundPage />} />
           </Route>
         </Routes>
+
+        {/* Thông báo đánh giá sản phẩm */}
+        <ReviewNotification getUnreviewedProducts={getUnreviewedProducts} />
       </Router>
 
       {/* Add React Query Devtools - only in development */}
