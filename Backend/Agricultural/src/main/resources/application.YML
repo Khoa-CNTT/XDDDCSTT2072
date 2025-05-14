@@ -33,10 +33,26 @@ spring:
             sql:
               BasicBinder: TRACE # Ghi lại giá trị tham số khi Hibernate chạy query
 
+  main:
+    allow-bean-definition-overriding: true
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    static-path-pattern: /static/**
+
 logging:
   level:
+    org:
+      springframework:
+        security: DEBUG
+        web: INFO
+    com:
+      agricultural: DEBUG
     org.hibernate.SQL: DEBUG # Ghi lại SQL Hibernate chạy
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE # Log giá trị tham số của query
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 jwt:
   secretKey: YourSuperSecretKeyHereMustBeAtLeast32CharactersLong
@@ -46,9 +62,9 @@ api:
   prefix: api/v1
 
 cloudinary:
-  cloud-name: dey5xwdud
-  api-key: 817519282872467
-  api-secret: X5teIyL-lyHbr2kfXX2ezQkknBo
+  cloud_name: dey5xwdud
+  api_key: 817519282872467
+  api_secret: X5teIyL-lyHbr2kfXX2ezQkknBo
   secure: true
 
 # Cấu hình OpenWeather API
@@ -61,8 +77,8 @@ vnpay:
   tmn-code: T4A9FEAR
   hash-secret: 98344NMN3SQ9PXJECUJEZG6EMSM8X1F9
   url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-  return-url: ${app.backend-url}/api/v1/payment/vnpay-return
-  ipn-url: ${app.backend-url}/api/v1/payment/vnpay-ipn
+  return-url: http://localhost:5173/payment/result
+  ipn-url: http://localhost:8080/api/v1/payment/vnpay-ipn
   version: 2.1.0
   command: pay
   currency-code: VND
@@ -78,10 +94,12 @@ ai:
       api:
         url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
         key: AIzaSyAWuG5_36F_CIPPVjCFEam8VoY4iyLIZN4
+      endpoint:
+        text: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
 
 app:
-  frontend-url: https://e42a-14-191-241-100.ngrok-free.app
-  backend-url: https://e42a-14-191-241-100.ngrok-free.app
+  frontend-url: http://localhost:5173
+  backend-url: http://localhost:8080
   payment:
     method: VNPAY # Phương thức thanh toán mặc định
 
@@ -92,10 +110,16 @@ momo:
   accessKey: klm05TvNBzhg7h7j
   secretKey: at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa
   apiEndpoint: https://test-payment.momo.vn/v2/gateway/api/create
-  redirectUrl: https://9f83-42-112-56-163.ngrok-free.app/api/v1/payment/momo/return
-  ipnUrl: https://9f83-42-112-56-163.ngrok-free.app/api/v1/payment/momo/ipn
+  redirectUrl: http://localhost:5173/payment/momo/return
+  ipnUrl: http://localhost:8080/api/v1/payment/momo/ipn
   storeId: Agricultural1
   lang: vi
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
 
 
 

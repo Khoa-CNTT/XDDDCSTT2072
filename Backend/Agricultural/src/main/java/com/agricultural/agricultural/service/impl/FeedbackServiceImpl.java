@@ -76,7 +76,10 @@ public class FeedbackServiceImpl implements IFeedbackService {
             throw new BadRequestException("Bạn đã đánh giá sản phẩm này rồi");
         }
         
-        // TODO: Kiểm tra xem người dùng đã mua sản phẩm này chưa (có thể thêm sau)
+        // Kiểm tra xem người dùng đã mua sản phẩm này chưa
+        if (!userHasPurchasedProduct(currentUser.getId(), feedbackDTO.getProductId())) {
+            throw new BadRequestException("Bạn chưa mua sản phẩm này nên không thể đánh giá");
+        }
         
         // Tạo đánh giá mới
         Feedback feedback = Feedback.builder()
@@ -85,8 +88,8 @@ public class FeedbackServiceImpl implements IFeedbackService {
                 .rating(feedbackDTO.getRating())
                 .comment(feedbackDTO.getComment())
                 .reviewDate(LocalDateTime.now())
-                .status("PENDING") // Đánh giá mới sẽ ở trạng thái chờ duyệt
-                .isVerifiedPurchase(false) // TODO: cập nhật lại sau khi kiểm tra mua hàng
+                .status("APPROVED") // Đánh giá mới sẽ được tự động phê duyệt
+                .isVerifiedPurchase(true) // Mặc định là đã xác nhận mua hàng
                 .helpfulCount(0)
                 .notHelpfulCount(0)
                 .build();
@@ -119,8 +122,8 @@ public class FeedbackServiceImpl implements IFeedbackService {
         feedback.setRating(feedbackDTO.getRating());
         feedback.setComment(feedbackDTO.getComment());
         
-        // Luôn gán status là PENDING khi cập nhật 
-        feedback.setStatus("PENDING");
+        // Luôn gán status là APPROVED khi cập nhật 
+        feedback.setStatus("APPROVED");
         
         Feedback updatedFeedback = feedbackRepository.save(feedback);
         
@@ -403,6 +406,78 @@ public class FeedbackServiceImpl implements IFeedbackService {
     }
 
     /**
+     * Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
+     */
+    @Override
+    public boolean userHasReviewedProduct(Integer userId, Integer productId) {
+        // Tìm feedback của người dùng cho sản phẩm này
+        Optional<Feedback> existingFeedback = feedbackRepository.findByUserIdAndProductId(userId, productId);
+        return existingFeedback.isPresent();
+    }
+    
+    /**
+     * Kiểm tra xem người dùng đã mua sản phẩm này chưa
+     * Giả sử nếu người dùng đã có đơn hàng chứa sản phẩm này và trạng thái đơn hàng đã hoàn thành
+     */
+    @Override
+    public boolean userHasPurchasedProduct(Integer userId, Integer productId) {
+        try {
+            // Kiểm tra trong bảng order_items và orders xem người dùng đã mua sản phẩm này chưa
+            // Trạng thái đơn hàng phải là COMPLETED hoặc DELIVERED
+            
+            // Sử dụng native query để kiểm tra 
+            Integer count = feedbackRepository.countUserPurchasedProduct(userId, productId);
+            
+            // Debug log
+            System.out.println("DEBUG - Checking user " + userId + " purchased product " + productId);
+            System.out.println("DEBUG - Count result: " + count);
+            
+            return count != null && count > 0;
+        } catch (Exception e) {
+            // Log lỗi để debug
+            System.err.println("ERROR in userHasPurchasedProduct: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Lấy danh sách sản phẩm đã mua nhưng chưa đánh giá
+     */
+    @Override
+    public List<Map<String, Object>> getUnreviewedProducts(Integer userId) {
+        // TODO: Implement logic to get list of purchased but unreviewed products
+        // Cần tích hợp với OrderRepository và MarketPlaceRepository
+        
+        // Trả về danh sách giả để test
+        List<Map<String, Object>> result = new ArrayList<>();
+        try {
+            // Lấy 5 sản phẩm đầu tiên trong MarketPlace
+            List<MarketPlace> products = marketPlaceRepository.findAll(Pageable.ofSize(5)).getContent();
+            
+            for (MarketPlace product : products) {
+                // Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
+                boolean hasReviewed = userHasReviewedProduct(userId, product.getId());
+                
+                // Nếu chưa đánh giá, thêm vào danh sách kết quả
+                if (!hasReviewed) {
+                    Map<String, Object> productInfo = new HashMap<>();
+                    productInfo.put("id", product.getId());
+                    productInfo.put("name", product.getProductName());
+                    productInfo.put("imageUrl", product.getImageUrl());
+                    productInfo.put("price", product.getPrice());
+                    
+                    result.add(productInfo);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error getting unreviewed products", e);
+        }
+        
+        return result;
+    }
+
+    /**
      * Xử lý các hình ảnh đánh giá
      */
     private void processImages(Feedback feedback, List<MultipartFile> images) {
@@ -495,8 +570,8 @@ public class FeedbackServiceImpl implements IFeedbackService {
                 } catch (IllegalArgumentException e) {
                     // Ghi log lỗi
                     log.error("Lỗi chuyển đổi enum status: {}", statusStr);
-                    // Mặc định là PENDING nếu không thể chuyển đổi
-                    feedbackDTO.setStatus(FeedbackStatus.PENDING);
+                    // Mặc định là APPROVED nếu không thể chuyển đổi
+                    feedbackDTO.setStatus(FeedbackStatus.APPROVED);
                 }
             }
             

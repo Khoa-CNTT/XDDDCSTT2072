@@ -1,6 +1,7 @@
 package com.agricultural.agricultural.dto;
 
 import com.agricultural.agricultural.entity.enumeration.FeedbackStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,6 +34,7 @@ public class FeedbackDTO {
     
     private String comment;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", shape = JsonFormat.Shape.STRING)
     private LocalDateTime reviewDate;
     
     private String imageUrl;
@@ -49,8 +51,10 @@ public class FeedbackDTO {
     
     private Integer repliedBy;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", shape = JsonFormat.Shape.STRING)
     private LocalDateTime repliedAt;
     
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", shape = JsonFormat.Shape.STRING)
     private LocalDateTime updatedAt;
     
     private UserDTO user;

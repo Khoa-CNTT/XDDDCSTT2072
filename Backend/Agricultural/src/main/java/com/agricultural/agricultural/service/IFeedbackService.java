@@ -61,4 +61,21 @@ public interface IFeedbackService {
     
     // Lấy đánh giá từ khách hàng đã mua hàng
     Page<FeedbackDTO> getVerifiedPurchaseFeedbacks(Integer productId, Pageable pageable);
+    
+    // Thêm các phương thức mới để phục vụ API kiểm tra đánh giá
+    
+    /**
+     * Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
+     */
+    boolean userHasReviewedProduct(Integer userId, Integer productId);
+    
+    /**
+     * Kiểm tra xem người dùng đã mua sản phẩm này chưa
+     */
+    boolean userHasPurchasedProduct(Integer userId, Integer productId);
+    
+    /**
+     * Lấy danh sách sản phẩm đã mua nhưng chưa đánh giá
+     */
+    List<Map<String, Object>> getUnreviewedProducts(Integer userId);
 } 
