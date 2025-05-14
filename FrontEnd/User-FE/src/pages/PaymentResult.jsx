@@ -8,9 +8,14 @@ import {
   ArrowRight,
   Home,
   AlertCircle,
+  Star,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/constant/queryKeys";
+import { getUnreviewedProducts } from "@/services/feedbackService";
+import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1";
 
@@ -20,6 +25,22 @@ const PaymentResult = () => {
   const [paymentInfo, setPaymentInfo] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
+  const axiosPrivate = useAxiosPrivate();
+
+  // Lấy danh sách sản phẩm chưa đánh giá khi thanh toán thành công
+  const {
+    data: unreviewedProductsData,
+    isLoading: isLoadingUnreviewedProducts,
+  } = useQuery({
+    queryKey: ["unreviewedProducts"],
+    queryFn: () => getUnreviewedProducts(axiosPrivate),
+    enabled: paymentStatus === "success", // Chỉ kích hoạt khi thanh toán thành công
+    staleTime: 5 * 60 * 1000, // 5 phút
+  });
+
+  // Lấy danh sách sản phẩm chưa đánh giá
+  const unreviewedProducts = unreviewedProductsData?.data || [];
 
   // Hàm gọi API để kiểm tra và cập nhật trạng thái thanh toán
   const updatePaymentStatus = async (transactionNo, txnRef) => {
@@ -351,6 +372,9 @@ const PaymentResult = () => {
 
                   // Thông báo thành công bổ sung
                   toast.success("Trạng thái đơn hàng đã được cập nhật!");
+
+                  // Làm mới giỏ hàng sau khi thanh toán thành công
+                  refreshCart();
                 } else {
                   console.warn(
                     "Không thể cập nhật trạng thái thanh toán trong database"
@@ -368,6 +392,9 @@ const PaymentResult = () => {
         if (isSuccess) {
           // Thông báo thành công
           toast.success("Thanh toán thành công!");
+
+          // Làm mới giỏ hàng khi thanh toán thành công
+          refreshCart();
 
           setPaymentStatus("success");
           setPaymentInfo({
@@ -431,6 +458,43 @@ const PaymentResult = () => {
     }
   };
 
+  // Hàm làm mới giỏ hàng sau khi thanh toán thành công
+  const refreshCart = async () => {
+    try {
+      console.log("Làm mới giỏ hàng sau khi thanh toán thành công");
+
+      // Lấy token từ localStorage
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        // Gọi API để làm mới dữ liệu giỏ hàng
+        await axios.get(`${API_URL}/cart`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("Đã làm mới dữ liệu giỏ hàng từ server");
+
+        // Xóa cache của giỏ hàng trong React Query
+        queryClient.invalidateQueries({ queryKey: queryKeys.cart });
+        console.log("Đã làm mới cache React Query cho giỏ hàng");
+
+        // Thêm việc xóa dữ liệu giỏ hàng trong localStorage (nếu có)
+        try {
+          const cartKey = "cart-items"; // Hoặc tên khóa lưu giỏ hàng trong localStorage của bạn
+          localStorage.removeItem(cartKey);
+          console.log("Đã xóa dữ liệu giỏ hàng từ localStorage");
+        } catch (e) {
+          console.error("Lỗi khi xóa dữ liệu giỏ hàng từ localStorage:", e);
+        }
+      } else {
+        console.warn("Không tìm thấy token, không thể làm mới giỏ hàng");
+      }
+    } catch (error) {
+      console.error("Lỗi khi làm mới giỏ hàng:", error);
+    }
+  };
+
   // Hàm lấy thông báo lỗi dựa trên mã lỗi
   const getErrorMessage = (errorCode) => {
     const errorMessages = {
@@ -481,14 +545,15 @@ const PaymentResult = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <Card className="shadow-lg">
+      <div className="max-w-3xl mx-auto">
+        <Card className="shadow-lg overflow-hidden">
           <CardHeader
-            className={
-              paymentStatus === "success" ? "bg-green-50" : "bg-red-50"
-            }
+            className={`
+              ${paymentStatus === "success" ? "bg-green-50" : "bg-red-50"}
+              p-6 flex flex-col items-center
+            `}
           >
-            <div className="flex items-center justify-center mb-4">
+            <div className="mb-4">
               {paymentStatus === "success" ? (
                 <CheckCircle className="w-16 h-16 text-green-500" />
               ) : (
@@ -505,41 +570,45 @@ const PaymentResult = () => {
           <CardContent className="p-6">
             {paymentStatus === "success" && paymentInfo && (
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Mã giao dịch</p>
-                  <p className="font-semibold">{paymentInfo.transactionId}</p>
-                </div>
+                {/* Payment Info Grid - Responsive Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">Mã giao dịch</p>
+                    <p className="font-semibold">{paymentInfo.transactionId}</p>
+                  </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Mã đơn hàng</p>
-                  <p className="font-semibold">{paymentInfo.transactionRef}</p>
-                </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">Mã đơn hàng</p>
+                    <p className="font-semibold">
+                      {paymentInfo.transactionRef}
+                    </p>
+                  </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Số tiền</p>
-                  <p className="font-semibold text-green-600">
-                    {paymentInfo.amount}
-                  </p>
-                </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">Số tiền</p>
+                    <p className="font-semibold text-green-600">
+                      {paymentInfo.amount}
+                    </p>
+                  </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Nội dung thanh toán</p>
-                  <p className="font-semibold">{paymentInfo.orderInfo}</p>
-                </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">
+                      Nội dung thanh toán
+                    </p>
+                    <p className="font-semibold">{paymentInfo.orderInfo}</p>
+                  </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Ngân hàng</p>
-                  <p className="font-semibold">{paymentInfo.bankCode}</p>
-                </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">Ngân hàng</p>
+                    <p className="font-semibold">{paymentInfo.bankCode}</p>
+                  </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Ngày thanh toán</p>
-                  <p className="font-semibold">{paymentInfo.paymentDate}</p>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Phương thức thanh toán</p>
-                  <p className="font-semibold">{paymentInfo.paymentMethod}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">
+                      Ngày thanh toán
+                    </p>
+                    <p className="font-semibold">{paymentInfo.paymentDate}</p>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg">
@@ -548,38 +617,90 @@ const PaymentResult = () => {
                     Thanh toán đã được xác nhận thành công!
                   </p>
                 </div>
+
+                {/* Phần đánh giá sản phẩm - Chỉ hiển thị khi thanh toán thành công */}
+                <div className="mt-6 bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <Star className="w-5 h-5 text-yellow-500 mr-2" />
+                    <h3 className="font-semibold">Đánh giá sản phẩm</h3>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-4">
+                    Hãy chia sẻ cảm nhận của bạn về sản phẩm đã mua để giúp
+                    người khác có trải nghiệm mua sắm tốt hơn.
+                  </p>
+
+                  {isLoadingUnreviewedProducts ? (
+                    <div className="flex justify-center py-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : unreviewedProducts.length > 0 ? (
+                    <div className="flex flex-col space-y-2">
+                      <Button
+                        className="w-full flex items-center justify-center"
+                        onClick={() => {
+                          // Lấy sản phẩm đầu tiên từ danh sách chưa đánh giá
+                          if (
+                            unreviewedProducts &&
+                            unreviewedProducts.length > 0
+                          ) {
+                            const firstProduct = unreviewedProducts[0];
+                            // Chuyển đến trang chi tiết sản phẩm với tab đánh giá được chọn và form đánh giá mở
+                            navigate(`/marketplace/${firstProduct.id}`, {
+                              state: {
+                                showReviewForm: true,
+                                activeTab: "reviews",
+                              },
+                            });
+                          } else {
+                            navigate("/reviews/pending");
+                          }
+                        }}
+                      >
+                        <Star className="w-4 h-4 mr-2" />
+                        Đánh giá sản phẩm đã mua
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic text-center">
+                      Bạn sẽ có thể đánh giá sản phẩm sau khi nhận được hàng.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
             {paymentStatus === "failed" && paymentInfo && (
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Mã lỗi</p>
-                  <p className="font-semibold text-red-600">
-                    {paymentInfo.errorCode}
-                  </p>
-                </div>
+                {/* Responsive grid for error information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">Mã lỗi</p>
+                    <p className="font-semibold text-red-600">
+                      {paymentInfo.errorCode}
+                    </p>
+                  </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Thông báo lỗi</p>
-                  <p className="font-semibold text-red-600">
-                    {paymentInfo.errorMessage}
-                  </p>
-                </div>
+                  <div className="bg-gray-50 p-4 rounded-lg col-span-1 md:col-span-2">
+                    <p className="text-gray-600 mb-1 text-sm">Thông báo lỗi</p>
+                    <p className="font-semibold text-red-600">
+                      {paymentInfo.errorMessage}
+                    </p>
+                  </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Mã đơn hàng</p>
-                  <p className="font-semibold">{paymentInfo.transactionRef}</p>
-                </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">Mã đơn hàng</p>
+                    <p className="font-semibold">
+                      {paymentInfo.transactionRef}
+                    </p>
+                  </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Nội dung thanh toán</p>
-                  <p className="font-semibold">{paymentInfo.orderInfo}</p>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Phương thức thanh toán</p>
-                  <p className="font-semibold">{paymentInfo.paymentMethod}</p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 mb-1 text-sm">
+                      Nội dung thanh toán
+                    </p>
+                    <p className="font-semibold">{paymentInfo.orderInfo}</p>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg">
@@ -591,9 +712,9 @@ const PaymentResult = () => {
               </div>
             )}
 
-            <div className="flex justify-center mt-8 space-x-4">
+            <div className="flex flex-col sm:flex-row justify-center mt-8 gap-4">
               <Button
-                className="flex items-center"
+                className="flex items-center justify-center"
                 variant="outline"
                 onClick={() => navigate("/cart")}
               >
@@ -602,7 +723,7 @@ const PaymentResult = () => {
               </Button>
 
               <Button
-                className="flex items-center"
+                className="flex items-center justify-center"
                 onClick={() => navigate("/")}
               >
                 <Home className="w-4 h-4 mr-2" />

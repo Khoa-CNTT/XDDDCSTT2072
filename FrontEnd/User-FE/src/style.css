@@ -1,0 +1,400 @@
+/* Modern Agricultural Social Network Styling */
+
+/* 3D Card effects */
+.card-3d {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+.card-3d:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Gradient borders */
+.gradient-border {
+  position: relative;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+}
+
+.gradient-border:hover {
+  border-color: rgba(100, 200, 100, 0.3);
+  box-shadow: 0 5px 15px rgba(100, 200, 100, 0.1);
+}
+
+/* Interactive buttons */
+.btn-interactive {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-interactive:after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: -100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.5s ease;
+}
+
+.btn-interactive:hover:after {
+  left: 100%;
+}
+
+/* Header specific styles */
+header a, header button {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+header .menu-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+/* Even spacing for header icons */
+.header-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  margin: 0 6px;
+  position: relative;
+}
+
+.header-icon:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Post creation */
+.post-input-box {
+  border-radius: 24px;
+  height: 48px;
+  padding-left: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.post-input-box:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border-color: rgba(100, 200, 100, 0.5);
+}
+
+.post-action-button {
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.post-action-button:hover {
+  background-color: rgba(100, 200, 100, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Social tabs */
+.social-tab {
+  position: relative;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.social-tab[data-state="active"] {
+  background: linear-gradient(to bottom, rgba(0, 200, 0, 0.1), transparent);
+  font-weight: 600;
+  color: #22c55e; /* Green-500 */
+}
+
+.social-tab[data-state="active"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 25%;
+  width: 50%;
+  height: 3px;
+  background: linear-gradient(to right, #22c55e, #10b981); /* Green to Teal */
+  border-radius: 10px 10px 0 0;
+  animation: tabIndicator 0.3s ease-in-out;
+}
+
+@keyframes tabIndicator {
+  from { width: 0; left: 50%; }
+  to { width: 50%; left: 25%; }
+}
+
+.social-tab[data-state="active"] svg {
+  color: #22c55e; /* Green-500 */
+}
+
+/* Connection cards */
+.connection-card {
+  position: relative;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.connection-card:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.connection-role-badge {
+  font-size: 0.65rem;
+  padding: 3px 6px;
+  border-radius: 10px;
+  background-color: rgba(100, 200, 250, 0.15);
+  color: #3b82f6; /* Blue-500 */
+}
+
+.connection-role-badge.admin {
+  background-color: rgba(250, 100, 100, 0.15);
+  color: #ef4444; /* Red-500 */
+}
+
+.connection-role-badge.expert {
+  background-color: rgba(250, 200, 50, 0.15);
+  color: #f59e0b; /* Amber-500 */
+}
+
+.connection-role-badge.farmer {
+  background-color: rgba(100, 200, 100, 0.15);
+  color: #22c55e; /* Green-500 */
+}
+
+.connection-role-badge.supplier {
+  background-color: rgba(180, 120, 220, 0.15);
+  color: #8b5cf6; /* Violet-500 */
+}
+
+/* Mobile menu */
+.mobile-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  z-index: 50;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.mobile-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  gap: 4px;
+  color: #64748b; /* slate-500 */
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-item.active {
+  color: #22c55e; /* Green-500 */
+  position: relative;
+}
+
+.mobile-menu-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 50%;
+  height: 3px;
+  background: #22c55e; /* Green-500 */
+  border-radius: 3px 3px 0 0;
+}
+
+.mobile-menu-icon {
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-item:hover .mobile-menu-icon {
+  transform: translateY(-2px);
+}
+
+/* Skeleton loader */
+.skeleton-loader {
+  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Theme toggle */
+.theme-toggle {
+  width: 48px;
+  height: 24px;
+  border-radius: 12px;
+  background-color: #e5e7eb; /* Gray-200 */
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.dark .theme-toggle {
+  background-color: #3b82f6; /* Blue-500 */
+}
+
+.theme-toggle-thumb {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  transition: all 0.3s ease;
+  transform: translateX(0);
+}
+
+.dark .theme-toggle-thumb {
+  transform: translateX(24px);
+}
+
+/* Loading animation */
+.farmhub-animate-fadeIn {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hero section styles */
+.hero-badge {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.hero-stat-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.hero-stat-card:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-5px);
+}
+
+.hero-image-container {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-image-container::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle at center, rgba(74, 222, 128, 0.2), transparent 70%);
+  z-index: -1;
+  border-radius: 24px;
+}
+
+/* Post cards */
+.post-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.post-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.post-card.topic-farming {
+  border-left: 4px solid rgba(74, 222, 128, 0.6);
+}
+
+.post-card.topic-tech {
+  border-left: 4px solid rgba(59, 130, 246, 0.6);
+}
+
+.post-card.topic-animals {
+  border-left: 4px solid rgba(168, 85, 247, 0.6);
+}
+
+.post-card.topic-news {
+  border-left: 4px solid rgba(249, 115, 22, 0.6);
+}
+
+.post-image-container {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.post-image {
+  transition: transform 0.6s ease;
+}
+
+.post-card:hover .post-image {
+  transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-3d {
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+  }
+  
+  .mobile-menu {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  .hero-content {
+    padding: 40px 20px;
+  }
+  
+  .hero-stat-card {
+    padding: 12px;
+  }
+} 

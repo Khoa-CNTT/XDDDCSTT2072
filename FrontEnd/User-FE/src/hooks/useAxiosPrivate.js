@@ -43,8 +43,9 @@ const useAxiosPrivate = () => {
           console.error(`Response error ${error.response.status}:`, error.response.data);
           
           // Xử lý lỗi 401 Unauthorized
-          if (error.response.status === 401) {
+          if (error.response.status === 403) {
             console.error("Unauthorized error - Invalid or expired token");
+            
             // Thêm xử lý refresh token ở đây nếu cần
           }
         } else if (error.request) {
