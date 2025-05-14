@@ -125,13 +125,11 @@ const Header = () => {
           {/* Thông báo */}
           <div className="relative hover:scale-110 transition-transform cursor-pointer">
             <FaBell size={22} className="text-black dark:text-white" />
-            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-              
-            </span>
+            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold"></span>
           </div>
 
           {/* Giỏ hàng */}
-         <Cart/>
+          <Cart />
 
           {/* Avatar dropdown */}
           <div className="relative hidden md:block">
@@ -147,22 +145,25 @@ const Header = () => {
               >
                 <ul>
                   <li className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
-                    👤 Profile
+                    <Link to={`/profile/${auth?.user?.id}`}>👤 Hồ sơ</Link>
                   </li>
                   <li className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
-                    ⚙️ Settings
+                    <Link to="/users/search">🔍 Tìm người dùng</Link>
+                  </li>
+                  <li className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600">
+                    ⚙️ Cài đặt
                   </li>
                   <li
                     onClick={handleLogout}
                     className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
                   >
-                    🚪 Logout
+                    🚪 Đăng xuất
                   </li>
                   <li
                     onClick={toggleDarkMode}
                     className="py-1 px-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600"
                   >
-                    {isDarkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+                    {isDarkMode ? "☀️ Chế độ sáng" : "🌙 Chế độ tối"}
                   </li>
                 </ul>
               </div>

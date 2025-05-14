@@ -6,18 +6,19 @@ import axiosInstance from "../services/api/axios";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import useAuth from "../hooks/useAuth";
-import { useNavigate, useLocation, Link } from "react-router";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 
 const login = async ({ email, password }) => {
   try {
+    console.log("Đang gửi request đăng nhập...");
     const res = await axiosInstance.post("/users/login", {
       email,
       password,
     });
-    toast.success("Login successfully");
+    console.log("Response đăng nhập:", res.data);
     return res.data;
   } catch (error) {
-    console.log(error);
+    console.error("Lỗi đăng nhập:", error);
     throw error;
   }
 };
@@ -30,29 +31,58 @@ const Login = () => {
   const location = useLocation();
   // Get the intended destination from the location state
   const from = location.state?.from?.pathname || "/home";
-  useEffect(() => {
-    const sessionAuth = sessionStorage.getItem("auth");
-    if (sessionAuth) {
-      navigate(from, { replace: true });
-      // navigate(from, { replace: true });
-    }
-  }, [from, navigate]);
 
-  const { mutate, isPending } = useMutation({
+  useEffect(() => {
+    // Chỉ kiểm tra phiên đăng nhập nếu không có tham số from từ redirect
+    // hoặc tham số from không phải là trạng thái redirect từ RequireAuth
+    if (!location.state || !location.state.from) {
+      const sessionAuth = sessionStorage.getItem("auth");
+      if (sessionAuth) {
+        try {
+          const parsedAuth = JSON.parse(sessionAuth);
+          // Nếu có token trong sessionStorage, đặt auth state và chuyển đến trang chính
+          if (parsedAuth && parsedAuth.accessToken) {
+            setAuth(parsedAuth);
+            navigate("/home", { replace: true });
+          }
+        } catch (error) {
+          console.error("Error parsing auth from session:", error);
+          // Xóa sessionStorage nếu dữ liệu không hợp lệ
+          sessionStorage.removeItem("auth");
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const { mutate, isPending, error } = useMutation({
     mutationFn: login,
     onSuccess: (data) => {
+      console.log("Login success, data:", data);
+      toast.success("Đăng nhập thành công");
+
+      // Lưu thông tin xác thực
       const accessToken = data.token;
       const user = data.user;
       const roleName = data.user.roleName;
       const authData = { accessToken, user, roleName };
+
+      // Cập nhật trạng thái và lưu vào session storage
       setAuth(authData);
       sessionStorage.setItem("auth", JSON.stringify(authData));
+
+      // Reset form
       setEmail("");
       setPassword("");
-      // Navigate to the intended destination or home
-      navigate(from, { replace: true });
+
+      // Trì hoãn chuyển hướng một chút để đảm bảo state đã được cập nhật
+      setTimeout(() => {
+        console.log("Điều hướng từ login đến:", from);
+        navigate(from, { replace: true });
+      }, 100);
     },
     onError: (error) => {
+      console.error("Login error:", error);
       if (error.response?.data?.email) {
         toast.error(error.response.data.email);
         return;
@@ -67,14 +97,24 @@ const Login = () => {
       }
       if (error.message) {
         toast.error(error.message);
+      } else {
+        toast.error("Đăng nhập thất bại. Vui lòng thử lại sau.");
       }
     },
   });
 
   const handleLogin = (e) => {
     e.preventDefault();
+    console.log("Đăng nhập với email:", email);
     mutate({ email, password });
   };
+
+  // Display any error
+  useEffect(() => {
+    if (error) {
+      console.error("Error in login:", error);
+    }
+  }, [error]);
 
   return (
     <div
@@ -99,7 +139,7 @@ const Login = () => {
             LOGO
           </div>
           <h2 className="text-2xl font-bold text-center mb-6 text-black">
-            Sign In
+            Đăng Nhập
           </h2>
           <form onSubmit={handleLogin} className="space-y-4 w-full max-w-sm">
             <Input
@@ -111,21 +151,20 @@ const Login = () => {
 
             <Input
               type="password"
-              placeholder="Password"
+              placeholder="Mật khẩu"
               onChange={(e) => setPassword(e.target.value)}
               value={password}
             />
 
             <button
               type="submit"
-              onClick={handleLogin}
               className={`w-full p-3 rounded-md transition duration-300 ${
                 isPending
                   ? "bg-blue-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700 text-white"
               }`}
             >
-              {isPending ? "Loading..." : "Sign In"}
+              {isPending ? "Đang xử lý..." : "Đăng Nhập"}
             </button>
           </form>
           <div className="text-center text-xl text-gray-600 mt-3 cursor-pointer font-medium">
@@ -134,7 +173,7 @@ const Login = () => {
             </Link>
           </div>
           <div className="flex items-center justify-center mt-3">
-            <p className="text-gray-600 text-sm mr-2">Or Login With</p>
+            <p className="text-gray-600 text-sm mr-2">Hoặc đăng nhập với</p>
             <div className="flex space-x-4">
               <FaFacebook className="text-blue-600 text-2xl cursor-pointer" />
               <FaGoogle className="text-red-600 text-2xl cursor-pointer" />

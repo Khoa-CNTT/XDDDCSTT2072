@@ -48,10 +48,17 @@ export const useCartActions = (product = null) => {
       console.log(error);
     },
   });
+  
+  // Hàm làm mới giỏ hàng
+  const refreshCart = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.cart });
+  };
+  
   return {
     createCartMuation,
     getCartQuery,
     deleteCartItemsMuation,
     updateCartMutation,
+    refreshCart,
   };
 };
