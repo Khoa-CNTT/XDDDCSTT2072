@@ -80,3 +80,58 @@ export const getProductById = async (axiosPrivate, id) => {
     throw error;
   }
 };
+
+// Lấy tất cả ảnh của sản phẩm
+export const getProductImages = async (axiosPrivate, productId) => {
+  try {
+    const response = await axiosPrivate.get(`/product-images/product/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.log("Lỗi khi lấy ảnh sản phẩm:", error);
+    throw error;
+  }
+};
+
+// Lấy ảnh chính của sản phẩm
+export const getPrimaryProductImage = async (axiosPrivate, productId) => {
+  try {
+    const response = await axiosPrivate.get(`/product-images/product/${productId}/primary`);
+    return response.data;
+  } catch (error) {
+    console.log("Lỗi khi lấy ảnh chính của sản phẩm:", error);
+    throw error;
+  }
+};
+
+// Lấy thông tin flash sale đang hoạt động
+export const getActiveFlashSales = async (axiosPrivate) => {
+  try {
+    const response = await axiosPrivate.get('/flash-sales/active');
+    return response.data;
+  } catch (error) {
+    console.log("Lỗi khi lấy flash sale đang hoạt động:", error);
+    throw error;
+  }
+};
+
+// Kiểm tra sản phẩm có nằm trong flash sale không
+export const checkProductInFlashSale = async (axiosPrivate, productId) => {
+  try {
+    const response = await axiosPrivate.get(`/flash-sales/check-product/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.log("Lỗi khi kiểm tra sản phẩm trong flash sale:", error);
+    throw error;
+  }
+};
+
+// Lấy thông tin flash sale cho sản phẩm cụ thể
+export const getFlashSaleForProduct = async (axiosPrivate, productId) => {
+  try {
+    const response = await axiosPrivate.get(`/flash-sales/product/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.log("Lỗi khi lấy flash sale cho sản phẩm:", error);
+    throw error;
+  }
+};

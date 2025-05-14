@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import axiosInstance from "../services/api/axios";
 import backgroundImage from "../assets/page-signup-signin/sign-up.jpg";
 import smallImage from "../assets/page-signup-signin/sign-up.jpg";
 import { Input } from "@/components/ui/input";
@@ -46,25 +46,24 @@ const Register = () => {
 
   const mutation = useMutation({
     mutationFn: async (formData) => {
-      return await axios.post(
-        "http://localhost:8080/api/v1/users/register-with-image",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      console.log("Đang gửi request đăng ký...");
+      return await axiosInstance.post("/users/register-with-image", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
     },
     onSuccess: (data) => {
-      console.log(data);
+      console.log("Đăng ký thành công:", data);
       toast.success("Đăng ký thành công!");
       reset();
       navigate("/account/login");
     },
     onError: (error) => {
-      console.log(error);
-      toast.error(error.response.data);
+      console.error("Lỗi đăng ký:", error);
+      toast.error(
+        error.response?.data || "Đăng ký thất bại, vui lòng thử lại sau"
+      );
     },
   });
 
@@ -79,7 +78,7 @@ const Register = () => {
   // };
 
   const onSubmit = (data) => {
-    console.log(data);
+    console.log("Dữ liệu form:", data);
 
     const formData = new FormData();
     formData.append("userName", data.userName);
@@ -89,8 +88,8 @@ const Register = () => {
     // formData.append("confirmPassword", data.confirmPassword);
     if (data.image && data.image[0]) {
       formData.append("image", data.image[0]);
+      console.log("Ảnh để upload:", data.image[0]);
     }
-    console.log("image to upload:", data.image[0]);
     mutation.mutate(formData);
   };
 

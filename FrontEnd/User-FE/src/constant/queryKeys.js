@@ -8,5 +8,7 @@ export const queryKeys = {
   searchProducts: (keyword) => ["searchProducts", keyword],
   productById: (id) => ["productById", id],
   userById: (id) => ["userById", id],
-  cart: () => ["cart"]
+  cart: () => ["cart"],
+  relatedProducts: (productId, categoryId) => ["relatedProducts", productId, categoryId],
+  searchUsers: (params) => ["searchUsers", params]
 };
