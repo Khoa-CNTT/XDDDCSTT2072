@@ -32,6 +32,7 @@ public class ForumReplyService implements IForumReplyService {
     private final IUserRepository userRepository;
     private final ForumReplyMapper replyMapper;
     private final INotificationService notificationService;
+    private final ProfanityFilterService profanityFilterService;
 
     @Override
     public List<ForumReplyDTO> getRootRepliesByPostId(Integer postId) {
@@ -112,38 +113,66 @@ public class ForumReplyService implements IForumReplyService {
         ForumPost post = postRepository.findById(request.getPostId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết với ID: " + request.getPostId()));
 
+        // Kiểm tra nội dung có chứa từ ngữ không phù hợp không
+        boolean containsProfanity = profanityFilterService.containsProfanity(request.getContent());
+        
+        // Lọc nội dung bình luận nếu có từ ngữ tục tĩu
+        String filteredContent = profanityFilterService.filterProfanity(request.getContent());
+        
         // Tạo reply mới
         ForumReply reply = ForumReply.builder()
-                .content(request.getContent())
+                .content(filteredContent)
                 .post(post)
                 .user(user)
-                .likeCount(0)
-                .isDeleted(false)
+                .isInappropriate(containsProfanity)
                 .build();
 
-        // Nếu là reply con (có parentId)
+        // Nếu có parentId, tức là reply cho một comment
         if (request.getParentId() != null) {
             ForumReply parentReply = replyRepository.findById(request.getParentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bình luận cha với ID: " + request.getParentId()));
             reply.setParent(parentReply);
+            
+            // Gửi thông báo cho người bình luận gốc nếu đó không phải là người đang reply
+            if (parentReply.getUser().getId() != userId) {
+                // Tạo thông báo về reply
+                NotificationDTO notification = NotificationDTO.builder()
+                        .receiverId(parentReply.getUser().getId())
+                        .senderId(userId)
+                        .type("REPLY")
+                        .title("Phản hồi mới")
+                        .content("đã trả lời bình luận của bạn trong bài viết \"" + post.getTitle() + "\"")
+                        .entityId(reply.getId())
+                        .entityType("FORUM_REPLY")
+                        .relatedEntityId(post.getId())
+                        .relatedEntityType("FORUM_POST")
+                        .build();
+                
+                // Gửi thông báo
+                notificationService.createNotification(notification);
+            }
+        } else {
+            // Đây là bình luận gốc (không phải reply), gửi thông báo cho chủ bài viết nếu cần
+            if (post.getUser().getId() != userId) {
+                // Tạo thông báo về bình luận mới
+                NotificationDTO notification = NotificationDTO.builder()
+                        .receiverId(post.getUser().getId())
+                        .senderId(userId)
+                        .type("COMMENT")
+                        .title("Bình luận mới")
+                        .content("đã bình luận về bài viết của bạn \"" + post.getTitle() + "\"")
+                        .entityId(reply.getId())
+                        .entityType("FORUM_REPLY")
+                        .relatedEntityId(post.getId())
+                        .relatedEntityType("FORUM_POST")
+                        .build();
+                
+                // Gửi thông báo
+                notificationService.createNotification(notification);
+            }
         }
 
-        // Lưu reply vào database
         ForumReply savedReply = replyRepository.save(reply);
-
-        // Gửi thông báo realtime cho chủ bài viết nếu người trả lời khác chủ bài
-        if (post.getUser().getId() != userId) {
-            NotificationDTO notification = NotificationDTO.builder()
-                    .userId(post.getUser().getId())
-                    .title("Có phản hồi mới trên bài viết của bạn")
-                    .message(user.getUsername() + " đã phản hồi bài viết của bạn: " + post.getTitle())
-                    .type("FORUM_REPLY")
-                    .redirectUrl("/forum/posts/" + post.getId())
-                    .build();
-            notificationService.sendRealTimeNotification(notification);
-        }
-
-        // Trả về DTO
         return replyMapper.toDTO(savedReply);
     }
 
@@ -162,22 +191,24 @@ public class ForumReplyService implements IForumReplyService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Lấy reply từ database
         ForumReply reply = replyRepository.findById(replyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bình luận với ID: " + replyId));
-
-        if (reply.getUser() == null || reply.getUser().getId() != userId) {
-            throw new BadRequestException("Bạn không có quyền cập nhật bình luận này");
+        
+        // Kiểm tra quyền
+        if (reply.getUser().getId() != userId) {
+            throw new BadRequestException("Bạn không có quyền sửa bình luận này");
         }
-
-
-        // Cập nhật nội dung bình luận
-        reply.setContent(content);
-
-        // Lưu vào database
+        
+        // Kiểm tra nội dung có chứa từ ngữ không phù hợp không
+        boolean containsProfanity = profanityFilterService.containsProfanity(content);
+        
+        // Lọc nội dung bình luận nếu có từ ngữ tục tĩu
+        String filteredContent = profanityFilterService.filterProfanity(content);
+        
+        reply.setContent(filteredContent);
+        reply.setIsInappropriate(containsProfanity);
+        
         ForumReply updatedReply = replyRepository.save(reply);
-
-        // Trả về DTO
         return replyMapper.toDTO(updatedReply);
     }
 
@@ -192,14 +223,14 @@ public class ForumReplyService implements IForumReplyService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Lấy reply từ database
         ForumReply reply = replyRepository.findById(replyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bình luận với ID: " + replyId));
-
-        if (reply.getUser() == null || reply.getUser().getId() != userId) {
-            throw new BadRequestException("Bạn không có quyền xoá bình luận này");
+        
+        // Kiểm tra quyền (chỉ chủ bình luận mới được xóa)
+        if (reply.getUser().getId() != userId) {
+            throw new BadRequestException("Bạn không có quyền xóa bình luận này");
         }
-
+        
         // Xóa mềm bình luận
         reply.setIsDeleted(true);
         replyRepository.save(reply);
@@ -216,17 +247,37 @@ public class ForumReplyService implements IForumReplyService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Lấy reply từ database
         ForumReply reply = replyRepository.findById(replyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bình luận với ID: " + replyId));
-
-        // Tăng số lượt thích (trong thực tế, nên có bảng riêng để lưu thông tin thích)
-        reply.setLikeCount(reply.getLikeCount() + 1);
         
-        // Lưu vào database
+        // Kiểm tra nếu bình luận đã bị xóa
+        if (Boolean.TRUE.equals(reply.getIsDeleted())) {
+            throw new BadRequestException("Bình luận này đã bị xóa");
+        }
+        
+        // Tăng số lượt thích
+        reply.incrementLikes();
         ForumReply updatedReply = replyRepository.save(reply);
-
-        // Trả về DTO
+        
+        // Gửi thông báo nếu người like không phải chủ bình luận
+        if (reply.getUser().getId() != userId) {
+            // Tạo thông báo về like
+            NotificationDTO notification = NotificationDTO.builder()
+                    .receiverId(reply.getUser().getId())
+                    .senderId(userId)
+                    .type("LIKE_COMMENT")
+                    .title("Lượt thích mới")
+                    .content("đã thích bình luận của bạn")
+                    .entityId(replyId)
+                    .entityType("FORUM_REPLY")
+                    .relatedEntityId(reply.getPost().getId())
+                    .relatedEntityType("FORUM_POST")
+                    .build();
+            
+            // Gửi thông báo
+            notificationService.createNotification(notification);
+        }
+        
         return replyMapper.toDTO(updatedReply);
     }
 
@@ -241,19 +292,18 @@ public class ForumReplyService implements IForumReplyService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Lấy reply từ database
         ForumReply reply = replyRepository.findById(replyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bình luận với ID: " + replyId));
-
-        // Giảm số lượt thích (nếu > 0)
-        if (reply.getLikeCount() > 0) {
-            reply.setLikeCount(reply.getLikeCount() - 1);
+        
+        // Kiểm tra nếu bình luận đã bị xóa
+        if (Boolean.TRUE.equals(reply.getIsDeleted())) {
+            throw new BadRequestException("Bình luận này đã bị xóa");
         }
         
-        // Lưu vào database
+        // Giảm số lượt thích
+        reply.decrementLikes();
         ForumReply updatedReply = replyRepository.save(reply);
-
-        // Trả về DTO
+        
         return replyMapper.toDTO(updatedReply);
     }
 

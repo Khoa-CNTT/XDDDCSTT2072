@@ -66,8 +66,16 @@ public class ForumReply {
     @Builder.Default
     Boolean isDeleted = false;
     
+    // Cờ đánh dấu bình luận không phù hợp (tục tĩu, vi phạm)
+    @Column(name = "is_inappropriate", nullable = false)
+    @Builder.Default
+    Boolean isInappropriate = false;
+    
     // Phương thức tiện ích để thêm reply con
     public void addReply(ForumReply reply) {
+        if (replies == null) {
+            replies = new ArrayList<>();
+        }
         replies.add(reply);
         reply.setParent(this);
     }
@@ -76,5 +84,22 @@ public class ForumReply {
     public void removeReply(ForumReply reply) {
         replies.remove(reply);
         reply.setParent(null);
+    }
+    
+    // Phương thức tăng số lượt thích
+    public void incrementLikes() {
+        if (likeCount == null) {
+            likeCount = 0;
+        }
+        likeCount++;
+    }
+    
+    // Phương thức giảm số lượt thích
+    public void decrementLikes() {
+        if (likeCount == null || likeCount <= 0) {
+            likeCount = 0;
+            return;
+        }
+        likeCount--;
     }
 } 

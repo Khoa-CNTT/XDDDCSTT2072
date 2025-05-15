@@ -35,6 +35,7 @@ public class ForumReplyDTO {
     private String userImageUrl;
     private Integer parentId;
     private Integer likeCount;
+    private Boolean isInappropriate;
     
     @Builder.Default
     private List<ForumReplyDTO> replies = new ArrayList<>();

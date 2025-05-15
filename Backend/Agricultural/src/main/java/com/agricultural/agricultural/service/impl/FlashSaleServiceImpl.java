@@ -41,8 +41,8 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
         FlashSale flashSale = new FlashSale();
         flashSale.setName(request.getName());
         flashSale.setDescription(request.getDescription());
-        flashSale.setStartTime(request.getStartDate());
-        flashSale.setEndTime(request.getEndDate());
+        flashSale.setStartTime(request.getStartTime());
+        flashSale.setEndTime(request.getEndTime());
         flashSale.setStatus(request.getStatus());
         flashSale.setDiscountPercentage(request.getDiscountPercentage());
         flashSale.setMaxDiscountAmount(request.getMaxDiscountAmount());
@@ -65,8 +65,8 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
         // Cập nhật thông tin flash sale
         flashSale.setName(request.getName());
         flashSale.setDescription(request.getDescription());
-        flashSale.setStartTime(request.getStartDate());
-        flashSale.setEndTime(request.getEndDate());
+        flashSale.setStartTime(request.getStartTime());
+        flashSale.setEndTime(request.getEndTime());
         flashSale.setStatus(request.getStatus());
         flashSale.setDiscountPercentage(request.getDiscountPercentage());
         flashSale.setMaxDiscountAmount(request.getMaxDiscountAmount());
@@ -282,8 +282,8 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
             .id(Long.valueOf(flashSale.getId()))
             .name(flashSale.getName())
             .description(flashSale.getDescription())
-            .startDate(flashSale.getStartTime())
-            .endDate(flashSale.getEndTime())
+            .startTime(flashSale.getStartTime())
+            .endTime(flashSale.getEndTime())
             .status(flashSale.getStatus())
             .discountPercentage(flashSale.getDiscountPercentage())
             .maxDiscountAmount(flashSale.getMaxDiscountAmount())

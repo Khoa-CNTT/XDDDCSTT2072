@@ -28,6 +28,51 @@ public class NotificationServiceImpl implements INotificationService {
         notificationDTO.setCreatedAt(LocalDateTime.now());
         notificationDTO.setRead(false);
         
+        // Đảm bảo trường message không null khi mapper từ content
+        if (notificationDTO.getMessage() == null && notificationDTO.getContent() != null) {
+            notificationDTO.setMessage(notificationDTO.getContent());
+        } else if (notificationDTO.getContent() == null && notificationDTO.getMessage() != null) {
+            notificationDTO.setContent(notificationDTO.getMessage());
+        } else if (notificationDTO.getMessage() == null && notificationDTO.getContent() == null) {
+            // Nếu cả 2 đều là null, đặt giá trị mặc định
+            notificationDTO.setMessage("Bạn có thông báo mới");
+            notificationDTO.setContent("Bạn có thông báo mới");
+        }
+        
+        // Đảm bảo trường title không null
+        if (notificationDTO.getTitle() == null) {
+            // Tạo title dựa vào type hoặc đặt giá trị mặc định
+            String title = "Thông báo mới";
+            if (notificationDTO.getType() != null) {
+                switch (notificationDTO.getType()) {
+                    case "COMMENT":
+                        title = "Bình luận mới";
+                        break;
+                    case "REPLY":
+                        title = "Phản hồi mới";
+                        break;
+                    case "LIKE_COMMENT":
+                        title = "Lượt thích mới";
+                        break;
+                    case "ORDER_NOTIFICATION":
+                        title = "Thông báo đơn hàng";
+                        break;
+                    default:
+                        title = "Thông báo mới";
+                }
+            }
+            notificationDTO.setTitle(title);
+        }
+        
+        // Xử lý việc ánh xạ userId và receiverId
+        if (notificationDTO.getUserId() == null && notificationDTO.getReceiverId() != null) {
+            notificationDTO.setUserId(notificationDTO.getReceiverId());
+        } else if (notificationDTO.getReceiverId() == null && notificationDTO.getUserId() != null) {
+            notificationDTO.setReceiverId(notificationDTO.getUserId());
+        } else if (notificationDTO.getUserId() == null && notificationDTO.getReceiverId() == null) {
+            throw new IllegalArgumentException("Thông báo phải có người nhận (userId hoặc receiverId)");
+        }
+        
         Notification notification = notificationMapper.toEntity(notificationDTO);
         notification = notificationRepository.save(notification);
         
@@ -98,6 +143,7 @@ public class NotificationServiceImpl implements INotificationService {
                 .userId(userId)
                 .title(title)
                 .message(message)
+                .content(message)
                 .type("ORDER_NOTIFICATION")
                 .read(false)
                 .createdAt(LocalDateTime.now())

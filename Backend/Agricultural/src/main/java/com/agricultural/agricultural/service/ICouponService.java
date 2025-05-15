@@ -79,4 +79,14 @@ public interface ICouponService {
      * Tính toán số tiền giảm giá khi áp dụng coupon
      */
     BigDecimal calculateDiscount(String couponCode, BigDecimal orderAmount);
+    
+    /**
+     * Đồng bộ số lần sử dụng của coupon từ dữ liệu thực tế
+     */
+    void synchronizeCouponUsage(Integer couponId);
+    
+    /**
+     * Đồng bộ số lần sử dụng của tất cả coupon
+     */
+    void synchronizeAllCouponsUsage();
 } 

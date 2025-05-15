@@ -18,8 +18,8 @@ public class FlashSaleResponse {
     private Long id;
     private String name;
     private String description;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private FlashSaleStatus status;
     private Integer discountPercentage;
     private BigDecimal maxDiscountAmount;
