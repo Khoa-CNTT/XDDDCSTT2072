@@ -15,6 +15,8 @@ import SubscriptionPayment from "@/pages/SubscriptionPayment";
 import SubscriptionPlans from "@/pages/admin/SubscriptionPlans";
 import PaymentResult from "@/pages/PaymentResult";
 import UnreviewedProducts from "@/pages/UnreviewedProducts";
+import UserSellerDashboard from "@/pages/UserSellerDashboard";
+import SellerProductForm from "@/pages/SellerProductForm";
 
 const router = createBrowserRouter([
   {
@@ -80,6 +82,18 @@ const router = createBrowserRouter([
       {
         path: "reviews/pending",
         element: <UnreviewedProducts />,
+      },
+      {
+        path: "seller/dashboard",
+        element: <UserSellerDashboard />,
+      },
+      {
+        path: "seller/add-product",
+        element: <SellerProductForm />,
+      },
+      {
+        path: "seller/edit-product/:id",
+        element: <SellerProductForm />,
       },
     ],
   },

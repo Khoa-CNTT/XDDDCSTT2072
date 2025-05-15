@@ -23,7 +23,9 @@ import {
   Leaf,
   Cloud,
   FileText,
+  Store,
 } from "lucide-react";
+import { FaClipboardList } from "react-icons/fa";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -232,6 +234,24 @@ const Header = () => {
                   </li>
                   <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
                     <Link
+                      to="/seller/dashboard"
+                      className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                    >
+                      <Store size={16} className="text-green-500" />
+                      Người bán
+                    </Link>
+                  </li>
+                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                    <Link
+                      to="/seller/orders"
+                      className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                    >
+                      <FaClipboardList size={16} className="text-blue-500" />
+                      Quản lý đơn hàng
+                    </Link>
+                  </li>
+                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                    <Link
                       to="/users/search"
                       className="py-2 px-3 flex items-center gap-2 text-sm w-full"
                     >
@@ -340,6 +360,24 @@ const Header = () => {
                 >
                   <User size={16} className="text-blue-500" />
                   Hồ sơ
+                </Link>
+              </li>
+              <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <Link
+                  to="/seller/dashboard"
+                  className="py-2 px-3 flex items-center gap-2 w-full"
+                >
+                  <Store size={16} className="text-green-500" />
+                  Người bán
+                </Link>
+              </li>
+              <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <Link
+                  to="/seller/orders"
+                  className="py-2 px-3 flex items-center gap-2 w-full"
+                >
+                  <FaClipboardList size={16} className="text-blue-500" />
+                  Quản lý đơn hàng
                 </Link>
               </li>
               <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">

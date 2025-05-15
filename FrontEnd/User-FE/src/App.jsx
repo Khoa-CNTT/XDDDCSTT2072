@@ -27,6 +27,9 @@ import SubscriptionPlans from "./pages/admin/SubscriptionPlans";
 import PaymentResult from "./pages/PaymentResult";
 import ReviewNotification from "./components/product/ReviewNotification";
 import { getUnreviewedProducts } from "./services/feedbackService";
+import UserSellerDashboard from "./pages/UserSellerDashboard";
+import SellerProductForm from "./pages/SellerProductForm";
+import SellerOrdersPage from "./pages/SellerOrdersPage";
 
 import Category from "./components/farmhub2/Category";
 import NewProducts from "./components/farmhub2/NewProducts";
@@ -105,6 +108,19 @@ function App() {
                 path="admin/subscriptions"
                 element={<SubscriptionPlans />}
               />
+              <Route
+                path="seller/dashboard"
+                element={<UserSellerDashboard />}
+              />
+              <Route
+                path="seller/add-product"
+                element={<SellerProductForm />}
+              />
+              <Route
+                path="seller/edit-product/:id"
+                element={<SellerProductForm />}
+              />
+              <Route path="seller/orders" element={<SellerOrdersPage />} />
             </Route>
             <Route path="*" element={<NoFoundPage />} />
           </Route>
