@@ -165,4 +165,22 @@ public class CouponController {
                 new ApiResponse<>(true, "Số tiền giảm giá", discountAmount)
         );
     }
+
+    @PostMapping("/{id}/sync-usage")
+    @PreAuthorize("hasAuthority('Admin')")
+    public ResponseEntity<ApiResponse<Void>> synchronizeCouponUsage(@PathVariable Integer id) {
+        couponService.synchronizeCouponUsage(id);
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Đã đồng bộ số lần sử dụng của mã giảm giá", null)
+        );
+    }
+    
+    @PostMapping("/sync-all-usage")
+    @PreAuthorize("hasAuthority('Admin')")
+    public ResponseEntity<ApiResponse<Void>> synchronizeAllCouponsUsage() {
+        couponService.synchronizeAllCouponsUsage();
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Đã đồng bộ số lần sử dụng của tất cả mã giảm giá", null)
+        );
+    }
 } 

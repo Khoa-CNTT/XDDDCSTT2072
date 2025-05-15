@@ -23,4 +23,20 @@ public interface IOrderCouponRepository extends JpaRepository<OrderCoupon, Integ
     
     // Tìm OrderCoupon theo orderId và couponId
     Optional<OrderCoupon> findByOrderIdAndCouponId(Integer orderId, Integer couponId);
+    
+    // Kiểm tra xem một người dùng (buyerId) đã từng sử dụng coupon chưa
+    @Query(value = "SELECT EXISTS (SELECT 1 FROM order_coupons oc JOIN orders o ON oc.order_id = o.id WHERE o.buyer_id = :buyerId AND oc.coupon_id = :couponId)", nativeQuery = true)
+    boolean existsByBuyerIdAndCouponId(@Param("buyerId") Integer buyerId, @Param("couponId") Integer couponId);
+    
+    // Đếm số người dùng khác nhau đã sử dụng coupon này
+    @Query(value = "SELECT COUNT(DISTINCT o.buyer_id) FROM order_coupons oc JOIN orders o ON oc.order_id = o.id WHERE oc.coupon_id = :couponId AND o.status IN ('PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED')", nativeQuery = true)
+    Integer countDistinctUsersByCouponId(@Param("couponId") Integer couponId);
+    
+    // Đếm tất cả đơn hàng có sử dụng mã giảm giá, kể cả trạng thái PENDING
+    @Query(value = "SELECT COUNT(DISTINCT o.buyer_id) FROM order_coupons oc JOIN orders o ON oc.order_id = o.id WHERE oc.coupon_id = :couponId", nativeQuery = true)
+    Integer countAllDistinctUsersByCouponId(@Param("couponId") Integer couponId);
+    
+    // Lấy danh sách buyer_id và trạng thái của đơn hàng đã sử dụng coupon
+    @Query(value = "SELECT o.buyer_id, o.status FROM order_coupons oc JOIN orders o ON oc.order_id = o.id WHERE oc.coupon_id = :couponId", nativeQuery = true)
+    List<Object[]> findBuyerIdsAndStatusByCouponId(@Param("couponId") Integer couponId);
 }

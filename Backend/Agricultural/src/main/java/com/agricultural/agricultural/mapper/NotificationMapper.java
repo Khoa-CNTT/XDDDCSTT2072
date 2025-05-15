@@ -12,8 +12,12 @@ import java.util.List;
 public interface NotificationMapper {
     NotificationMapper INSTANCE = Mappers.getMapper(NotificationMapper.class);
     
+    @Mapping(target = "content", source = "message")
+    @Mapping(target = "receiverId", source = "userId")
     NotificationDTO toDTO(Notification notification);
     
+    @Mapping(target = "message", source = "content")
+    @Mapping(target = "userId", source = "receiverId")
     Notification toEntity(NotificationDTO dto);
     
     List<NotificationDTO> toDTOList(List<Notification> notifications);

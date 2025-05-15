@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { styled } from "@mui/material/styles";
+import PropTypes from "prop-types";
 import {
   Box,
   List,
@@ -10,7 +11,6 @@ import {
   ListItemText,
   Collapse,
   Drawer,
-  IconButton,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -20,13 +20,9 @@ import {
   Settings as SettingsIcon,
   LocalOffer as LocalOfferIcon,
   Forum as ForumIcon,
-  Info as InfoIcon,
-  Menu as MenuIcon,
   ExpandLess,
   ExpandMore,
-  CheckCircle as CheckCircleIcon,
   MonetizationOn as MonetizationOnIcon,
-  ListAlt as ListAltIcon,
   Notifications as NotificationsIcon,
   Home as HomeIcon,
   Cloud as CloudIcon,
@@ -35,7 +31,6 @@ import {
   Spa as SpaIcon,
   Assessment as AssessmentIcon,
   Warning as WarningIcon,
-  FlashOn as FlashOnIcon,
   Newspaper as NewspaperIcon,
 } from "@mui/icons-material";
 import SubscriptionIcon from "@mui/icons-material/Subscriptions";
@@ -84,7 +79,6 @@ const SidebarItem = styled(ListItemButton)(({ theme, active }) => ({
 const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const location = useLocation();
   const [openProductSubmenu, setOpenProductSubmenu] = useState(false);
-  const [openOrderSubmenu, setOpenOrderSubmenu] = useState(false);
   const [openWeatherSubmenu, setOpenWeatherSubmenu] = useState(false);
   const [openSubscriptionSubmenu, setOpenSubscriptionSubmenu] = useState(false);
   const [openRecommendationSubmenu, setOpenRecommendationSubmenu] =
@@ -94,10 +88,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
 
   const handleProductClick = () => {
     setOpenProductSubmenu(!openProductSubmenu);
-  };
-
-  const handleOrderClick = () => {
-    setOpenOrderSubmenu(!openOrderSubmenu);
   };
 
   const handleWeatherClick = () => {
@@ -129,6 +119,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       text: "Dashboard",
       icon: <DashboardIcon />,
       path: "/dashboard",
+    },
+    {
+      text: "Đơn hàng",
+      icon: <ShoppingCartIcon />,
+      path: "/orders",
     },
     {
       text: "Sản phẩm",
@@ -246,35 +241,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           text: "Đăng Ký Người Dùng",
           path: "/user-subscriptions",
           icon: <PersonIcon fontSize="small" />,
-        },
-      ],
-    },
-    {
-      text: "Đơn hàng",
-      icon: <ShoppingCartIcon />,
-      submenu: true,
-      onClick: handleOrderClick,
-      open: openOrderSubmenu,
-      items: [
-        {
-          text: "Tất cả đơn hàng",
-          path: "/orders",
-        },
-        {
-          text: "Đang xử lý",
-          path: "/orders/processing",
-        },
-        {
-          text: "Đang giao hàng",
-          path: "/orders/shipping",
-        },
-        {
-          text: "Đã hoàn thành",
-          path: "/orders/completed",
-        },
-        {
-          text: "Đã huỷ",
-          path: "/orders/cancelled",
         },
       ],
     },
@@ -421,6 +387,12 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       </Drawer>
     </>
   );
+};
+
+// PropTypes validation
+Sidebar.propTypes = {
+  mobileOpen: PropTypes.bool.isRequired,
+  handleDrawerToggle: PropTypes.func.isRequired,
 };
 
 export default Sidebar;

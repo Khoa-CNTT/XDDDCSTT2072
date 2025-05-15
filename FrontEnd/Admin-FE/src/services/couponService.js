@@ -179,6 +179,32 @@ const couponService = {
       console.error(`Error calculating discount for coupon ${couponCode}:`, error);
       throw error;
     }
+  },
+  
+  /**
+   * Đồng bộ số lần sử dụng của một mã giảm giá
+   */
+  syncCouponUsage: async (id) => {
+    try {
+      const response = await api.post(`coupons/${id}/sync-usage`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error syncing usage count for coupon ID ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Đồng bộ số lần sử dụng của tất cả mã giảm giá
+   */
+  syncAllCouponsUsage: async () => {
+    try {
+      const response = await api.post('coupons/sync-all-usage');
+      return response.data;
+    } catch (error) {
+      console.error('Error syncing usage count for all coupons:', error);
+      throw error;
+    }
   }
 };
 
