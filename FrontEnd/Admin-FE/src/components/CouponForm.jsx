@@ -208,6 +208,34 @@ const CouponForm = ({
 
       <DialogContent>
         <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          {coupon && (
+            <Box mb={2} p={2} bgcolor="rgba(0, 0, 0, 0.03)" borderRadius={1}>
+              <Typography
+                variant="subtitle2"
+                color="textSecondary"
+                gutterBottom
+              >
+                Thông tin sử dụng:
+              </Typography>
+              <Typography variant="body2">
+                <strong>Số lần đã sử dụng:</strong> {coupon.usageCount || 0} lần{" "}
+                {coupon.usageLimit
+                  ? `(giới hạn: ${coupon.usageLimit} lần)`
+                  : "(không giới hạn)"}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="textSecondary"
+                fontSize="0.8rem"
+                mt={1}
+              >
+                * Lưu ý: Hệ thống chỉ tăng số lần sử dụng khi mỗi người dùng áp
+                dụng mã lần đầu tiên. Một người dùng sử dụng nhiều lần chỉ tính
+                là 1 lần sử dụng.
+              </Typography>
+            </Box>
+          )}
+
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <TextField

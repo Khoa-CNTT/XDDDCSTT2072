@@ -24,8 +24,10 @@ import CouponsPage from "./pages/CouponsPage.jsx";
 import FlashSalesPage from "./pages/FlashSalesPage.jsx";
 import Layout from "./components/layout/Layout";
 import PaymentsPage from "./pages/PaymentsPage.jsx";
+import OrdersPage from "./pages/OrdersPage.jsx";
 import NewsPage from "./pages/NewsPage.jsx";
 import NewsSourcesRedirect from "./pages/NewsSourcesRedirect.jsx";
+import ForumPostsPage from "./pages/ForumPostsPage.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -93,6 +95,12 @@ createRoot(document.getElementById("root")).render(
               path="/payment-statistics"
               element={<PaymentsPage showStatisticsTab={true} />}
             />
+
+            {/* Orders Routes */}
+            <Route path="/orders" element={<OrdersPage />} />
+
+            {/* Forum Routes */}
+            <Route path="/forum-posts" element={<ForumPostsPage />} />
 
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Route>

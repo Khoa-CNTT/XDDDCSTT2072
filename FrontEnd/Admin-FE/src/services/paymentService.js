@@ -23,10 +23,129 @@ const PaymentService = {
       const response = await api.get('/payments/list', { params: cleanParams });
       console.log('API Response raw:', response);
       
+      // Thử cả hai cấu trúc dữ liệu có thể: data.content hoặc data.data.content
+      let paymentsData = [];
+      let totalElementsCount = 0;
+
+      if (response.data?.content) {
+        // Format 1: data.content trực tiếp
+        paymentsData = response.data.content;
+        totalElementsCount = response.data.totalElements || 0;
+      } else if (response.data?.data?.content) {
+        // Format 2: data.data.content (dùng ApiResponse wrapper)
+        paymentsData = response.data.data.content;
+        totalElementsCount = response.data.data.totalElements || 0;
+      } else if (Array.isArray(response.data)) {
+        // Format 3: Mảng trực tiếp
+        paymentsData = response.data;
+        totalElementsCount = response.data.length;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        // Format 4: data.data là một mảng
+        paymentsData = response.data.data;
+        totalElementsCount = response.data.data.length;
+      }
+
+      // Đảm bảo mỗi item trong mảng payments đều có thời gian
+      if (paymentsData && paymentsData.length > 0) {
+        console.log("Kiểm tra dữ liệu thời gian từ API");
+        
+        // Xử lý các giá trị thời gian
+        paymentsData = paymentsData.map(payment => {
+          // Kiểm tra và in chi tiết để phân tích
+          console.log(`Processing payment ID: ${payment.id || 'unknown'}`);
+          console.log(` - createdAt:`, payment.createdAt, typeof payment.createdAt);
+          console.log(` - updatedAt:`, payment.updatedAt, typeof payment.updatedAt);
+          
+          // Xử lý createdAt array thành chuỗi ISO
+          if (Array.isArray(payment.createdAt) && payment.createdAt.length >= 3) {
+            const [year, month, day, hour = 0, minute = 0, second = 0] = payment.createdAt;
+            // Tháng trong JS bắt đầu từ 0, nhưng trong Java bắt đầu từ 1
+            const adjustedMonth = month - 1;
+            const isoDate = new Date(year, adjustedMonth, day, hour, minute, second);
+            
+            if (!isNaN(isoDate.getTime())) {
+              // Chuyển thành chuỗi ISO
+              payment.createdAt = isoDate.toISOString();
+              console.log(` - createdAt converted:`, payment.createdAt);
+            }
+          }
+          
+          // Xử lý updatedAt array thành chuỗi ISO
+          if (Array.isArray(payment.updatedAt) && payment.updatedAt.length >= 3) {
+            const [year, month, day, hour = 0, minute = 0, second = 0] = payment.updatedAt;
+            // Tháng trong JS bắt đầu từ 0, nhưng trong Java bắt đầu từ 1
+            const adjustedMonth = month - 1;
+            const isoDate = new Date(year, adjustedMonth, day, hour, minute, second);
+            
+            if (!isNaN(isoDate.getTime())) {
+              // Chuyển thành chuỗi ISO
+              payment.updatedAt = isoDate.toISOString();
+              console.log(` - updatedAt converted:`, payment.updatedAt);
+            }
+          }
+          
+          return payment;
+        });
+      }
+
+      console.log("Processed payments data:", paymentsData);
+      console.log("Total items:", totalElementsCount);
+      
+      // Kiểm tra định dạng thời gian trong response
+      if (paymentsData && paymentsData.length > 0) {
+        console.log('Mẫu dữ liệu thời gian từ API:', {
+          createdAt: paymentsData[0].createdAt,
+          updatedAt: paymentsData[0].updatedAt,
+          type: typeof paymentsData[0].createdAt
+        });
+      }
+      
+      // Nếu đã xử lý dữ liệu từ API, trả về kết quả đã xử lý
+      if (paymentsData && paymentsData.length > 0) {
+        console.log('Trả về dữ liệu đã xử lý từ API');
+        return {
+          ...response,
+          data: {
+            content: paymentsData,
+            totalElements: totalElementsCount,
+            totalPages: Math.ceil(totalElementsCount / (params.size || 10)),
+            number: params.page || 0,
+            size: params.size || 10
+          }
+        };
+      }
+      
       // Nếu API trả về ApiResponse<Map<String, Object>> thì cần xử lý thêm
-      // Format: { success: true, message: "OK", data: { content: [], totalElements: 0 } }
       if (response.data && response.data.data) {
         console.log('Returning data.data format');
+        // Kiểm tra và đảm bảo các trường thời gian có định dạng chuẩn
+        if (response.data.data.content && Array.isArray(response.data.data.content)) {
+          response.data.data.content = response.data.data.content.map(item => {
+            // Đảm bảo createdAt có dạng ISO string
+            if (item.createdAt && typeof item.createdAt === 'string' && !item.createdAt.includes('T')) {
+              // Nếu là định dạng date khác, chuyển thành ISO
+              try {
+                const date = new Date(item.createdAt);
+                item.createdAt = date.toISOString();
+              } catch (_) {
+                console.error("Không thể chuyển đổi createdAt:", item.createdAt);
+              }
+            }
+            
+            // Đảm bảo updatedAt có dạng ISO string
+            if (item.updatedAt && typeof item.updatedAt === 'string' && !item.updatedAt.includes('T')) {
+              try {
+                const date = new Date(item.updatedAt);
+                item.updatedAt = date.toISOString();
+              } catch (_) {
+                console.error("Không thể chuyển đổi updatedAt:", item.updatedAt);
+              }
+            }
+            
+            return item;
+          });
+        }
+        
         return {
           ...response,
           data: response.data.data
@@ -46,8 +165,8 @@ const PaymentService = {
             paymentMethod: 'VNPAY',
             status: 'COMPLETED',
             transactionId: 'VNP12345678',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: '2023-11-15T08:30:45.123Z',
+            updatedAt: '2023-11-15T08:30:45.123Z',
             description: 'Thanh toán đơn hàng #123'
           },
           {
@@ -57,8 +176,8 @@ const PaymentService = {
             paymentMethod: 'VNPAY',
             status: 'PENDING',
             transactionId: 'VNP12345679',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: '2023-12-20T10:15:22.456Z',
+            updatedAt: '2023-12-20T10:15:22.456Z',
             description: 'Thanh toán đơn hàng #124'
           },
           {
@@ -68,8 +187,8 @@ const PaymentService = {
             paymentMethod: 'MOMO',
             status: 'FAILED',
             transactionId: 'MM12345680',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: '2024-01-17T14:45:30.789Z',
+            updatedAt: '2024-01-17T14:45:30.789Z',
             description: 'Thanh toán đơn hàng #125'
           },
           {
@@ -79,8 +198,8 @@ const PaymentService = {
             paymentMethod: 'MOMO',
             status: 'COMPLETED',
             transactionId: 'MM12345681',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: '2024-02-18T16:20:10.123Z',
+            updatedAt: '2024-02-18T16:20:10.123Z',
             description: 'Thanh toán đơn hàng #126'
           },
           {
@@ -90,8 +209,8 @@ const PaymentService = {
             paymentMethod: 'COD',
             status: 'COMPLETED',
             transactionId: 'COD12345682',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: '2024-03-19T09:05:55.456Z',
+            updatedAt: '2024-03-19T09:05:55.456Z',
             description: 'Thanh toán đơn hàng #127'
           }
         ];
