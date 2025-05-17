@@ -75,4 +75,17 @@ public class NewsSourceController {
         newsSourceService.deactivateNewsSource(id);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/update-url")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<String> updateNewsSourceUrl(@RequestParam("id") Long id, @RequestParam("url") String url) {
+        try {
+            NewsSourceDTO source = newsSourceService.getNewsSourceById(id);
+            source.setUrl(url);
+            newsSourceService.updateNewsSource(id, source);
+            return ResponseEntity.ok("Đã cập nhật URL thành công cho nguồn tin có ID: " + id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi khi cập nhật URL: " + e.getMessage());
+        }
+    }
 } 

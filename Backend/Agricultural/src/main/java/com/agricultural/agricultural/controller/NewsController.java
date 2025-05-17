@@ -13,6 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("${api.prefix}/news")
@@ -20,6 +22,7 @@ import java.util.List;
 public class NewsController {
 
     private final NewsService newsService;
+    private static final Logger log = LoggerFactory.getLogger(NewsController.class);
 
     @GetMapping
     public ResponseEntity<Page<NewsDTO>> getAllNews(
@@ -50,8 +53,12 @@ public class NewsController {
 
     @GetMapping("/{id}")
     public ResponseEntity<NewsDTO> getNewsById(@PathVariable Long id) {
-        NewsDTO newsDTO = newsService.getNewsById(id);
-        return ResponseEntity.ok(newsDTO);
+        try {
+            NewsDTO newsDTO = newsService.getNewsById(id);
+            return ResponseEntity.ok(newsDTO);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/latest")
@@ -92,15 +99,89 @@ public class NewsController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/fetch")
+    public ResponseEntity<String> fetchNewsGet() {
+        return fetchNewsInternal();
+    }
+
     @PostMapping("/fetch")
-    public ResponseEntity<String> fetchNewsFromAllSources() {
-        newsService.fetchNewsFromSources();
-        return ResponseEntity.ok("News fetching process started for all active sources");
+    public ResponseEntity<String> fetchNewsPost() {
+        return fetchNewsInternal();
+    }
+
+    private ResponseEntity<String> fetchNewsInternal() {
+        try {
+            log.info("Bắt đầu thu thập tin tức từ các nguồn...");
+            newsService.fetchNewsFromSources();
+            log.info("Hoàn tất thu thập tin tức.");
+            return ResponseEntity.ok("Đã thu thập tin tức thành công");
+        } catch (Exception e) {
+            log.error("Lỗi khi thu thập tin tức: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi thu thập tin tức: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/fetch/{sourceId}")
+    public ResponseEntity<String> fetchNewsFromSourceGet(@PathVariable Long sourceId) {
+        return fetchNewsFromSourceInternal(sourceId);
     }
 
     @PostMapping("/fetch/{sourceId}")
-    public ResponseEntity<String> fetchNewsFromSource(@PathVariable Long sourceId) {
-        newsService.fetchNewsFromSource(sourceId);
-        return ResponseEntity.ok("News fetching process started for source with ID: " + sourceId);
+    public ResponseEntity<String> fetchNewsFromSourcePost(@PathVariable Long sourceId) {
+        return fetchNewsFromSourceInternal(sourceId);
+    }
+
+    private ResponseEntity<String> fetchNewsFromSourceInternal(Long sourceId) {
+        try {
+            log.info("Bắt đầu thu thập tin tức từ nguồn có ID: {}", sourceId);
+            newsService.fetchNewsFromSource(sourceId);
+            log.info("Hoàn tất thu thập tin tức từ nguồn có ID: {}", sourceId);
+            return ResponseEntity.ok("Đã thu thập tin tức thành công từ nguồn có ID: " + sourceId);
+        } catch (Exception e) {
+            log.error("Lỗi khi thu thập tin tức từ nguồn có ID {}: {}", sourceId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi thu thập tin tức: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/all")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<String> deleteAllNews() {
+        try {
+            int count = newsService.deleteAllNews();
+            return ResponseEntity.ok("Đã xóa " + count + " tin tức");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi xóa tin tức: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/test-fetch")
+    public ResponseEntity<String> testFetch() {
+        try {
+            log.info("Bắt đầu thử nghiệm thu thập tin tức từ tất cả các nguồn...");
+            
+            // Lấy số lượng tin tức trước khi thu thập
+            long countBefore = newsService.getNewsCount();
+            
+            // Tiến hành thu thập tin tức
+            newsService.fetchNewsFromSources();
+            
+            // Lấy số lượng tin tức sau khi thu thập
+            long countAfter = newsService.getNewsCount();
+            
+            long newArticles = countAfter - countBefore;
+            
+            String message = String.format("Đã thu thập được %d tin tức mới. Tổng số tin tức hiện tại: %d", 
+                    newArticles, countAfter);
+            log.info(message);
+            
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            log.error("Lỗi khi thử nghiệm thu thập tin tức: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi thử nghiệm thu thập tin tức: " + e.getMessage());
+        }
     }
 } 
