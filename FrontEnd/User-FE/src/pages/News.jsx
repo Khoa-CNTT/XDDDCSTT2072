@@ -34,76 +34,6 @@ function News() {
   const category = searchParams.get("category") || "";
   const keyword = searchParams.get("keyword") || "";
 
-  // Sử dụng dữ liệu mẫu khi API không hoạt động
-  const sampleData = [
-    {
-      id: 1,
-      title: "Phát triển mô hình nông nghiệp thông minh ở Việt Nam",
-      summary:
-        "Việt Nam đang đẩy mạnh ứng dụng công nghệ cao vào sản xuất nông nghiệp nhằm tăng năng suất và chất lượng",
-      imageUrl:
-        "https://tse1.mm.bing.net/th?id=OIP._D-67MXB8hlCTjksAjwebwHaDl&pid=Api&P=0&h=220",
-      category: "Nông nghiệp",
-      publishedDate: new Date().toISOString(),
-      sourceName: "Agricultural News",
-    },
-    {
-      id: 2,
-      title: "Người tạo xu hướng nông nghiệp organic tại Mỹ",
-      summary:
-        "Các nông dân Mỹ đang chuyển đổi sang canh tác hữu cơ để đáp ứng nhu cầu thị trường ngày càng tăng",
-      imageUrl:
-        "https://tse1.mm.bing.net/th?id=OIP.tU-neYliRjFFZINhZ_F8OAHaEc&pid=Api&P=0&h=220",
-      category: "Nông nghiệp",
-      publishedDate: new Date().toISOString(),
-      sourceName: "Agricultural News",
-    },
-    {
-      id: 3,
-      title: "Hàng loạt nông sản Việt rời khỏi thị trường quốc tế",
-      summary:
-        "Nhiều loại nông sản Việt Nam đang gặp khó khăn trong việc xuất khẩu do các rào cản thương mại mới",
-      imageUrl:
-        "https://tse1.mm.bing.net/th?id=OIP.E-POXG48lZUN5SKK7fuUTwHaFj&pid=Api&P=0&h=220",
-      category: "Thị trường",
-      publishedDate: new Date().toISOString(),
-      sourceName: "Agricultural News",
-    },
-    {
-      id: 4,
-      title: "Ứng dụng công nghệ IoT trong chăn nuôi hiện đại",
-      summary:
-        "Các thiết bị IoT giúp nông dân theo dõi sức khỏe vật nuôi, tối ưu hóa thức ăn và cảnh báo bệnh dịch",
-      imageUrl:
-        "https://up.yimg.com/ib/th?id=OIP.m88P1cRUzm3p2bICwK2I-wHaE7&pid=Api&rs=1&c=1&qlt=95&w=149&h=99",
-      category: "Công nghệ",
-      publishedDate: new Date().toISOString(),
-      sourceName: "Agricultural News",
-    },
-    {
-      id: 5,
-      title: "Giá phân bón tăng cao ảnh hưởng đến nông dân toàn cầu",
-      summary:
-        "Cuộc khủng hoảng năng lượng và chiến tranh đã khiến giá phân bón tăng mạnh, ảnh hưởng đến chi phí sản xuất",
-      imageUrl:
-        "https://up.yimg.com/ib/th?id=OIP.upcVyiUzz2n_UWkZdZmSFwHaEK&pid=Api&rs=1&c=1&qlt=95&w=177&h=99",
-      category: "Kinh tế",
-      publishedDate: new Date().toISOString(),
-      sourceName: "Agricultural News",
-    },
-    {
-      id: 6,
-      title: "Kỹ thuật nuôi tôm bền vững tại đồng bằng sông Cửu Long",
-      summary:
-        "Các mô hình nuôi tôm kết hợp rừng ngập mặn giúp bảo vệ môi trường và tăng thu nhập cho người dân",
-      imageUrl:
-        "https://up.yimg.com/ib/th?id=OIP.DXqlhh_inDuENzwO9bhplQHaF7&pid=Api&rs=1&c=1&qlt=95&w=124&h=99",
-      category: "Thủy sản",
-      publishedDate: new Date().toISOString(),
-      sourceName: "Agricultural News",
-    },
-  ];
-
   const fetchNews = async () => {
     setLoading(true);
     try {
@@ -133,30 +63,39 @@ function News() {
         const response = await axiosInstance.get(url, { params });
         console.log("API response:", response.data);
 
-        if (
-          response.data &&
-          response.data.content &&
-          response.data.content.length > 0
-        ) {
-          setNews(response.data.content);
-          setTotalPages(response.data.totalPages);
+        // Kiểm tra cấu trúc dữ liệu
+        if (response.data) {
+          if (response.data.content && Array.isArray(response.data.content)) {
+            // Cấu trúc Page<T> với content và totalPages
+            setNews(response.data.content);
+            setTotalPages(response.data.totalPages);
+
+            // Nếu không có dữ liệu, tự động tải tin mới
+            if (response.data.content.length === 0) {
+              console.log("Không có dữ liệu, đang tự động tải tin mới...");
+              fetchNewsFromSources();
+            }
+          } else if (Array.isArray(response.data)) {
+            // Cấu trúc List<T>
+            setNews(response.data);
+            setTotalPages(1); // Mặc định 1 trang vì không có thông tin phân trang
+
+            // Nếu không có dữ liệu, tự động tải tin mới
+            if (response.data.length === 0) {
+              console.log("Không có dữ liệu, đang tự động tải tin mới...");
+              fetchNewsFromSources();
+            }
+          } else {
+            console.warn("Cấu trúc dữ liệu không được hỗ trợ:", response.data);
+          }
         } else {
-          console.warn(
-            "API trả về mảng trống hoặc không đúng định dạng:",
-            response.data
-          );
-          // Sử dụng dữ liệu mẫu khi API không trả về dữ liệu
-          setNews(sampleData);
-          setTotalPages(1);
-          toast.info("Hiển thị dữ liệu mẫu vì không có tin tức từ hệ thống.");
+          console.warn("API trả về dữ liệu null hoặc undefined");
+          fetchNewsFromSources();
         }
       } catch (error) {
         console.error("Lỗi khi gọi API:", error);
-        console.log("Sử dụng dữ liệu mẫu thay thế...");
-        // Sử dụng dữ liệu mẫu khi API lỗi
-        setNews(sampleData);
-        setTotalPages(1);
-        toast.error("Không thể tải tin tức từ API. Hiển thị dữ liệu mẫu.");
+        console.log("Đang tự động tải tin mới...");
+        fetchNewsFromSources();
       }
     } finally {
       setLoading(false);
@@ -171,24 +110,31 @@ function News() {
         const response = await axiosInstance.get("/news/latest");
         console.log("Latest news response:", response.data);
 
-        if (
-          response.data &&
-          Array.isArray(response.data) &&
-          response.data.length > 0
-        ) {
+        if (response.data && Array.isArray(response.data)) {
           setLatestNews(response.data);
+
+          if (response.data.length === 0) {
+            console.warn("API tin mới nhất trả về mảng rỗng");
+          }
         } else {
           console.warn(
-            "API tin mới nhất trả về mảng trống hoặc không đúng định dạng:",
+            "API tin mới nhất trả về không đúng định dạng mảng:",
             response.data
           );
-          // Sử dụng 3 tin đầu từ dữ liệu mẫu
-          setLatestNews(sampleData.slice(0, 3));
         }
       } catch (error) {
         console.error("Lỗi khi tải tin tức mới nhất:", error);
-        // Sử dụng 3 tin đầu từ dữ liệu mẫu
-        setLatestNews(sampleData.slice(0, 3));
+        // Thử lại với timeout dài hơn
+        try {
+          const response = await axiosInstance.get("/news/latest", {
+            timeout: 30000,
+          });
+          if (response.data && Array.isArray(response.data)) {
+            setLatestNews(response.data);
+          }
+        } catch (retryError) {
+          console.error("Vẫn lỗi sau khi thử lại tin mới nhất:", retryError);
+        }
       }
     } catch (error) {
       console.error("Lỗi tổng thể khi lấy tin mới nhất:", error);
@@ -267,6 +213,12 @@ function News() {
   };
 
   const handleNewsClick = (newsId) => {
+    if (!newsId) {
+      toast.warning("ID tin tức không hợp lệ");
+      return;
+    }
+
+    console.log("Chuyển hướng đến tin tức ID:", newsId);
     navigate(`/news/${newsId}`);
   };
 
@@ -277,7 +229,7 @@ function News() {
       {/* Banner section with latest news */}
       <div className="w-full max-w-7xl px-4 mt-20">
         <div className="flex flex-wrap p-4 w-full border border-gray-200 shadow-md rounded-lg gap-4 bg-white">
-          {latestNews.length > 0 && (
+          {latestNews.length > 0 ? (
             <>
               {/* Featured news (first item) */}
               <div
@@ -340,6 +292,18 @@ function News() {
                 ))}
               </div>
             </>
+          ) : (
+            <div className="w-full p-4 text-center">
+              <button
+                onClick={fetchNewsFromSources}
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                <FaSync className={fetchingNews ? "animate-spin" : ""} />
+                <span>
+                  {fetchingNews ? "Đang tải tin tức..." : "Tải tin tức mới"}
+                </span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -430,8 +394,16 @@ function News() {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
             </div>
           ) : news.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              Không có tin tức nào phù hợp với tìm kiếm của bạn.
+            <div className="flex flex-col items-center justify-center py-8">
+              <p className="text-gray-500 mb-4">Đang tải tin tức mới...</p>
+              <button
+                onClick={fetchNewsFromSources}
+                disabled={fetchingNews}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                <FaSync className={fetchingNews ? "animate-spin" : ""} />
+                <span>{fetchingNews ? "Đang tải..." : "Tải tin tức mới"}</span>
+              </button>
             </div>
           ) : (
             <>

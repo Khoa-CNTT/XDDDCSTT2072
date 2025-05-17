@@ -29,6 +29,8 @@ import {
   Lightbulb,
   Award,
   Trophy,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -41,6 +43,7 @@ import { getPostImages, getComments } from "@/services/forumService";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 // Thêm import CommentDialog
 import CommentDialog from "./CommentDialog";
+import { formatDistanceToNow } from "date-fns";
 
 // Thêm hàm helper để format thời gian cho title tooltip, với xử lý lỗi tốt hơn
 const formatTitleDate = (dateString) => {
@@ -100,6 +103,8 @@ const PostCard = ({
   const [loadingImages, setLoadingImages] = useState(false);
   // Thêm state trong component PostCard
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   // Query client để lấy dữ liệu từ cache
   const queryClient = useQueryClient();

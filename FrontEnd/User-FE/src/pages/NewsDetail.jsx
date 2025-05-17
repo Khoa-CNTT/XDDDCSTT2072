@@ -12,9 +12,9 @@ function NewsDetail() {
   const [relatedNews, setRelatedNews] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Dữ liệu mẫu khi API không hoạt động
-  const sampleNewsDetail = {
-    id: Number(id) || 1,
+  // Dữ liệu mẫu khi API không hoạt động hoặc bài viết không tồn tại
+  const getSampleNewsDetail = (newsId) => ({
+    id: Number(newsId),
     title: "Phát triển mô hình nông nghiệp thông minh ở Việt Nam",
     summary:
       "Việt Nam đang đẩy mạnh ứng dụng công nghệ cao vào sản xuất nông nghiệp nhằm tăng năng suất và chất lượng. Các mô hình nông nghiệp thông minh, sử dụng IoT và tự động hóa, đang dần trở nên phổ biến tại các tỉnh thành trên cả nước.",
@@ -37,11 +37,11 @@ function NewsDetail() {
     sourceName: "Nông Nghiệp Việt Nam",
     sourceUrl: "https://nongnghiep.vn",
     tags: "Nông nghiệp thông minh, IoT, Tự động hóa, Công nghệ cao",
-  };
+  });
 
-  const sampleRelatedNews = [
+  const getSampleRelatedNews = (newsId) => [
     {
-      id: Number(id) + 1 || 2,
+      id: Number(newsId) + 1,
       title: "Người tạo xu hướng nông nghiệp organic tại Mỹ",
       summary:
         "Các nông dân Mỹ đang chuyển đổi sang canh tác hữu cơ để đáp ứng nhu cầu thị trường ngày càng tăng",
@@ -52,7 +52,7 @@ function NewsDetail() {
       sourceName: "Agricultural News",
     },
     {
-      id: Number(id) + 2 || 3,
+      id: Number(newsId) + 2,
       title: "Ứng dụng công nghệ drone trong nông nghiệp Việt Nam",
       summary:
         "Drone đang giúp nông dân tiết kiệm chi phí và tăng hiệu quả trong canh tác nông nghiệp",
@@ -63,7 +63,7 @@ function NewsDetail() {
       sourceName: "Agricultural News",
     },
     {
-      id: Number(id) + 3 || 4,
+      id: Number(newsId) + 3,
       title: "Kỹ thuật canh tác không đất ngày càng phổ biến",
       summary:
         "Các kỹ thuật thủy canh, khí canh đang được áp dụng rộng rãi trong sản xuất rau sạch",
@@ -80,16 +80,16 @@ function NewsDetail() {
       setLoading(true);
       try {
         console.log(`Đang gọi API chi tiết tin tức: /news/${id}`);
+        const response = await axiosInstance.get(`/news/${id}`);
 
-        try {
-          const response = await axiosInstance.get(`/news/${id}`);
-          console.log("Chi tiết tin tức response:", response.data);
+        console.log("Chi tiết tin tức response:", response.data);
 
-          if (response.data) {
-            setNews(response.data);
+        if (response.data) {
+          setNews(response.data);
 
-            // Fetch related news based on category
-            if (response.data.category) {
+          // Fetch related news based on category
+          if (response.data.category) {
+            try {
               const relatedResponse = await axiosInstance.get(
                 `/news/category/${response.data.category}`,
                 {
@@ -108,26 +108,32 @@ function NewsDetail() {
                 setRelatedNews(filtered.slice(0, 3)); // Limit to 3 items
               } else {
                 console.warn("API tin liên quan trả về không đúng định dạng");
-                setRelatedNews(sampleRelatedNews);
+                setRelatedNews(getSampleRelatedNews(id));
               }
+            } catch (error) {
+              console.warn("Lỗi khi tải tin liên quan:", error);
+              setRelatedNews(getSampleRelatedNews(id));
             }
-          } else {
-            console.warn("API chi tiết tin tức trả về không đúng định dạng");
-            setNews(sampleNewsDetail);
-            setRelatedNews(sampleRelatedNews);
           }
-        } catch (error) {
-          console.error("Lỗi khi gọi API chi tiết tin tức:", error);
-          // Sử dụng dữ liệu mẫu
-          console.log("Sử dụng dữ liệu mẫu thay thế...");
-          setNews(sampleNewsDetail);
-          setRelatedNews(sampleRelatedNews);
-          toast.error(
-            "Không thể tải chi tiết tin tức từ API. Hiển thị dữ liệu mẫu."
-          );
+        } else {
+          console.warn("API chi tiết tin tức trả về không đúng định dạng");
+          setNews(getSampleNewsDetail(id));
+          setRelatedNews(getSampleRelatedNews(id));
         }
       } catch (error) {
-        console.error("Lỗi tổng thể khi tải chi tiết tin tức:", error);
+        console.error("Lỗi khi gọi API chi tiết tin tức:", error);
+        // Kiểm tra xem có phải lỗi 404 không
+        if (error.response && error.response.status === 404) {
+          console.log("Không tìm thấy tin tức với id=" + id);
+          setNews(getSampleNewsDetail(id));
+          setRelatedNews(getSampleRelatedNews(id));
+          toast.info("Hiển thị nội dung mẫu vì tin tức này không tồn tại.");
+        } else {
+          console.log("Sử dụng dữ liệu mẫu thay thế do lỗi API");
+          setNews(getSampleNewsDetail(id));
+          setRelatedNews(getSampleRelatedNews(id));
+          toast.error("Không thể tải chi tiết tin tức. Hiển thị dữ liệu mẫu.");
+        }
       } finally {
         setLoading(false);
       }

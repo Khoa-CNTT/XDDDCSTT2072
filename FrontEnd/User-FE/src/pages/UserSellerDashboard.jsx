@@ -3,7 +3,9 @@ import Header from "@/layout/Header";
 import Footer from "@/layout/Footer";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import useAuth from "@/hooks/useAuth";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import sellerRegistrationService from "@/services/sellerRegistrationService";
+import { toast } from "react-hot-toast";
 import {
   FaPlus,
   FaEdit,
@@ -29,6 +31,7 @@ const UserSellerDashboard = () => {
   const { auth } = useAuth();
   const axiosPrivate = useAxiosPrivate();
   const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -40,8 +43,74 @@ const UserSellerDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [pendingOrders, setPendingOrders] = useState(0);
+  const [sellerVerified, setSellerVerified] = useState(false);
+
+  // Kiểm tra quyền bán hàng trước khi tải dữ liệu
+  useEffect(() => {
+    const checkSellerPermission = async () => {
+      try {
+        // Comprobar si venimos de la página de registro de vendedor o del formulario de producto
+        const fromRegistration = location.state?.fromRegistration === true;
+        const fromSellerDashboard =
+          location.state?.fromSellerDashboard === true;
+        const skipErrorMessages = location.state?.skipErrorMessages === true;
+
+        // Si viene de una de estas páginas, confiar en la autenticación
+        if (fromRegistration || fromSellerDashboard) {
+          console.log(
+            "Ya autenticado desde otra página, omitiendo verificación"
+          );
+          setSellerVerified(true);
+
+          // Si se especifica saltear los mensajes de error, asegurarse de que no se muestren
+          if (skipErrorMessages) {
+            console.log("Omitiendo mensajes de error por indicación explícita");
+            // Limpiar cualquier notificación de error que pueda estar mostrándose
+            toast.dismiss();
+          }
+          return;
+        }
+
+        // Llamar a la API para verificar permisos de vendedor
+        const isApproved = await sellerRegistrationService.isApproved();
+        console.log("Resultado de verificación de permisos:", isApproved);
+
+        // Si no está aprobado, redirigir a la página de registro
+        if (!isApproved?.data) {
+          toast.error(
+            "Necesitas aprobación como vendedor antes de acceder a esta página!"
+          );
+          // Usar replace para reemplazar la entrada en el historial
+          navigate("/seller-registration", { replace: true });
+          return;
+        }
+
+        // Ya verificado, marcar como verificado
+        setSellerVerified(true);
+      } catch (error) {
+        console.error("Error al verificar permisos de vendedor:", error);
+
+        // Verificar si estamos viniendo desde una creación de producto exitosa
+        if (location.state?.skipErrorMessages) {
+          console.log(
+            "Se omitirá el error porque viene de una creación de producto exitosa"
+          );
+          setSellerVerified(true); // Permitir acceso de todos modos
+          return;
+        }
+
+        toast.error("Ocurrió un error al verificar tus permisos de vendedor");
+        navigate("/seller-registration", { replace: true });
+      }
+    };
+
+    checkSellerPermission();
+  }, [navigate, location]);
 
   useEffect(() => {
+    // Chỉ tải dữ liệu khi đã xác thực quyền bán hàng
+    if (!sellerVerified) return;
+
     const fetchUserProducts = async () => {
       try {
         setLoading(true);
@@ -126,7 +195,7 @@ const UserSellerDashboard = () => {
     };
 
     fetchUserProducts();
-  }, [axiosPrivate, auth]);
+  }, [axiosPrivate, auth, sellerVerified]);
 
   const handleDeleteProduct = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
@@ -197,6 +266,15 @@ const UserSellerDashboard = () => {
     </button>
   );
 
+  // Nút "Thêm sản phẩm" từ dashboard
+  const handleAddProductClick = () => {
+    console.log("Điều hướng đến trang thêm sản phẩm từ dashboard");
+    navigate("/seller/add-product", {
+      state: { fromSellerDashboard: true },
+      replace: true,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -250,7 +328,7 @@ const UserSellerDashboard = () => {
                 )}
               </Link>
               <button
-                onClick={() => navigate("/seller/add-product")}
+                onClick={handleAddProductClick}
                 className="bg-white text-green-600 py-2 px-4 rounded-lg flex items-center shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1"
               >
                 <FaPlus className="mr-2" /> Thêm sản phẩm mới
@@ -404,7 +482,7 @@ const UserSellerDashboard = () => {
                     Bạn chưa có sản phẩm nào. Hãy thêm sản phẩm đầu tiên!
                   </p>
                   <button
-                    onClick={() => navigate("/seller/add-product")}
+                    onClick={handleAddProductClick}
                     className="bg-green-500 hover:bg-green-600 text-white py-2 px-6 rounded-lg flex items-center mx-auto"
                   >
                     <FaPlus className="mr-2" /> Thêm sản phẩm
