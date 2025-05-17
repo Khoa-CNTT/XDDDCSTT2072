@@ -12,6 +12,11 @@ const authService = {
       localStorage.setItem('token', token);
       localStorage.setItem('refreshToken', refreshToken);
       
+      // Lưu role vào userRole để đồng bộ với auth.js
+      if (response.data.role || response.data.user?.role) {
+        localStorage.setItem('userRole', response.data.role || response.data.user?.role);
+      }
+      
       return response.data;
     } catch (apiError) {
       console.warn("Không thể kết nối đến API đăng nhập, sử dụng đăng nhập giả lập:", apiError);
@@ -31,6 +36,9 @@ const authService = {
           email: 'admin@example.com',
           role: 'Admin'
         }));
+        
+        // Thêm lưu userRole để đồng bộ với auth.js
+        localStorage.setItem('userRole', 'Admin');
         
         // Trả về dữ liệu giả
         return {
@@ -118,11 +126,19 @@ const authService = {
       );
     }
     
-    // Log thêm thông tin để debug
-    console.log('User object structure:', JSON.stringify(user));
-    
-    // Tạm thời luôn trả về true để bypass kiểm tra
-    return true;
+    return false;
+  },
+  
+  // Thêm phương thức isAdmin để đồng bộ với auth.js
+  isAdmin() {
+    const role = localStorage.getItem('userRole');
+    const hasAdmin = this.hasAdminRole();
+    console.log('DEBUG isAdmin():', { 
+      directRoleCheck: role === 'Admin', 
+      userRoleFromStorage: role,
+      hasAdminRoleCheck: hasAdmin 
+    });
+    return role === 'Admin' || hasAdmin;
   },
   
   hasUserRole() {

@@ -32,6 +32,7 @@ import {
   Assessment as AssessmentIcon,
   Warning as WarningIcon,
   Newspaper as NewspaperIcon,
+  Business as BusinessIcon,
 } from "@mui/icons-material";
 import SubscriptionIcon from "@mui/icons-material/Subscriptions";
 import PaymentIcon from "@mui/icons-material/Payment";
@@ -241,6 +242,11 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           text: "Đăng Ký Người Dùng",
           path: "/user-subscriptions",
           icon: <PersonIcon fontSize="small" />,
+        },
+        {
+          text: "Đơn Đăng Ký Bán Hàng",
+          path: "/seller-registrations",
+          icon: <BusinessIcon fontSize="small" />,
         },
       ],
     },
