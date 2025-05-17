@@ -41,4 +41,24 @@ public interface IUserService {
     
     void changePassword(int userId, String currentPassword, String newPassword) throws Exception;
 
+    /**
+     * Kiểm tra xem người dùng hiện tại có quyền bán hàng không
+     * @return true nếu có quyền bán hàng, false nếu không
+     */
+    boolean canCurrentUserSell();
+
+    /**
+     * Kiểm tra xem người dùng có quyền bán hàng không
+     * @param userId ID của người dùng cần kiểm tra
+     * @return true nếu có quyền bán hàng, false nếu không
+     */
+    boolean canUserSell(Integer userId);
+
+    /**
+     * Đăng ký làm người bán hàng cho người dùng hiện tại 
+     * (yêu cầu phải có gói Premium và sẽ cần admin phê duyệt)
+     * @return thông tin yêu cầu đăng ký
+     */
+    Object registerAsSeller();
+
 }

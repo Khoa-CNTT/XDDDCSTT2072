@@ -28,6 +28,7 @@ import OrdersPage from "./pages/OrdersPage.jsx";
 import NewsPage from "./pages/NewsPage.jsx";
 import NewsSourcesRedirect from "./pages/NewsSourcesRedirect.jsx";
 import ForumPostsPage from "./pages/ForumPostsPage.jsx";
+import SellerRegistrationsPage from "./pages/SellerRegistrationsPage.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -87,6 +88,10 @@ createRoot(document.getElementById("root")).render(
             <Route
               path="/user-subscriptions"
               element={<UserSubscriptionsPage />}
+            />
+            <Route
+              path="/seller-registrations"
+              element={<SellerRegistrationsPage />}
             />
 
             {/* Payment Routes */}

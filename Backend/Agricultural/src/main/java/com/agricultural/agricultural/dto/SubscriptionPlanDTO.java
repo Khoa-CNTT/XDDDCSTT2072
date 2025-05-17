@@ -37,6 +37,26 @@ public class SubscriptionPlanDTO {
     
     private Boolean isFree;
     
+    /**
+     * Quyền đăng ký bán hàng
+     */
+    private Boolean canSellProducts;
+    
+    /**
+     * Quyền tham gia diễn đàn
+     */
+    private Boolean canAccessForum;
+    
+    /**
+     * Quyền mua sản phẩm
+     */
+    private Boolean canPurchaseProducts;
+    
+    /**
+     * Quyền sử dụng AI chat
+     */
+    private Boolean canUseAIChat;
+    
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;

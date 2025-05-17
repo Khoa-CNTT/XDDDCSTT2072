@@ -1,17 +1,16 @@
 package com.agricultural.agricultural.service.impl;
 
 import com.agricultural.agricultural.config.AiConfig;
-import com.agricultural.agricultural.dto.ai.ChatBotRequest;
-import com.agricultural.agricultural.dto.ai.ChatRequest;
-import com.agricultural.agricultural.dto.ai.ChatResponse;
-import com.agricultural.agricultural.dto.ai.MessageHistoryRequest;
-import com.agricultural.agricultural.dto.ai.MessageHistoryResponse;
+import com.agricultural.agricultural.dto.ai.request.ChatBotRequest;
+import com.agricultural.agricultural.dto.ai.request.ChatRequest;
+import com.agricultural.agricultural.dto.ai.response.ChatResponse;
+import com.agricultural.agricultural.dto.ai.request.MessageHistoryRequest;
+import com.agricultural.agricultural.dto.ai.response.MessageHistoryResponse;
 import com.agricultural.agricultural.service.ChatHistoryService;
 import com.agricultural.agricultural.service.GeminiAiService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;

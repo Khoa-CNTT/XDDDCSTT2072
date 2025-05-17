@@ -27,4 +27,21 @@ public interface NewsService {
     void fetchNewsFromSources();
     
     void fetchNewsFromSource(Long sourceId);
+    
+    /**
+     * Get the count of news articles in the database
+     * @return The number of news articles
+     */
+    long getNewsCount();
+
+    /**
+     * Xóa toàn bộ tin tức trong database
+     * @return Số lượng tin tức đã xóa
+     */
+    int deleteAllNews();
+    
+    /**
+     * Finds and updates news articles with problematic image URLs
+     */
+    void fixProblematicImageUrls();
 } 

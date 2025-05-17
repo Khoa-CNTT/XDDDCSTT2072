@@ -11,6 +11,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Main from "./pages/Main";
 import RequireAuth from "./auth/requireAuth";
+import RequireSellerAuth from "./auth/requireSellerAuth";
 import NoFoundPage from "./pages/NoFoundPage";
 import FarmHub2 from "./pages/FarmHub2";
 import CategoryPage from "./pages/CategoryPage ";
@@ -30,6 +31,7 @@ import { getUnreviewedProducts } from "./services/feedbackService";
 import UserSellerDashboard from "./pages/UserSellerDashboard";
 import SellerProductForm from "./pages/SellerProductForm";
 import SellerOrdersPage from "./pages/SellerOrdersPage";
+import SellerRegistration from "./pages/SellerRegistration";
 
 import Category from "./components/farmhub2/Category";
 import NewProducts from "./components/farmhub2/NewProducts";
@@ -69,6 +71,10 @@ function App() {
             <Route path="subscriptions" element={<Subscriptions />} />
             <Route path="subscriptions/:id" element={<SubscriptionDetails />} />
             <Route element={<RequireAuth allowedRoles={[ROLES.User]} />}>
+              <Route
+                path="seller-registration"
+                element={<SellerRegistration />}
+              />
               <Route path="profile/:userId" element={<UserProfile />} />
               <Route path="profile/edit" element={<EditProfile />} />
               <Route path="users/search" element={<UserSearchPage />} />
@@ -108,10 +114,17 @@ function App() {
                 path="admin/subscriptions"
                 element={<SubscriptionPlans />}
               />
-              <Route
-                path="seller/dashboard"
-                element={<UserSellerDashboard />}
-              />
+
+              {/* Khu vực Seller - yêu cầu phải đăng ký và được duyệt */}
+              <Route element={<RequireSellerAuth />}>
+                <Route
+                  path="seller/dashboard"
+                  element={<UserSellerDashboard />}
+                />
+                <Route path="seller/orders" element={<SellerOrdersPage />} />
+              </Route>
+
+              {/* Trang thêm/sửa sản phẩm - đã có kiểm tra riêng trong component */}
               <Route
                 path="seller/add-product"
                 element={<SellerProductForm />}
@@ -120,7 +133,6 @@ function App() {
                 path="seller/edit-product/:id"
                 element={<SellerProductForm />}
               />
-              <Route path="seller/orders" element={<SellerOrdersPage />} />
             </Route>
             <Route path="*" element={<NoFoundPage />} />
           </Route>

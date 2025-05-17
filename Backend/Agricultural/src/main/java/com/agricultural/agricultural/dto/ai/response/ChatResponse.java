@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.dto.ai;
+package com.agricultural.agricultural.dto.ai.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChatRequest {
+public class ChatResponse {
     private String message;
-    private String userId;
-    private String domain = "agricultural"; // Mặc định là lĩnh vực nông nghiệp
+    private String source;
+    private boolean success;
+    private String error;
 } 

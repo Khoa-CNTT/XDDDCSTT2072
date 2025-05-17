@@ -24,6 +24,10 @@ public class SubscriptionPlanMapper {
                 .maxLocations(entity.getMaxLocations())
                 .isActive(entity.getIsActive())
                 .isFree(entity.getIsFree())
+                .canSellProducts(entity.getCanSellProducts())
+                .canAccessForum(entity.getCanAccessForum())
+                .canPurchaseProducts(entity.getCanPurchaseProducts())
+                .canUseAIChat(entity.getCanUseAIChat())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -34,7 +38,7 @@ public class SubscriptionPlanMapper {
             return null;
         }
         
-        return SubscriptionPlan.builder()
+        SubscriptionPlan entity = SubscriptionPlan.builder()
                 .id(dto.getId())
                 .name(dto.getName())
                 .description(dto.getDescription())
@@ -44,6 +48,14 @@ public class SubscriptionPlanMapper {
                 .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
                 .isFree(dto.getIsFree() != null ? dto.getIsFree() : false)
                 .build();
+        
+        // Thiết lập các quyền với giá trị mặc định nếu chưa có
+        entity.setCanSellProducts(dto.getCanSellProducts() != null ? dto.getCanSellProducts() : false);
+        entity.setCanAccessForum(dto.getCanAccessForum() != null ? dto.getCanAccessForum() : true);
+        entity.setCanPurchaseProducts(dto.getCanPurchaseProducts() != null ? dto.getCanPurchaseProducts() : true);
+        entity.setCanUseAIChat(dto.getCanUseAIChat() != null ? dto.getCanUseAIChat() : true);
+        
+        return entity;
     }
     
     public List<SubscriptionPlanDTO> toDTOList(List<SubscriptionPlan> entities) {
