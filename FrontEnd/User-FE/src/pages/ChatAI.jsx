@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../layout/Header";
 import useAiChat from "@/hooks/useAiChat";
 import useAuth from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BotIcon,
   SendIcon,
@@ -19,10 +20,88 @@ import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
+// Variants cho animation
+const chatContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const messageVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 12,
+    },
+  },
+  hover: {
+    scale: 1.01,
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+    transition: { duration: 0.3 },
+  },
+};
+
+const productCardVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+  hover: {
+    scale: 1.05,
+    rotateY: 5,
+    boxShadow: "0 10px 25px rgba(126, 34, 206, 0.2)",
+    transition: { duration: 0.3 },
+  },
+};
+
+// Hiệu ứng cho tooltip
+const tooltipVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.2 },
+  },
+};
+
+// Hiệu ứng cho các suggestion boxes
+const suggestionVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: (custom) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: custom * 0.1,
+      duration: 0.5,
+    },
+  }),
+  hover: {
+    scale: 1.03,
+    backgroundColor: "#f5f3ff",
+    boxShadow: "0 4px 20px rgba(126, 34, 206, 0.1)",
+    transition: { duration: 0.2 },
+  },
+};
+
 function ChatAI() {
   const [message, setMessage] = useState("");
   const [showSidebar, setShowSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const messageContainerRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
@@ -32,13 +111,13 @@ function ChatAI() {
     messages,
     loading,
     error,
-    sendMessage,
-    clearChatHistory,
+    sessionId,
     sessions,
     loadingSessions,
+    sendMessage,
+    clearChatHistory,
     fetchChatSessions,
     selectChatSession,
-    sessionId,
   } = useAiChat();
 
   // Kiểm tra kích thước màn hình để xác định thiết bị di động
@@ -61,7 +140,7 @@ function ChatAI() {
   // Kiểm tra đăng nhập
   useEffect(() => {
     if (!auth?.accessToken) {
-      toast.info("Vui lòng đăng nhập để sử dụng trợ lý AI");
+      toast.info("Vui lòng đăng nhập để sử dụng AgroSphere AI");
       navigate("/account/login", { state: { from: { pathname: "/chat-ai" } } });
     } else {
       fetchChatSessions();
@@ -122,202 +201,424 @@ function ChatAI() {
     }
   };
 
+  // Xử lý khi chọn một gợi ý
+  const handleSelectSuggestion = (text) => {
+    setMessage(text);
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
+  };
+
   // Hiển thị các tin nhắn
   const renderMessages = () => {
     if (messages.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-full py-10 px-4">
+        <motion.div
+          className="flex flex-col items-center justify-center h-full py-10 px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="text-center mb-8 max-w-2xl">
-            <div className="inline-block bg-green-100 p-4 rounded-full mb-6">
-              <BotIcon size={48} className="text-green-500" />
-            </div>
-            <h3 className="text-2xl font-medium text-gray-800 mb-3">
-              Trợ lý AI Nông nghiệp
-            </h3>
-            <p className="text-center text-gray-600 mx-auto mb-8">
-              Chào mừng bạn đến với trợ lý AI của chúng tôi. Hãy đặt câu hỏi về
-              nông nghiệp, kỹ thuật canh tác, hoặc bất kỳ vấn đề gì liên quan
-              đến nông nghiệp.
-            </p>
+            <motion.div
+              className="inline-block bg-gradient-to-r from-purple-100 to-indigo-100 p-4 rounded-full mb-6"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+                delay: 0.3,
+              }}
+            >
+              <BotIcon size={48} className="text-purple-500" />
+            </motion.div>
+            <motion.h3
+              className="text-2xl font-medium text-purple-900 mb-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              AgroSphere AI
+            </motion.h3>
+            <motion.p
+              className="text-center text-gray-600 mx-auto mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.5 }}
+            >
+              Chào mừng bạn đến với AgroSphere AI. Hãy đặt câu hỏi về nông
+              nghiệp, kỹ thuật canh tác, hoặc bất kỳ vấn đề gì liên quan đến
+              nông nghiệp.
+            </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl w-full">
-            <div className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors">
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl w-full"
+            variants={chatContainerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div
+              className="bg-gray-50 hover:bg-purple-50 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+              variants={suggestionVariants}
+              custom={0}
+              whileHover="hover"
+              onClick={() =>
+                handleSelectSuggestion("Kỹ thuật trồng lúa hiệu quả?")
+              }
+            >
               <h4 className="font-medium text-gray-800 mb-1">
                 🌱 Kỹ thuật trồng trọt
               </h4>
               <p className="text-sm text-gray-600">
                 Hướng dẫn về cách trồng và chăm sóc cây trồng
               </p>
-            </div>
-            <div className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors">
+            </motion.div>
+            <motion.div
+              className="bg-gray-50 hover:bg-purple-50 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+              variants={suggestionVariants}
+              custom={1}
+              whileHover="hover"
+              onClick={() =>
+                handleSelectSuggestion("Cách chăn nuôi bò sữa hiệu quả?")
+              }
+            >
               <h4 className="font-medium text-gray-800 mb-1">🐄 Chăn nuôi</h4>
               <p className="text-sm text-gray-600">
                 Thông tin về chăn nuôi và phòng bệnh cho vật nuôi
               </p>
-            </div>
-            <div className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors">
+            </motion.div>
+            <motion.div
+              className="bg-gray-50 hover:bg-purple-50 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+              variants={suggestionVariants}
+              custom={2}
+              whileHover="hover"
+              onClick={() =>
+                handleSelectSuggestion("Ảnh hưởng của thời tiết đến vụ mùa?")
+              }
+            >
               <h4 className="font-medium text-gray-800 mb-1">
                 ⛅ Thời tiết và mùa vụ
               </h4>
               <p className="text-sm text-gray-600">
                 Hướng dẫn về thời vụ và ảnh hưởng của thời tiết
               </p>
-            </div>
-            <div className="bg-gray-50 hover:bg-gray-100 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors">
+            </motion.div>
+            <motion.div
+              className="bg-gray-50 hover:bg-purple-50 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+              variants={suggestionVariants}
+              custom={3}
+              whileHover="hover"
+              onClick={() =>
+                handleSelectSuggestion("Tôi cần mua thuốc trừ sâu cho cây lúa")
+              }
+            >
               <h4 className="font-medium text-gray-800 mb-1">
                 🦠 Phòng trừ sâu bệnh
               </h4>
               <p className="text-sm text-gray-600">
                 Cách nhận biết và đối phó với sâu bệnh hại
               </p>
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          </motion.div>
+        </motion.div>
       );
     }
 
     return (
-      <div className="w-full max-w-4xl mx-auto">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`py-6 px-4 ${
-              index < messages.length - 1 ? "border-b border-gray-200" : ""
-            }`}
-          >
-            <div className="flex items-start max-w-3xl mx-auto">
-              {msg.role === "assistant" ? (
-                <Avatar className="h-10 w-10 mr-4 mt-1 flex-shrink-0 border-2 border-green-100 p-0.5">
-                  <AvatarImage
-                    src="/robot-avatar.png"
-                    alt="AI"
-                    className="rounded-full"
-                  />
-                  <AvatarFallback className="bg-green-100 text-green-800">
-                    AI
-                  </AvatarFallback>
-                </Avatar>
-              ) : (
-                <Avatar className="h-10 w-10 mr-4 mt-1 flex-shrink-0 border-2 border-blue-100 p-0.5">
-                  <AvatarImage
-                    src={auth?.user?.imageUrl || "/placeholder-avatar.png"}
-                    alt={auth?.user?.userName || "User"}
-                    className="rounded-full"
-                  />
-                  <AvatarFallback className="bg-blue-100 text-blue-800">
-                    {auth?.user?.userName?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-
-              <div className="flex-1 min-w-0">
-                <div className="mb-1 flex items-center">
-                  <span
-                    className={`font-medium ${
-                      msg.role === "assistant"
-                        ? "text-green-700"
-                        : "text-blue-700"
-                    }`}
+      <motion.div
+        className="w-full max-w-4xl mx-auto"
+        variants={chatContainerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <AnimatePresence>
+          {messages.map((msg, index) => (
+            <motion.div
+              key={index}
+              className={`py-6 px-4 ${
+                index < messages.length - 1 ? "border-b border-gray-200" : ""
+              }`}
+              variants={messageVariants}
+              initial="hidden"
+              animate="visible"
+              whileHover="hover"
+              layout
+            >
+              <div className="flex items-start max-w-3xl mx-auto">
+                {msg.role === "user" ? (
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
                   >
-                    {msg.role === "assistant"
-                      ? "Trợ lý AI"
-                      : auth?.user?.userName || "Bạn"}
-                  </span>
-                  <span className="text-xs text-gray-400 ml-2">
-                    {formatTime(msg.timestamp)}
-                  </span>
-                </div>
-
-                <div
-                  className={`prose prose-sm max-w-none ${
-                    msg.role === "assistant" ? "text-gray-800" : "text-gray-700"
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap bg-gray-50 rounded-lg p-4 border border-gray-100 shadow-sm">
-                    {msg.content}
-                  </div>
-                </div>
-
-                {msg.source && (
-                  <div className="mt-2 text-xs text-gray-500 italic">
-                    <span className="font-semibold">Nguồn:</span> {msg.source}
-                  </div>
+                    <Avatar className="h-10 w-10 mr-4 mt-1 flex-shrink-0 border-2 border-blue-100 p-0.5">
+                      <AvatarImage
+                        src={auth?.user?.imageUrl || "/placeholder-avatar.png"}
+                        alt={auth?.user?.userName || "User"}
+                        className="rounded-full"
+                      />
+                      <AvatarFallback className="bg-blue-100 text-blue-800">
+                        {auth?.user?.userName?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                  >
+                    <Avatar className="h-10 w-10 mr-4 mt-1 flex-shrink-0 border-2 border-purple-100 p-0.5">
+                      <AvatarImage
+                        src="/agrosphere-ai-avatar.svg"
+                        alt="AgroSphere AI"
+                        className="rounded-full"
+                      />
+                      <AvatarFallback className="bg-purple-100 text-purple-800">
+                        AI
+                      </AvatarFallback>
+                    </Avatar>
+                  </motion.div>
                 )}
+
+                <div className="flex-1 min-w-0">
+                  <div className="mb-1 flex items-center">
+                    <span
+                      className={`font-medium ${
+                        msg.role === "assistant"
+                          ? "text-purple-700"
+                          : "text-blue-700"
+                      }`}
+                    >
+                      {msg.role === "assistant"
+                        ? "AgroSphere AI"
+                        : auth?.user?.userName || "Bạn"}
+                    </span>
+                    <span className="text-xs text-gray-400 ml-2">
+                      {formatTime(msg.timestamp)}
+                    </span>
+                  </div>
+
+                  <motion.div
+                    className={`prose prose-sm max-w-none ${
+                      msg.role === "assistant"
+                        ? "text-gray-800"
+                        : "text-gray-700"
+                    }`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                  >
+                    <motion.div
+                      className="whitespace-pre-wrap bg-gradient-to-r from-purple-50 to-white rounded-lg p-4 border border-purple-100 shadow-sm"
+                      style={{
+                        perspective: "1000px",
+                        transformStyle: "preserve-3d",
+                      }}
+                    >
+                      {msg.content}
+                    </motion.div>
+                  </motion.div>
+
+                  {msg.source && (
+                    <motion.div
+                      className="mt-2 text-xs text-gray-500 italic"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <span className="font-semibold">Nguồn:</span> {msg.source}
+                    </motion.div>
+                  )}
+
+                  {/* Hiển thị sản phẩm liên quan nếu có */}
+                  {msg.role === "assistant" &&
+                    msg.products &&
+                    msg.products.length > 0 && (
+                      <motion.div
+                        className="mt-4"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.4 }}
+                      >
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                          Sản phẩm liên quan:
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                          {msg.products.map((product) => (
+                            <motion.div
+                              key={product.id}
+                              className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                              onClick={() =>
+                                navigate(`/farmhub2/product/${product.id}`)
+                              }
+                              variants={productCardVariants}
+                              whileHover="hover"
+                              style={{
+                                perspective: "1000px",
+                                transformStyle: "preserve-3d",
+                              }}
+                            >
+                              <motion.div className="w-full h-32 bg-gray-100 rounded-md mb-2 overflow-hidden">
+                                <motion.img
+                                  src={
+                                    product.imageUrl ||
+                                    "/placeholder-product.png"
+                                  }
+                                  alt={product.productName}
+                                  className="w-full h-full object-cover"
+                                  whileHover={{ scale: 1.1 }}
+                                  transition={{ duration: 0.5 }}
+                                />
+                              </motion.div>
+                              <h5 className="font-medium text-sm text-gray-800 line-clamp-2 mb-1">
+                                {product.productName}
+                              </h5>
+                              <div className="flex items-center">
+                                <span className="text-purple-600 font-medium">
+                                  {product.salePrice ? (
+                                    <>
+                                      {new Intl.NumberFormat("vi-VN", {
+                                        style: "currency",
+                                        currency: "VND",
+                                      }).format(product.salePrice)}
+                                      <span className="text-xs text-gray-500 line-through ml-1">
+                                        {new Intl.NumberFormat("vi-VN", {
+                                          style: "currency",
+                                          currency: "VND",
+                                        }).format(product.price)}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    new Intl.NumberFormat("vi-VN", {
+                                      style: "currency",
+                                      currency: "VND",
+                                    }).format(product.price)
+                                  )}
+                                </span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
     );
   };
 
   // Hiển thị thanh bên lịch sử chat
   const renderSidebar = () => (
-    <div
-      className={`bg-gray-900 text-white h-[calc(100vh-64px)] w-80 flex flex-col ${
+    <motion.div
+      className={`bg-purple-900 text-white h-[calc(100vh-64px)] w-80 flex flex-col ${
         showSidebar ? "block" : "hidden"
       } md:block transition-all duration-300 ease-in-out`}
+      initial={{ x: -50, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
     >
-      <div className="p-4 flex justify-between items-center border-b border-gray-800">
+      <div className="p-4 flex justify-between items-center border-b border-purple-800">
         <h2 className="font-semibold text-lg">Lịch sử trò chuyện</h2>
         <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearChatHistory}
-            className="text-gray-400 hover:text-white hover:bg-gray-800 p-1 h-8 w-8 rounded-full"
-            title="Cuộc trò chuyện mới"
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onHoverStart={() => setShowTooltip(true)}
+            onHoverEnd={() => setShowTooltip(false)}
           >
-            <PlusIcon size={16} />
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearChatHistory}
+              className="text-purple-300 hover:text-white hover:bg-purple-800 p-1 h-8 w-8 rounded-full relative"
+              title="Cuộc trò chuyện mới"
+            >
+              <PlusIcon size={16} />
+              <AnimatePresence>
+                {showTooltip && (
+                  <motion.div
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-purple-800 text-white text-xs rounded whitespace-nowrap"
+                    variants={tooltipVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                  >
+                    Tạo cuộc trò chuyện mới
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Button>
+          </motion.div>
         </div>
       </div>
 
       <div className="flex-1 overflow-auto px-2 py-3">
         {loadingSessions ? (
           <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+            <motion.div
+              className="rounded-full h-6 w-6 border-b-2 border-purple-300"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            ></motion.div>
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-center py-6 px-4 text-gray-400">
+          <motion.div
+            className="text-center py-6 px-4 text-purple-200"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
             <div className="mb-2">
               <HistoryIcon className="inline-block h-10 w-10 opacity-50 mb-2" />
             </div>
             <p>Không có lịch sử trò chuyện</p>
             <p className="text-xs mt-2">Trò chuyện mới sẽ xuất hiện ở đây</p>
-          </div>
+          </motion.div>
         ) : (
           <div className="space-y-2">
-            {sessions.map((session) => (
-              <div
-                key={session.sessionId}
-                className={`px-3 py-3 hover:bg-gray-800 rounded-lg cursor-pointer transition-colors ${
-                  session.sessionId === sessionId
-                    ? "bg-gray-800 border-l-4 border-green-500"
-                    : ""
-                }`}
-                onClick={() => handleSelectSession(session.sessionId)}
-              >
-                <div className="flex items-center">
-                  <HistoryIcon
-                    size={14}
-                    className="text-gray-400 mr-2 flex-shrink-0"
-                  />
-                  <span className="text-sm truncate font-medium">
-                    {session.title || "Cuộc trò chuyện mới"}
-                  </span>
-                </div>
-                <div className="text-xs text-gray-500 mt-1 pl-6 flex items-center">
-                  <ClockIcon size={12} className="mr-1" />
-                  {formatDate(session.createdAt)}
-                </div>
-              </div>
-            ))}
+            <AnimatePresence>
+              {sessions.map((session, index) => (
+                <motion.div
+                  key={session.sessionId}
+                  className={`px-3 py-3 hover:bg-purple-800 rounded-lg cursor-pointer transition-colors ${
+                    session.sessionId === sessionId
+                      ? "bg-purple-800 border-l-4 border-purple-400"
+                      : ""
+                  }`}
+                  onClick={() => handleSelectSession(session.sessionId)}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                  whileHover={{ x: 5 }}
+                >
+                  <div className="flex items-center">
+                    <HistoryIcon
+                      size={14}
+                      className="text-purple-300 mr-2 flex-shrink-0"
+                    />
+                    <span className="text-sm truncate font-medium">
+                      {session.title || "Cuộc trò chuyện mới"}
+                    </span>
+                  </div>
+                  <div className="text-xs text-purple-300 mt-1 pl-6 flex items-center">
+                    <ClockIcon size={12} className="mr-1" />
+                    {formatDate(session.createdAt)}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 
   return (
@@ -328,32 +629,53 @@ function ChatAI() {
         {renderSidebar()}
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col h-full relative">
+        <motion.div
+          className="flex-1 flex flex-col h-full relative"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+        >
           {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="md:hidden absolute top-4 left-4 z-10 bg-white border shadow-sm rounded-full p-2 h-10 w-10"
-          >
-            <MenuIcon size={20} />
-          </Button>
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="md:hidden absolute top-4 left-4 z-10 bg-white border shadow-sm rounded-full p-2 h-10 w-10"
+            >
+              <MenuIcon size={20} className="text-purple-600" />
+            </Button>
+          </motion.div>
 
           {/* Messages container */}
           <div
             ref={messageContainerRef}
-            className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+            className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-50 scroll-smooth"
           >
             {renderMessages()}
 
             {loading && (
-              <div className="flex justify-center items-center py-6">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
-              </div>
+              <motion.div
+                className="flex justify-center items-center py-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="rounded-full h-8 w-8 border-b-2 border-purple-500"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                ></motion.div>
+              </motion.div>
             )}
 
             {error && !loading && (
-              <div className="max-w-3xl mx-auto px-6 mt-4">
+              <motion.div
+                className="max-w-3xl mx-auto px-6 mt-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
                   <div className="flex">
                     <div className="flex-shrink-0">
@@ -374,12 +696,17 @@ function ChatAI() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
 
           {/* Input container */}
-          <div className="bg-white border-t border-gray-200 p-4 shadow-md">
+          <motion.div
+            className="bg-white border-t border-purple-100 p-4 shadow-md"
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             <div className="max-w-3xl mx-auto">
               <form onSubmit={handleSendMessage}>
                 <div className="relative">
@@ -388,7 +715,7 @@ function ChatAI() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Hỏi về nông nghiệp, kỹ thuật trồng trọt, chăn nuôi..."
-                    className="min-h-[60px] pr-16 py-3 px-4 resize-none border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm"
+                    className="min-h-[60px] pr-16 py-3 px-4 resize-none border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-sm"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -396,25 +723,30 @@ function ChatAI() {
                       }
                     }}
                   />
-                  <Button
-                    type="submit"
-                    disabled={loading || !message.trim()}
-                    className="absolute right-2 bottom-2 bg-green-500 hover:bg-green-600 text-white h-10 w-10 rounded-lg p-0 flex items-center justify-center shadow-sm transition-colors"
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
-                    {loading ? (
-                      <RotateCwIcon size={18} className="animate-spin" />
-                    ) : (
-                      <SendIcon size={18} />
-                    )}
-                  </Button>
+                    <Button
+                      type="submit"
+                      disabled={loading || !message.trim()}
+                      className="absolute right-2 bottom-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white h-10 w-10 rounded-lg p-0 flex items-center justify-center shadow-sm transition-colors"
+                    >
+                      {loading ? (
+                        <RotateCwIcon size={18} className="animate-spin" />
+                      ) : (
+                        <SendIcon size={18} />
+                      )}
+                    </Button>
+                  </motion.div>
                 </div>
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   Nhấn Enter để gửi, Shift+Enter để xuống dòng
                 </p>
               </form>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

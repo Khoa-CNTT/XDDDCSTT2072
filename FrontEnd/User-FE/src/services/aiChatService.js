@@ -8,7 +8,7 @@
  * @param {string} userId - ID của người dùng
  * @param {string} sessionId - ID của phiên chat
  * @param {Array} context - Danh sách các tin nhắn trước đó
- * @returns {Promise} - Promise chứa kết quả từ API
+ * @returns {Promise} - Promise chứa kết quả từ API, bao gồm cả danh sách sản phẩm liên quan (nếu có)
  */
 export const sendChatMessage = async (axiosPrivate, message, userId, sessionId, context = []) => {
   try {
@@ -22,6 +22,7 @@ export const sendChatMessage = async (axiosPrivate, message, userId, sessionId, 
       domain: "agricultural" // Mặc định là lĩnh vực nông nghiệp
     });
     
+    // API sẽ trả về dữ liệu bao gồm message, source, success và products (nếu có)
     return response.data;
   } catch (error) {
     console.error("Lỗi khi gửi tin nhắn đến AI Chatbot:", error);
