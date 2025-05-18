@@ -35,7 +35,6 @@ public class FlashSaleScheduler {
         int activatedCount = 0;
         int endedCount = 0;
 
-        // Cập nhật trạng thái flash sale từ UPCOMING thành ACTIVE
         List<FlashSale> flashSalesToActivate = flashSaleRepository.findFlashSalesToActivate(
                 now, FlashSaleStatus.UPCOMING);
         
@@ -67,7 +66,7 @@ public class FlashSaleScheduler {
      * Kiểm tra các flash sale sắp diễn ra và gửi thông báo
      * Chạy mỗi 10 phút
      */
-    @Scheduled(fixedRate = 600000)
+    @Scheduled(cron = "0 0 0 * * ?")
     public void checkUpcomingFlashSales() {
         log.info("Kiểm tra flash sale sắp diễn ra...");
         
@@ -109,7 +108,7 @@ public class FlashSaleScheduler {
      * Kiểm tra các flash sale đang diễn ra và gửi thông báo khi bắt đầu
      * Chạy mỗi phút
      */
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "0 0 0 * * ?")
     public void notifyFlashSaleStarted() {
         log.info("Kiểm tra flash sale đang bắt đầu...");
         

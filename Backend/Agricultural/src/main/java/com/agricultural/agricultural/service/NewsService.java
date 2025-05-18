@@ -44,4 +44,22 @@ public interface NewsService {
      * Finds and updates news articles with problematic image URLs
      */
     void fixProblematicImageUrls();
+    
+    /**
+     * Xóa tất cả các tin tức mẫu (sample news)
+     * @return Số lượng tin tức mẫu đã xóa
+     */
+    int removeSampleNews();
+    
+    /**
+     * Cưỡng chế tải lại tin tức từ tất cả các nguồn, bỏ qua việc kiểm tra 
+     * tin tức đã tồn tại
+     */
+    void forceFetchNewsFromSources();
+
+    /**
+     * Updates all news articles with invalid dates to current date
+     * @return Number of articles updated
+     */
+    int fixInvalidDates();
 } 

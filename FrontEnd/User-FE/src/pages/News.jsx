@@ -9,6 +9,7 @@ import {
   FaSync,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { formatDateWithFallback } from "../lib/utils";
 
 function News() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,33 +70,36 @@ function News() {
             // Cấu trúc Page<T> với content và totalPages
             setNews(response.data.content);
             setTotalPages(response.data.totalPages);
-
-            // Nếu không có dữ liệu, tự động tải tin mới
-            if (response.data.content.length === 0) {
-              console.log("Không có dữ liệu, đang tự động tải tin mới...");
-              fetchNewsFromSources();
-            }
           } else if (Array.isArray(response.data)) {
             // Cấu trúc List<T>
             setNews(response.data);
-            setTotalPages(1); // Mặc định 1 trang vì không có thông tin phân trang
-
-            // Nếu không có dữ liệu, tự động tải tin mới
-            if (response.data.length === 0) {
-              console.log("Không có dữ liệu, đang tự động tải tin mới...");
-              fetchNewsFromSources();
-            }
+            setTotalPages(Math.ceil(response.data.length / size));
           } else {
             console.warn("Cấu trúc dữ liệu không được hỗ trợ:", response.data);
+            setNews([]);
+            setTotalPages(0);
+          }
+
+          // Kiểm tra nếu không có dữ liệu thì tự động tải tin mới
+          if (
+            (Array.isArray(response.data.content) &&
+              response.data.content.length === 0) ||
+            (Array.isArray(response.data) && response.data.length === 0)
+          ) {
+            console.log("Không có dữ liệu, đang tự động tải tin mới...");
+            fetchNewsFromSources();
           }
         } else {
           console.warn("API trả về dữ liệu null hoặc undefined");
+          setNews([]);
+          setTotalPages(0);
           fetchNewsFromSources();
         }
       } catch (error) {
         console.error("Lỗi khi gọi API:", error);
-        console.log("Đang tự động tải tin mới...");
-        fetchNewsFromSources();
+        setNews([]);
+        setTotalPages(0);
+        toast.error("Không thể tải tin tức. Vui lòng thử lại sau.");
       }
     } finally {
       setLoading(false);
@@ -112,32 +116,21 @@ function News() {
 
         if (response.data && Array.isArray(response.data)) {
           setLatestNews(response.data);
-
-          if (response.data.length === 0) {
-            console.warn("API tin mới nhất trả về mảng rỗng");
-          }
         } else {
           console.warn(
             "API tin mới nhất trả về không đúng định dạng mảng:",
             response.data
           );
+          setLatestNews([]);
         }
       } catch (error) {
         console.error("Lỗi khi tải tin tức mới nhất:", error);
-        // Thử lại với timeout dài hơn
-        try {
-          const response = await axiosInstance.get("/news/latest", {
-            timeout: 30000,
-          });
-          if (response.data && Array.isArray(response.data)) {
-            setLatestNews(response.data);
-          }
-        } catch (retryError) {
-          console.error("Vẫn lỗi sau khi thử lại tin mới nhất:", retryError);
-        }
+        setLatestNews([]);
+        toast.error("Không thể tải tin tức mới nhất. Vui lòng thử lại sau.");
       }
     } catch (error) {
       console.error("Lỗi tổng thể khi lấy tin mới nhất:", error);
+      setLatestNews([]);
     }
   };
 
@@ -195,20 +188,10 @@ function News() {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
   const truncateText = (text, maxLength) => {
     if (!text) return "";
     return text.length > maxLength
-      ? text.substring(0, maxLength) + "..."
+      ? `${text.substring(0, maxLength)}...`
       : text;
   };
 
@@ -255,8 +238,11 @@ function News() {
                     {truncateText(latestNews[0].summary, 120)}
                   </p>
                   <p className="text-gray-300 text-xs mt-2">
-                    {formatDate(latestNews[0].publishedDate)} |{" "}
-                    {latestNews[0].sourceName}
+                    {formatDateWithFallback(
+                      latestNews[0].publishedDate,
+                      "Không rõ ngày đăng"
+                    )}{" "}
+                    | {latestNews[0].sourceName}
                   </p>
                 </div>
               </div>
@@ -285,7 +271,10 @@ function News() {
                         {item.title}
                       </h3>
                       <p className="text-gray-300 text-xs mt-1">
-                        {formatDate(item.publishedDate)}
+                        {formatDateWithFallback(
+                          item.publishedDate,
+                          "Không rõ ngày đăng"
+                        )}
                       </p>
                     </div>
                   </div>
@@ -329,24 +318,17 @@ function News() {
               </button>
             </form>
 
-            {/* Fetch News Button */}
-            <button
-              onClick={fetchNewsFromSources}
-              disabled={fetchingNews}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
-            >
-              {fetchingNews ? (
-                <>
-                  <FaSync className="animate-spin" />
-                  <span>Đang tải...</span>
-                </>
-              ) : (
-                <>
-                  <FaSync />
-                  <span>Tải tin tức mới</span>
-                </>
-              )}
-            </button>
+            {/* Thêm bố cục hiển thị các nút chức năng */}
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
+              <button
+                onClick={fetchNewsFromSources}
+                disabled={fetchingNews}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md text-sm flex items-center gap-1"
+              >
+                <FaSync className={fetchingNews ? "animate-spin" : ""} />
+                {fetchingNews ? "Đang tải..." : "Tải tin tức mới"}
+              </button>
+            </div>
 
             {/* Categories */}
             <div className="flex flex-wrap gap-2 justify-center md:justify-end">
@@ -430,7 +412,10 @@ function News() {
                           {item.category || "Tin tức"}
                         </span>
                         <span className="text-gray-500 text-xs">
-                          {formatDate(item.publishedDate)}
+                          {formatDateWithFallback(
+                            item.publishedDate,
+                            "Không rõ ngày đăng"
+                          )}
                         </span>
                       </div>
                       <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">

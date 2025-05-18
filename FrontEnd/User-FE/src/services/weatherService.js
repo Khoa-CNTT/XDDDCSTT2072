@@ -66,7 +66,7 @@ const weatherService = {
     try {
       const encodedCity = encodeURIComponent(city);
       const encodedCountry = encodeURIComponent(country);
-      const url = `${API_BASE_URL}/weather/agricultural-advice?city=${encodedCity}&country=${encodedCountry}`;
+      const url = `${API_BASE_URL}/weather/advice/latest?city=${encodedCity}&country=${encodedCountry}`;
       
       console.log("Gọi API lời khuyên nông nghiệp:", url);
       const response = await axios.get(url, {
@@ -208,6 +208,89 @@ const weatherService = {
     ];
     
     return products;
+  },
+  
+  // Lấy lời khuyên nông nghiệp dựa trên điều kiện thời tiết
+  async getAdviceByWeatherCondition(description, temperature, humidity) {
+    try {
+      const encodedDesc = encodeURIComponent(description);
+      const url = `${API_BASE_URL}/weather/advice/by-condition?description=${encodedDesc}&temperature=${temperature}&humidity=${humidity}`;
+      
+      console.log("Gọi API lời khuyên theo điều kiện thời tiết:", url);
+      const response = await axios.get(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        responseType: 'json'
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi lấy lời khuyên theo điều kiện thời tiết:", error);
+      // Trả về null để sử dụng lời khuyên mặc định
+      return null;
+    }
+  },
+  
+  // Tạo lời khuyên mặc định dựa trên điều kiện thời tiết
+  createDefaultAdvice(description, temperature, humidity) {
+    const desc = description?.toLowerCase() || '';
+    const temp = temperature || 28;
+    // Thêm điều kiện xử lý độ ẩm
+    const isHighHumidity = humidity > 80;
+    
+    // Mưa
+    if (desc.includes("mưa to") || desc.includes("heavy rain")) {
+      return {
+        farmingAdvice: "Hạn chế ra đồng, kiểm tra hệ thống thoát nước. Bảo vệ cây trồng tránh ngập úng.",
+        cropAdvice: "Không nên gieo hạt hoặc bón phân trong thời tiết mưa to.",
+        warnings: "Cảnh báo ngập úng, sạt lở. Gia cố mái che, rãnh thoát nước.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: false,
+        recommendedActivities: "Kiểm tra hệ thống thoát nước, gia cố khu vực trồng trọt."
+      };
+    } else if (desc.includes("mưa") || desc.includes("rain")) {
+      return {
+        farmingAdvice: "Tạm dừng phun thuốc, chăm sóc hệ thống thoát nước. Bón phân sau khi mưa tạnh.",
+        cropAdvice: "Phù hợp trồng lúa, rau muống và các loại cây ưa nước.",
+        warnings: isHighHumidity ? "Lưu ý nấm bệnh phát triển mạnh trong điều kiện ẩm ướt cao." : "Lưu ý nấm bệnh có thể phát triển trong điều kiện ẩm ướt.",
+        isSuitableForPlanting: true,
+        isSuitableForHarvesting: false,
+        recommendedActivities: "Kiểm tra tình trạng nấm bệnh, chuẩn bị thuốc phòng trừ nấm mốc."
+      };
+    }
+    // Nắng
+    else if (temp > 35) {
+      return {
+        farmingAdvice: isHighHumidity ? "Tưới nước điều độ, tránh làm tăng độ ẩm quá cao. Sử dụng lưới che nắng." : "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice: "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+        recommendedActivities: "Lắp đặt hệ thống che nắng, tăng cường tưới nước vào sáng sớm và chiều tối."
+      };
+    } else if (temp > 30) {
+      return {
+        farmingAdvice: "Tưới nước đều đặn, bón phân vào sáng sớm hoặc chiều tối.",
+        cropAdvice: "Thích hợp trồng các loại cây ưa nắng như cà chua, dưa hấu.",
+        warnings: isHighHumidity ? "Chú ý nấm bệnh có thể phát sinh do độ ẩm cao kết hợp nhiệt độ cao." : "Chú ý cung cấp đủ nước, tránh bón phân đạm quá nhiều.",
+        isSuitableForPlanting: true,
+        isSuitableForHarvesting: true,
+        recommendedActivities: "Theo dõi và phòng trừ sâu bệnh, tăng cường tưới nước."
+      };
+    }
+    // Nhiều mây hoặc bình thường
+    else {
+      return {
+        farmingAdvice: isHighHumidity ? "Thời tiết thuận lợi nhưng độ ẩm cao, chú ý thoáng khí cho cây trồng." : "Thời tiết thuận lợi cho hầu hết các hoạt động canh tác. Theo dõi sâu bệnh.",
+        cropAdvice: "Phù hợp với hầu hết các loại cây trồng, tốt cho gieo hạt và trồng cây con.",
+        warnings: isHighHumidity ? "Độ ẩm cao có thể gây phát sinh nấm bệnh, cần chú ý phòng trừ." : "Không có cảnh báo đặc biệt, tiếp tục chăm sóc cây trồng bình thường.",
+        isSuitableForPlanting: true,
+        isSuitableForHarvesting: true,
+        recommendedActivities: "Thực hiện các công việc canh tác thường xuyên như làm cỏ, bón phân, phun thuốc phòng bệnh."
+      };
+    }
   }
 };
 

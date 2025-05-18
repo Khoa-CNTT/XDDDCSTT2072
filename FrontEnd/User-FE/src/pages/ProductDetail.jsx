@@ -365,7 +365,9 @@ const ProductDetail = () => {
     if (product && quantity < product.quantity) {
       setQuantity(quantity + 1);
     } else {
-      toast.warning("Số lượng đã đạt tối đa trong kho!");
+      toast.error(
+        `Không thể thêm. Chỉ còn ${product?.quantity || 0} sản phẩm trong kho!`
+      );
     }
   };
 
@@ -376,49 +378,17 @@ const ProductDetail = () => {
     }
   };
 
-  // Thêm vào giỏ hàng
-  const addToCart = async () => {
-    try {
-      // Kiểm tra đăng nhập
-      if (!auth?.accessToken) {
-        toast.info("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-        navigate("/account/login", {
-          state: { from: { pathname: `/farmhub2/product/${id}` } },
-        });
-        return;
-      }
-
-      // Tạo dữ liệu giỏ hàng
-      const cartData = {
-        productId: product.id,
-        quantity: quantity,
-      };
-
-      // Truyền flash sale price nếu có
-      if (flashSalePrice) {
-        cartData.isFlashSale = true;
-        cartData.flashSalePrice = flashSalePrice;
-      }
-
-      // Gọi API để thêm sản phẩm vào giỏ hàng
-      await createCart(
-        axiosPrivate,
-        cartData.productId,
-        cartData.quantity,
-        null, // Không còn sử dụng coupon
-        cartData.isFlashSale,
-        cartData.flashSalePrice
-      );
-      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
-    } catch (error) {
-      console.error("Lỗi khi thêm vào giỏ hàng:", error);
-      toast.error("Có lỗi xảy ra khi thêm vào giỏ hàng.");
-    }
-  };
-
   // Mua ngay
   const buyNow = async () => {
     try {
+      // Kiểm tra số lượng với tồn kho
+      if (product && quantity > product.quantity) {
+        toast.error(
+          `Không thể mua ngay. Chỉ còn ${product.quantity} sản phẩm trong kho!`
+        );
+        return;
+      }
+
       // Kiểm tra đăng nhập
       if (!auth?.accessToken) {
         toast.info("Vui lòng đăng nhập để mua sản phẩm");
@@ -461,7 +431,75 @@ const ProductDetail = () => {
       });
     } catch (error) {
       console.error("Lỗi khi mua ngay:", error);
-      toast.error("Có lỗi xảy ra khi xử lý mua ngay.");
+      if (error.response && error.response.status === 400) {
+        // Xử lý lỗi 400 Bad Request - có thể là vấn đề về số lượng
+        if (error.response.data && error.response.data.message) {
+          toast.error(`Không thể mua ngay: ${error.response.data.message}`);
+        } else {
+          toast.error("Số lượng sản phẩm vượt quá số lượng trong kho");
+        }
+      } else {
+        toast.error("Có lỗi xảy ra khi xử lý mua ngay.");
+      }
+    }
+  };
+
+  // Thêm vào giỏ hàng
+  const addToCart = async () => {
+    try {
+      // Kiểm tra số lượng với tồn kho
+      if (product && quantity > product.quantity) {
+        toast.error(
+          `Không thể thêm vào giỏ hàng. Chỉ còn ${product.quantity} sản phẩm trong kho!`
+        );
+        return;
+      }
+
+      // Kiểm tra đăng nhập
+      if (!auth?.accessToken) {
+        toast.info("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+        navigate("/account/login", {
+          state: { from: { pathname: `/farmhub2/product/${id}` } },
+        });
+        return;
+      }
+
+      // Tạo dữ liệu giỏ hàng
+      const cartData = {
+        productId: product.id,
+        quantity: quantity,
+      };
+
+      // Truyền flash sale price nếu có
+      if (flashSalePrice) {
+        cartData.isFlashSale = true;
+        cartData.flashSalePrice = flashSalePrice;
+      }
+
+      // Gọi API để thêm sản phẩm vào giỏ hàng
+      await createCart(
+        axiosPrivate,
+        cartData.productId,
+        cartData.quantity,
+        null, // Không còn sử dụng coupon
+        cartData.isFlashSale,
+        cartData.flashSalePrice
+      );
+      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+    } catch (error) {
+      console.error("Lỗi khi thêm vào giỏ hàng:", error);
+      if (error.response && error.response.status === 400) {
+        // Xử lý lỗi 400 Bad Request - có thể là vấn đề về số lượng
+        if (error.response.data && error.response.data.message) {
+          toast.error(
+            `Không thể thêm vào giỏ hàng: ${error.response.data.message}`
+          );
+        } else {
+          toast.error("Số lượng sản phẩm vượt quá số lượng trong kho");
+        }
+      } else {
+        toast.error("Có lỗi xảy ra khi thêm vào giỏ hàng");
+      }
     }
   };
 

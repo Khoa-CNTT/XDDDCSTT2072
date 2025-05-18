@@ -83,4 +83,6 @@ public interface IMarketPlaceRepository extends JpaRepository<MarketPlace, Integ
         @Param("now") LocalDateTime now,
         Pageable pageable
     );
+
+    List<MarketPlace> findByProductNameContainingOrDescriptionContaining(String keyword, String keyword1, Pageable pageable);
 } 

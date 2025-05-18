@@ -52,6 +52,8 @@ public interface CartMapper {
     @Mapping(source = "product.quantity", target = "availableQuantity")
     @Mapping(source = "variant.id", target = "variantId")
     @Mapping(source = "variant.name", target = "variantName")
+    @Mapping(source = "shopId", target = "shopId")
+    @Mapping(source = "shopName", target = "shopName")
     @Mapping(expression = "java(cartItem.getTotalPrice() != null ? cartItem.getTotalPrice() : (cartItem.getUnitPrice() != null && cartItem.getQuantity() != null ? cartItem.getUnitPrice().multiply(new java.math.BigDecimal(cartItem.getQuantity())) : null))", target = "totalPrice")
     CartItemDTO toDTO(CartItem cartItem);
 
