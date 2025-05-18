@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import org.slf4j.Logger;
@@ -182,6 +183,77 @@ public class NewsController {
             log.error("Lỗi khi thử nghiệm thu thập tin tức: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi thử nghiệm thu thập tin tức: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/clear-sample-data")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<String> clearSampleData() {
+        try {
+            log.info("Bắt đầu xóa dữ liệu mẫu và tải lại tin tức thật...");
+            
+            // Xóa dữ liệu mẫu
+            int removed = newsService.removeSampleNews();
+            
+            // Tải lại tin tức
+            newsService.fetchNewsFromSources();
+            
+            String message = String.format("Đã xóa %d tin tức mẫu và tải lại tin tức thật.", removed);
+            log.info(message);
+            
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa dữ liệu mẫu: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi xóa dữ liệu mẫu: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/force-fetch")
+    public ResponseEntity<String> forceFetchNews() {
+        try {
+            log.info("Bắt đầu cưỡng chế tải lại tin tức từ tất cả các nguồn...");
+            
+            // Tải lại tin tức với cờ bỏ qua kiểm tra bài viết đã tồn tại
+            newsService.forceFetchNewsFromSources();
+            
+            String message = "Đã cưỡng chế tải lại tin tức từ tất cả các nguồn.";
+            log.info(message);
+            
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            log.error("Lỗi khi cưỡng chế tải lại tin tức: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi cưỡng chế tải lại tin tức: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/fix-dates")
+    @PreAuthorize("hasRole('Admin')")
+    public ResponseEntity<String> fixInvalidDates() {
+        try {
+            log.info("Bắt đầu khắc phục vấn đề ngày tháng không hợp lệ...");
+            
+            // Trực tiếp cập nhật các ngày không hợp lệ trong database
+            int updatedCount = newsService.fixInvalidDates();
+            
+            // Cập nhật selectors date cho nguồn tin
+            RestTemplate restTemplate = new RestTemplate();
+            String sourcesUpdateUrl = "http://localhost:8080/api/v1/news-sources/update-all-date-selectors";
+            ResponseEntity<String> sourcesResponse = restTemplate.postForEntity(sourcesUpdateUrl, null, String.class);
+            
+            // Tải lại tin tức để có dữ liệu mới với date chính xác
+            newsService.fixProblematicImageUrls();
+            newsService.forceFetchNewsFromSources();
+            
+            String message = String.format("Đã cập nhật %d bài viết có ngày tháng không hợp lệ và tải lại tin tức mới.", updatedCount);
+            log.info(message);
+            
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            log.error("Lỗi khi khắc phục vấn đề ngày tháng: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi khắc phục vấn đề ngày tháng: " + e.getMessage());
         }
     }
 } 

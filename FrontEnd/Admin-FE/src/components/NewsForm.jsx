@@ -10,7 +10,13 @@ import {
   Switch,
   FormControlLabel,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import { createNews, updateNews } from "../services/newsService";
 
 const NewsForm = ({ news, onClose }) => {
@@ -28,6 +34,31 @@ const NewsForm = ({ news, onClose }) => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Categories for selection
+  const categories = [
+    "Nông nghiệp",
+    "Thủy sản",
+    "Chăn nuôi",
+    "Thị trường",
+    "Khuyến nông",
+    "Nông sản",
+    "Thời tiết",
+    "Khác",
+  ];
+
+  // Rich text editor modules/formats
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      ["bold", "italic", "underline", "strike"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ indent: "-1" }, { indent: "+1" }],
+      [{ align: [] }],
+      ["link", "image"],
+      ["clean"],
+    ],
+  };
 
   // Initialize form with existing news data if editing
   useEffect(() => {
@@ -52,6 +83,14 @@ const NewsForm = ({ news, onClose }) => {
     setFormData((prev) => ({
       ...prev,
       [name]: name === "active" ? checked : value,
+    }));
+  };
+
+  // Handle rich text editor changes
+  const handleContentChange = (content) => {
+    setFormData((prev) => ({
+      ...prev,
+      content,
     }));
   };
 
@@ -116,16 +155,14 @@ const NewsForm = ({ news, onClose }) => {
         </Grid>
 
         <Grid item xs={12}>
-          <TextField
-            name="content"
-            label="Nội dung"
-            fullWidth
-            required
-            multiline
-            rows={10}
+          <Typography variant="subtitle1" gutterBottom>
+            Nội dung
+          </Typography>
+          <ReactQuill
             value={formData.content}
-            onChange={handleChange}
-            margin="normal"
+            onChange={handleContentChange}
+            modules={modules}
+            style={{ height: "300px", marginBottom: "50px" }}
           />
         </Grid>
 
@@ -141,15 +178,22 @@ const NewsForm = ({ news, onClose }) => {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <TextField
-            name="category"
-            label="Danh mục"
-            fullWidth
-            required
-            value={formData.category}
-            onChange={handleChange}
-            margin="normal"
-          />
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Danh mục</InputLabel>
+            <Select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              label="Danh mục"
+              required
+            >
+              {categories.map((category) => (
+                <MenuItem key={category} value={category}>
+                  {category}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Grid>
 
         <Grid item xs={12} md={6}>
