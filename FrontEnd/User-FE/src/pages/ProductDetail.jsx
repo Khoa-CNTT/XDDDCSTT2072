@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getProductById,
   getProductsByCategory,
@@ -41,12 +41,14 @@ import Header from "@/layout/Header";
 import Footer from "@/layout/Footer";
 import CouponList from "@/components/product/CouponList";
 import ReviewsSection from "@/components/product/ReviewsSection";
+import { useCartActions } from "@/hooks/useCartActions";
 
 // Ảnh mặc định khi ảnh sản phẩm không tải được
 const DEFAULT_PRODUCT_IMAGE = "https://placehold.co/600x600?text=No+Image";
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const { getCartQuery } = useCartActions();
   const navigate = useNavigate();
   const axiosPrivate = useAxiosPrivate();
   const { auth } = useAuth();
@@ -409,7 +411,10 @@ const ProductDetail = () => {
         cartData.isFlashSale,
         cartData.flashSalePrice
       );
+      await getCartQuery.refetch();
       toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+    
+    
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
       toast.error("Có lỗi xảy ra khi thêm vào giỏ hàng.");

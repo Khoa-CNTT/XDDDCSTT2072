@@ -27,9 +27,9 @@ const Main = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="pt-20">
+      <div className="pt-20 flex-grow">
         {/* Phần nội dung từ các route con */}
         <Outlet />
       </div>
