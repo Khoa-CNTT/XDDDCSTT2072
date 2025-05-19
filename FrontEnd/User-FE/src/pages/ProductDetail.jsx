@@ -13,6 +13,10 @@ import {
   getProductFeedbackStats,
   checkCanReviewProduct,
 } from "@/services/feedbackService";
+import {
+  getUserWishlists,
+  addToDefaultWishlist,
+} from "@/services/wishlistService";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import useAuth from "@/hooks/useAuth";
 import Loading from "@/components/shared/Loading";
@@ -34,6 +38,7 @@ import {
   FaClock,
   FaPercentage,
 } from "react-icons/fa";
+import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -41,6 +46,7 @@ import Header from "@/layout/Header";
 import Footer from "@/layout/Footer";
 import CouponList from "@/components/product/CouponList";
 import ReviewsSection from "@/components/product/ReviewsSection";
+import { Button } from "@/components/ui/button";
 
 // Ảnh mặc định khi ảnh sản phẩm không tải được
 const DEFAULT_PRODUCT_IMAGE = "https://placehold.co/600x600?text=No+Image";
@@ -72,6 +78,10 @@ const ProductDetail = () => {
 
   const location = useLocation();
   const [showReviewForm, setShowReviewForm] = useState(false);
+
+  // Thêm state cho wishlist
+  const [addingToWishlist, setAddingToWishlist] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
 
   // Kiểm tra người dùng có thể đánh giá không
   const { data: canReviewData } = useQuery({
@@ -765,6 +775,78 @@ const ProductDetail = () => {
     );
   };
 
+  // Kiểm tra xem sản phẩm đã nằm trong danh sách yêu thích chưa
+  useEffect(() => {
+    if (auth?.accessToken && product?.id) {
+      const checkWishlistStatus = async () => {
+        try {
+          const wishlists = await getUserWishlists(axiosPrivate);
+          if (wishlists && wishlists.length > 0) {
+            // Tìm danh sách mặc định
+            const defaultWishlist = wishlists.find((w) => w.isDefault === true);
+            if (defaultWishlist && defaultWishlist.items) {
+              // Kiểm tra sản phẩm có trong danh sách không
+              const found = defaultWishlist.items.some(
+                (item) => parseInt(item.productId) === parseInt(product.id)
+              );
+              setIsInWishlist(found);
+            }
+          }
+        } catch (error) {
+          console.error("Không thể kiểm tra trạng thái wishlist:", error);
+        }
+      };
+
+      checkWishlistStatus();
+    }
+  }, [auth?.accessToken, product?.id, axiosPrivate]);
+
+  // Thêm hàm xử lý thêm vào danh sách yêu thích
+  const handleAddToWishlist = async () => {
+    // Kiểm tra đăng nhập
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích");
+      navigate("/account/login", {
+        state: { from: { pathname: `/farmhub2/product/${id}` } },
+      });
+      return;
+    }
+
+    try {
+      setAddingToWishlist(true);
+      console.log("Chuẩn bị thêm sản phẩm vào wishlist, productId:", id);
+
+      // Chuẩn bị dữ liệu sản phẩm cần thêm vào wishlist
+      const wishlistItem = {
+        productId: parseInt(id),
+        variantId: null, // Có thể thêm logic chọn variant nếu cần
+      };
+
+      console.log("Dữ liệu item gửi đi:", wishlistItem);
+
+      // Gọi service để thêm vào danh sách yêu thích mặc định
+      const response = await addToDefaultWishlist(axiosPrivate, wishlistItem);
+      console.log("Phản hồi từ API:", response);
+
+      setIsInWishlist(true);
+      toast.success("Đã thêm vào danh sách yêu thích");
+    } catch (error) {
+      console.error("Lỗi khi thêm vào danh sách yêu thích:", error);
+
+      if (
+        error.response?.status === 400 &&
+        error.response?.data?.message?.includes("đã tồn tại")
+      ) {
+        setIsInWishlist(true);
+        toast.info("Sản phẩm đã có trong danh sách yêu thích");
+      } else {
+        toast.error("Không thể thêm vào danh sách yêu thích");
+      }
+    } finally {
+      setAddingToWishlist(false);
+    }
+  };
+
   // Main render
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -955,10 +1037,24 @@ const ProductDetail = () => {
                     <FaShare />
                     Chia sẻ
                   </button>
-                  <button className="text-gray-500 hover:text-red-500 flex items-center gap-2">
-                    <FaHeart />
-                    Yêu thích
-                  </button>
+                  <Button
+                    variant={isInWishlist ? "default" : "outline"}
+                    size="sm"
+                    className={`flex items-center gap-2 rounded-full transition-all ${
+                      isInWishlist
+                        ? "bg-red-500 hover:bg-red-600 text-white"
+                        : "hover:bg-red-50 border border-red-300 text-red-500"
+                    }`}
+                    onClick={handleAddToWishlist}
+                    disabled={addingToWishlist}
+                  >
+                    <Heart
+                      size={18}
+                      className={isInWishlist ? "text-white" : ""}
+                      fill={isInWishlist ? "currentColor" : "none"}
+                    />
+                    {isInWishlist ? "Đã thích" : "Yêu thích"}
+                  </Button>
                 </div>
               </div>
             </div>

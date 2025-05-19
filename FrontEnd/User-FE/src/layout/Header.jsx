@@ -24,6 +24,7 @@ import {
   Cloud,
   FileText,
   Store,
+  Heart,
 } from "lucide-react";
 import { FaClipboardList } from "react-icons/fa";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -126,8 +127,8 @@ const Header = () => {
             to="/"
             className="text-[18px] text-white py-2 px-5 rounded-full bg-black dark:bg-gray-950 font-semibold italic shadow-md hover:shadow-lg transition-all duration-300 btn-interactive flex items-center gap-2"
           >
-            <Leaf size={18} className="text-lime-400" />
-            LOGO
+            <Leaf size={18} className="text-lime-300" />
+            Agro
           </Link>
         </div>
 
@@ -260,6 +261,15 @@ const Header = () => {
                     </Link>
                   </li>
                   <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                    <Link
+                      to="/wishlists"
+                      className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                    >
+                      <Heart size={16} className="text-red-500" />
+                      Danh sách yêu thích
+                    </Link>
+                  </li>
+                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
                     <button className="py-2 px-3 flex items-center gap-2 text-sm w-full text-left">
                       <Settings size={16} className="text-gray-500" />
                       Cài đặt
@@ -378,6 +388,24 @@ const Header = () => {
                 >
                   <FaClipboardList size={16} className="text-blue-500" />
                   Quản lý đơn hàng
+                </Link>
+              </li>
+              <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <Link
+                  to="/users/search"
+                  className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                >
+                  <SearchIcon size={16} className="text-green-500" />
+                  Tìm người dùng
+                </Link>
+              </li>
+              <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                <Link
+                  to="/wishlists"
+                  className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                >
+                  <Heart size={16} className="text-red-500" />
+                  Danh sách yêu thích
                 </Link>
               </li>
               <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">

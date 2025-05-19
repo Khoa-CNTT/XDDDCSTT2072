@@ -1,6 +1,7 @@
 package com.agricultural.agricultural.repository;
 
 import com.agricultural.agricultural.entity.UserProductInteraction;
+import com.agricultural.agricultural.entity.UserProductInteraction.InteractionType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,8 +16,7 @@ public interface IUserProductInteractionRepository extends JpaRepository<UserPro
     /**
      * Tìm tương tác của người dùng với sản phẩm
      */
-    Optional<UserProductInteraction> findByUserIdAndProductIdAndType(
-            Integer userId, Integer productId, UserProductInteraction.InteractionType type);
+    Optional<UserProductInteraction> findByUserIdAndProductIdAndType(Integer userId, Integer productId, InteractionType type);
     
     /**
      * Lấy tất cả tương tác của người dùng
@@ -36,7 +36,7 @@ public interface IUserProductInteractionRepository extends JpaRepository<UserPro
     /**
      * Đếm số lượng tương tác theo loại
      */
-    long countByProductIdAndType(Integer productId, UserProductInteraction.InteractionType type);
+    long countByProductIdAndType(Integer productId, InteractionType type);
     
     /**
      * Lấy danh sách sản phẩm được xem nhiều nhất
