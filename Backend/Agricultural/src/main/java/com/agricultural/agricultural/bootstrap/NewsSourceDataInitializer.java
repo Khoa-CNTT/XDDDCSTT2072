@@ -2,6 +2,7 @@ package com.agricultural.agricultural.bootstrap;
 
 import com.agricultural.agricultural.entity.NewsSource;
 import com.agricultural.agricultural.repository.NewsSourceRepository;
+import com.agricultural.agricultural.service.NewsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -17,6 +18,7 @@ import java.util.Optional;
 public class NewsSourceDataInitializer implements CommandLineRunner {
 
     private final NewsSourceRepository newsSourceRepository;
+    private final NewsService newsService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -24,8 +26,31 @@ public class NewsSourceDataInitializer implements CommandLineRunner {
         if (count == 0) {
             log.info("Initializing news sources data");
             initializeNewsSources();
+            
+            // Fetch news from sources immediately after initialization
+            log.info("Starting initial news fetch from all sources");
+            try {
+                newsService.fetchNewsFromSources();
+                log.info("Completed initial news fetch");
+            } catch (Exception e) {
+                log.error("Error during initial news fetch", e);
+            }
         } else {
             log.info("News sources data already exists, skipping initialization");
+            
+            // Check if we need to fetch news (if news table is empty)
+            long newsCount = newsService.getNewsCount();
+            if (newsCount == 0) {
+                log.info("No news found in database. Starting initial news fetch");
+                try {
+                    newsService.fetchNewsFromSources();
+                    log.info("Completed initial news fetch");
+                } catch (Exception e) {
+                    log.error("Error during initial news fetch", e);
+                }
+            } else {
+                log.info("Found {} news articles in database", newsCount);
+            }
         }
     }
 
@@ -85,6 +110,48 @@ public class NewsSourceDataInitializer implements CommandLineRunner {
                         .imageSelector("div.detail-content img")
                         .dateSelector("p.time-detail")
                         .category("Nông nghiệp")
+                        .active(true)
+                        .build(),
+                    
+                // NONGTHONVIET.COM.VN
+                NewsSource.builder()
+                        .name("Nông Thôn Việt")
+                        .url("https://nongthonviet.com.vn/nong-nghiep")
+                        .articleSelector("div.news-item")
+                        .titleSelector("h1.post-title")
+                        .summarySelector("div.post-sapo")
+                        .contentSelector("div.post-content")
+                        .imageSelector("div.post-content img")
+                        .dateSelector("div.post-time")
+                        .category("Nông nghiệp")
+                        .active(true)
+                        .build(),
+                    
+                // TIENPHONG.VN - Kinh tế
+                NewsSource.builder()
+                        .name("Tiền Phong - Kinh Tế")
+                        .url("https://tienphong.vn/kinh-te/")
+                        .articleSelector("article.article-item")
+                        .titleSelector("h1.article-title")
+                        .summarySelector("h2.article-sapo")
+                        .contentSelector("div.article-body")
+                        .imageSelector("div.article-body img")
+                        .dateSelector("div.article-date")
+                        .category("Kinh tế")
+                        .active(true)
+                        .build(),
+                    
+                // THUYSAN.VN
+                NewsSource.builder()
+                        .name("Thủy Sản Việt Nam")
+                        .url("https://thuysanvietnam.com.vn/")
+                        .articleSelector("div.item-news")
+                        .titleSelector("h1.title-detail")
+                        .summarySelector("div.detail-sapo")
+                        .contentSelector("div.detail-content")
+                        .imageSelector("div.detail-content img")
+                        .dateSelector("div.detail-time")
+                        .category("Thủy sản")
                         .active(true)
                         .build()
         );

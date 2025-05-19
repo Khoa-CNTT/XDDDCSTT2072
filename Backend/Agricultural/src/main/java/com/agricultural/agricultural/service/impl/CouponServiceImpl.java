@@ -234,10 +234,15 @@ public class CouponServiceImpl implements ICouponService {
         
         orderCouponRepository.save(orderCoupon);
         
-        // Cập nhật số lần sử dụng
-        coupon.incrementUsage();
+        // Tăng số lượng sử dụng ngay khi áp dụng mã giảm giá
+        if (coupon.getUsageCount() == null) {
+            coupon.setUsageCount(1);
+        } else {
+            coupon.setUsageCount(coupon.getUsageCount() + 1);
+        }
         couponRepository.save(coupon);
-        
+        log.info("Đã tăng số lượt sử dụng mã giảm giá: {} lên {}", coupon.getCode(), coupon.getUsageCount());
+
         // Cập nhật số tiền giảm giá cho đơn hàng
         order.setDiscountAmount(discountAmount);
         // Recalculate total_amount (giả sử có phương thức setTotalAmount)
@@ -289,5 +294,26 @@ public class CouponServiceImpl implements ICouponService {
         
         // Tính toán giảm giá
         return coupon.calculateDiscount(orderAmount);
+    }
+
+    /**
+     * Phương thức đồng bộ số lần sử dụng của coupon từ dữ liệu thực tế
+     * Số lần sử dụng = số người dùng khác nhau đã áp dụng coupon
+     */
+    @Override
+    @Transactional
+    public void synchronizeCouponUsage(Integer couponId) {
+        log.info("Chức năng đồng bộ đã bị vô hiệu hóa, giữ nguyên giá trị hiện tại");
+        // Không thực hiện bất kỳ thay đổi nào đối với giá trị usage_count
+    }
+    
+    /**
+     * Phương thức đồng bộ số lần sử dụng tất cả coupon
+     */
+    @Override
+    @Transactional
+    public void synchronizeAllCouponsUsage() {
+        log.info("Chức năng đồng bộ tất cả đã bị vô hiệu hóa, giữ nguyên giá trị hiện tại trong database");
+        // Không thực hiện thay đổi nào đối với giá trị usage_count
     }
 } 

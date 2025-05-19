@@ -16,6 +16,7 @@ public interface ForumReplyMapper {
     @Mapping(source = "user.username", target = "userName")
     @Mapping(source = "user.imageUrl", target = "userImageUrl")
     @Mapping(source = "parent.id", target = "parentId")
+    @Mapping(source = "isInappropriate", target = "isInappropriate")
     @Mapping(source = "replies", target = "replies", qualifiedByName = "mapReplies")
     ForumReplyDTO toDTO(ForumReply entity);
     
@@ -38,6 +39,7 @@ public interface ForumReplyMapper {
                         .userImageUrl(reply.getUser().getImageUrl())
                         .parentId(reply.getParent() != null ? reply.getParent().getId() : null)
                         .likeCount(reply.getLikeCount())
+                        .isInappropriate(reply.getIsInappropriate())
                         .build())
                 .toList();
     }

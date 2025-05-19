@@ -85,6 +85,20 @@ const FlashSalesPage = () => {
       if (response && response.success) {
         console.log("Dữ liệu Flash Sale hợp lệ:", response.data);
 
+        // Debug dữ liệu ngày tháng
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          const firstItem = response.data[0];
+          console.log("Dữ liệu ngày tháng của item đầu tiên:", {
+            startDate: firstItem.startDate,
+            endDate: firstItem.endDate,
+            startTime: firstItem.startTime,
+            endTime: firstItem.endTime,
+            isArrayStartTime: Array.isArray(firstItem.startTime),
+            isArrayEndTime: Array.isArray(firstItem.endTime),
+            status: firstItem.status,
+          });
+        }
+
         if (Array.isArray(response.data)) {
           console.log("Số lượng Flash Sale:", response.data.length);
           setFlashSales(response.data || []);
@@ -282,30 +296,44 @@ const FlashSalesPage = () => {
     // Log dữ liệu để debug
     console.log(`Rendering ${fieldName} for:`, flashSale);
 
+    let dateValue = null;
+
     // Xử lý cho startDate/endDate
     if (fieldName === "startDate") {
-      // Thử các trường khác nhau theo thứ tự ưu tiên
-      if (flashSale.startTime) return formatDateTime(flashSale.startTime);
-      if (flashSale.startDate) return formatDateTime(flashSale.startDate);
-
-      // Các trường có thể có khác từ backend
-      if (flashSale.start_time) return formatDateTime(flashSale.start_time);
-      if (flashSale.start_date) return formatDateTime(flashSale.start_date);
+      // Lấy giá trị từ các trường hợp có thể có
+      dateValue =
+        flashSale.startTime ||
+        flashSale.startDate ||
+        flashSale.start_time ||
+        flashSale.start_date;
+    } else if (fieldName === "endDate") {
+      // Lấy giá trị từ các trường hợp có thể có
+      dateValue =
+        flashSale.endTime ||
+        flashSale.endDate ||
+        flashSale.end_time ||
+        flashSale.end_date;
     }
 
-    // Xử lý cho endDate/endTime
-    if (fieldName === "endDate") {
-      // Thử các trường khác nhau theo thứ tự ưu tiên
-      if (flashSale.endTime) return formatDateTime(flashSale.endTime);
-      if (flashSale.endDate) return formatDateTime(flashSale.endDate);
+    // Nếu không có dữ liệu, trả về N/A
+    if (!dateValue) return "N/A";
 
-      // Các trường có thể có khác từ backend
-      if (flashSale.end_time) return formatDateTime(flashSale.end_time);
-      if (flashSale.end_date) return formatDateTime(flashSale.end_date);
+    // Xử lý trường hợp dữ liệu là mảng (định dạng Java LocalDateTime)
+    if (Array.isArray(dateValue)) {
+      // Mảng có dạng [năm, tháng, ngày, giờ, phút, giây]
+      const date = new Date(
+        dateValue[0], // năm
+        dateValue[1] - 1, // tháng (0-11)
+        dateValue[2], // ngày
+        dateValue[3], // giờ
+        dateValue[4], // phút
+        dateValue[5] || 0 // giây (nếu có)
+      );
+      return formatDateTime(date);
     }
 
-    // Fallback
-    return "N/A";
+    // Xử lý trường hợp thông thường (chuỗi hoặc đối tượng Date)
+    return formatDateTime(dateValue);
   };
 
   // Thêm hàm tính toán trạng thái thực tế dựa trên thời gian
@@ -314,32 +342,62 @@ const FlashSalesPage = () => {
     if (flashSale.status === "CANCELLED") return "CANCELLED";
 
     const now = new Date();
-    const startDate = new Date(
+
+    // Lấy giá trị startTime từ các nguồn có thể có
+    let startTimeValue =
       flashSale.startTime ||
-        flashSale.startDate ||
-        flashSale.start_time ||
-        flashSale.start_date
-    );
-    const endDate = new Date(
+      flashSale.startDate ||
+      flashSale.start_time ||
+      flashSale.start_date;
+
+    // Lấy giá trị endTime từ các nguồn có thể có
+    let endTimeValue =
       flashSale.endTime ||
-        flashSale.endDate ||
-        flashSale.end_time ||
-        flashSale.end_date
-    );
+      flashSale.endDate ||
+      flashSale.end_time ||
+      flashSale.end_date;
+
+    // Xử lý trường hợp dữ liệu là mảng (định dạng Java LocalDateTime)
+    if (Array.isArray(startTimeValue)) {
+      startTimeValue = new Date(
+        startTimeValue[0], // năm
+        startTimeValue[1] - 1, // tháng (0-11)
+        startTimeValue[2], // ngày
+        startTimeValue[3], // giờ
+        startTimeValue[4], // phút
+        startTimeValue[5] || 0 // giây (nếu có)
+      );
+    } else {
+      startTimeValue = new Date(startTimeValue);
+    }
+
+    // Xử lý trường hợp dữ liệu là mảng (định dạng Java LocalDateTime)
+    if (Array.isArray(endTimeValue)) {
+      endTimeValue = new Date(
+        endTimeValue[0], // năm
+        endTimeValue[1] - 1, // tháng (0-11)
+        endTimeValue[2], // ngày
+        endTimeValue[3], // giờ
+        endTimeValue[4], // phút
+        endTimeValue[5] || 0 // giây (nếu có)
+      );
+    } else {
+      endTimeValue = new Date(endTimeValue);
+    }
 
     // Kiểm tra các giá trị có hợp lệ không
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (isNaN(startTimeValue.getTime()) || isNaN(endTimeValue.getTime())) {
       console.warn(`Thời gian không hợp lệ cho Flash Sale ${flashSale.id}:`, {
-        start: flashSale.startTime || flashSale.startDate,
-        end: flashSale.endTime || flashSale.endDate,
+        start: startTimeValue,
+        end: endTimeValue,
       });
       return flashSale.status; // Giữ nguyên trạng thái nếu không parse được thời gian
     }
 
     // Tính toán trạng thái thực tế
-    if (now < startDate) {
+    if (now < startTimeValue) {
       return "UPCOMING"; // Sắp diễn ra
-    } else if (now >= startDate && now <= endDate) {
+    } else if (now >= startTimeValue && now <= endTimeValue) {
       return "ACTIVE"; // Đang diễn ra
     } else {
       return "ENDED"; // Đã kết thúc
@@ -350,10 +408,28 @@ const FlashSalesPage = () => {
   const formatDisplayTime = (dateStr) => {
     if (!dateStr) return "";
 
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
+    let dateToFormat = dateStr;
 
-    return date.toLocaleString("vi-VN", {
+    // Xử lý trường hợp dữ liệu là mảng (định dạng Java LocalDateTime)
+    if (Array.isArray(dateStr)) {
+      dateToFormat = new Date(
+        dateStr[0], // năm
+        dateStr[1] - 1, // tháng (0-11)
+        dateStr[2], // ngày
+        dateStr[3], // giờ
+        dateStr[4], // phút
+        dateStr[5] || 0 // giây (nếu có)
+      );
+    } else {
+      dateToFormat = new Date(dateStr);
+    }
+
+    if (isNaN(dateToFormat.getTime())) {
+      console.warn("Không thể định dạng thời gian:", dateStr);
+      return String(dateStr);
+    }
+
+    return dateToFormat.toLocaleString("vi-VN", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",

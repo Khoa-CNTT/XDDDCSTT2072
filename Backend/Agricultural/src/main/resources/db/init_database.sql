@@ -1895,3 +1895,123 @@ BEGIN
     WHERE id = NEW.post_id;
 END//
 DELIMITER ;
+
+-- UPDATE Lần 10
+
+
+-- ===================================
+-- CẬP NHẬT CẤU TRÚC BẢNG SUBSCRIPTION_PLANS
+-- ===================================
+
+-- Thêm các cột quyền mới cho bảng subscription_plans nếu chưa tồn tại
+ALTER TABLE subscription_plans
+    ADD COLUMN  can_sell_products BOOLEAN NOT NULL DEFAULT FALSE,
+ADD COLUMN  can_access_forum BOOLEAN NOT NULL DEFAULT TRUE,
+ADD COLUMN  can_purchase_products BOOLEAN NOT NULL DEFAULT TRUE,
+ADD COLUMN  can_use_ai_chat BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- ===================================
+-- CẬP NHẬT CÁC GÓI SUBSCRIPTION CÓ SẴN
+-- ===================================
+SET SQL_SAFE_UPDATES = 0;
+
+-- Cập nhật gói Free (Lấy theo ID = 1, hoặc dựa trên is_free = true)
+UPDATE subscription_plans
+SET
+    name = 'Gói Free',
+    description = 'Gói miễn phí cho phép tham gia diễn đàn, mua sản phẩm và sử dụng AI chat',
+    can_sell_products = FALSE,
+    can_access_forum = TRUE,
+    can_purchase_products = TRUE,
+    can_use_ai_chat = TRUE
+WHERE is_free = TRUE OR id = 1;
+
+-- Cập nhật gói Premium (Lấy theo ID = 2, hoặc dựa trên is_free = false và price > 0)
+UPDATE subscription_plans
+SET
+    name = 'Gói Premium',
+    description = 'Gói cao cấp cho phép đăng ký bán hàng (cần được admin phê duyệt)',
+    can_sell_products = TRUE,
+    can_access_forum = TRUE,
+    can_purchase_products = TRUE,
+    can_use_ai_chat = TRUE
+WHERE (is_free = FALSE AND price > 0) OR id = 2;
+
+-- ===================================
+-- TẠO CÁC GÓI MẶC ĐỊNH NẾU CHƯA CÓ
+-- ===================================
+
+-- Tạo gói Free nếu không tồn tại gói miễn phí nào
+INSERT INTO subscription_plans (
+    name, description, price, duration_months, max_locations,
+    is_active, is_free, can_sell_products, can_access_forum,
+    can_purchase_products, can_use_ai_chat, created_at, updated_at
+)
+SELECT
+    'Gói Free',
+    'Gói miễn phí cho phép tham gia diễn đàn, mua sản phẩm và sử dụng AI chat',
+    0,
+    12,
+    3,
+    TRUE,
+    TRUE,
+    FALSE,
+    TRUE,
+    TRUE,
+    TRUE,
+    NOW(),
+    NOW()
+    WHERE NOT EXISTS (
+    SELECT 1 FROM subscription_plans WHERE is_free = TRUE
+);
+
+-- Tạo gói Premium nếu không tồn tại gói cao cấp nào
+INSERT INTO subscription_plans (
+    name, description, price, duration_months, max_locations,
+    is_active, is_free, can_sell_products, can_access_forum,
+    can_purchase_products, can_use_ai_chat, created_at, updated_at
+)
+SELECT
+    'Gói Premium',
+    'Gói cao cấp cho phép đăng ký bán hàng (cần được admin phê duyệt)',
+    500000,
+    12,
+    10,
+    TRUE,
+    FALSE,
+    TRUE,
+    TRUE,
+    TRUE,
+    TRUE,
+    NOW(),
+    NOW()
+    WHERE NOT EXISTS (
+    SELECT 1 FROM subscription_plans WHERE is_free = FALSE AND price > 0
+);
+
+-- ===================================
+-- TẠO BẢNG CHO ĐĂNG KÝ BÁN HÀNG
+-- ===================================
+
+-- Tạo bảng seller_registrations nếu chưa tồn tại
+CREATE TABLE IF NOT EXISTS seller_registrations (
+                                                    id SERIAL PRIMARY KEY,
+                                                    user_id INT NOT NULL,
+                                                    business_name VARCHAR(255) NOT NULL,
+    business_address TEXT,
+    business_phone VARCHAR(20),
+    tax_id VARCHAR(50),
+    description TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    notes TEXT,
+    processed_by INT,
+    processed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (processed_by) REFERENCES users(id)
+    );
+
+-- Tạo index để tìm kiếm nhanh
+CREATE INDEX idx_seller_registrations_user_id ON seller_registrations(user_id);
+CREATE INDEX idx_seller_registrations_status ON seller_registrations(status);

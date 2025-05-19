@@ -242,12 +242,15 @@ const SubscriptionPlansPage = () => {
     }
   };
 
-  const filteredPlans = plans.filter(
-    (plan) =>
-      plan.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (plan.description &&
-        plan.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredPlans = Array.isArray(plans)
+    ? plans.filter(
+        (plan) =>
+          (plan.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (plan.description?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          )
+      )
+    : [];
 
   // Format giá thành định dạng VND
   const formatCurrency = (amount) => {

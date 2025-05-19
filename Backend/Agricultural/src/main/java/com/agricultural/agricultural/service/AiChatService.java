@@ -1,10 +1,10 @@
 package com.agricultural.agricultural.service;
 
-import com.agricultural.agricultural.dto.ai.ChatBotRequest;
-import com.agricultural.agricultural.dto.ai.ChatRequest;
-import com.agricultural.agricultural.dto.ai.ChatResponse;
-import com.agricultural.agricultural.dto.ai.MessageHistoryRequest;
-import com.agricultural.agricultural.dto.ai.MessageHistoryResponse;
+import com.agricultural.agricultural.dto.ai.request.ChatBotRequest;
+import com.agricultural.agricultural.dto.ai.request.ChatRequest;
+import com.agricultural.agricultural.dto.ai.response.ChatResponse;
+import com.agricultural.agricultural.dto.ai.request.MessageHistoryRequest;
+import com.agricultural.agricultural.dto.ai.response.MessageHistoryResponse;
 
 public interface AiChatService {
     ChatResponse processChat(ChatRequest request);

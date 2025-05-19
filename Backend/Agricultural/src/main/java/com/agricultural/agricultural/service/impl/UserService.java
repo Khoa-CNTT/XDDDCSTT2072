@@ -1,7 +1,11 @@
 package com.agricultural.agricultural.service.impl;
 
+import com.agricultural.agricultural.common.SellerRegistrationStatus;
+import com.agricultural.agricultural.dto.SellerRegistrationDTO;
+import com.agricultural.agricultural.dto.UserSubscriptionDTO;
 import com.agricultural.agricultural.entity.RefreshToken;
 import com.agricultural.agricultural.entity.Role;
+import com.agricultural.agricultural.entity.SubscriptionPlan;
 import com.agricultural.agricultural.entity.User;
 import com.agricultural.agricultural.components.JwtTokenUtil;
 import com.agricultural.agricultural.dto.response.LoginResponse;
@@ -10,9 +14,12 @@ import com.agricultural.agricultural.exception.BusinessException;
 import com.agricultural.agricultural.exception.ResourceNotFoundException;
 import com.agricultural.agricultural.mapper.UserMapper;
 import com.agricultural.agricultural.repository.IRoleRepository;
+import com.agricultural.agricultural.repository.ISubscriptionPlanRepository;
 import com.agricultural.agricultural.repository.impl.UserRepository;
 import com.agricultural.agricultural.service.IRefreshTokenService;
+import com.agricultural.agricultural.service.ISellerRegistrationService;
 import com.agricultural.agricultural.service.IUserService;
+import com.agricultural.agricultural.service.IUserSubscriptionService;
 import com.agricultural.agricultural.utils.UploadUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AccessLevel;
@@ -23,6 +30,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,21 +43,29 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserService implements IUserService {
 
     @Value("${jwt.expiration:3600}")
-    private long jwtExpiration;
+    long jwtExpiration;
 
-    private final AuthenticationManager authenticationManager;
-    private final IRoleRepository roleRepository;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenUtil jwtTokenUtil;
-    private final UserMapper userMapper;
-    private final UploadUtils uploadUtils;
-    private final IRefreshTokenService refreshTokenService;
+    final AuthenticationManager authenticationManager;
+    final IRoleRepository roleRepository;
+    final UserRepository userRepository;
+    final PasswordEncoder passwordEncoder;
+    final JwtTokenUtil jwtTokenUtil;
+    final UserMapper userMapper;
+    final UploadUtils uploadUtils;
+    final IRefreshTokenService refreshTokenService;
+    
+    @Autowired
+    IUserSubscriptionService userSubscriptionService;
+    
+    @Autowired
+    ISellerRegistrationService sellerRegistrationService;
+    
+    @Autowired
+    ISubscriptionPlanRepository subscriptionPlanRepository;
 
     @Autowired
     public UserService(UserMapper userMapper, AuthenticationManager authenticationManager,
@@ -295,5 +312,123 @@ public class UserService implements IUserService {
         // Cập nhật mật khẩu mới
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    @Override
+    public boolean canCurrentUserSell() {
+        // Lấy thông tin người dùng hiện tại từ SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserEmail = authentication.getName();
+        
+        // Tìm thông tin người dùng
+        Optional<User> userOptional = userRepository.findByEmail(currentUserEmail);
+        if (userOptional.isEmpty()) {
+            return false;
+        }
+        
+        User currentUser = userOptional.get();
+        return canUserSell(currentUser.getId());
+    }
+
+    @Override
+    public boolean canUserSell(Integer userId) {
+        // Đầu tiên kiểm tra người dùng có tồn tại không
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            return false;
+        }
+        
+        // Kiểm tra xem người dùng có đăng ký Premium và có quyền bán hàng không
+        // Kiểm tra xem người dùng có gói đăng ký Premium không
+        Optional<UserSubscriptionDTO> subscriptionOptional = 
+            userSubscriptionService.getLatestActiveSubscription(userId);
+        
+        if (subscriptionOptional.isEmpty()) {
+            return false; // Không có gói đăng ký nào
+        }
+        
+        // Lấy thông tin gói đăng ký
+        UserSubscriptionDTO subscription = subscriptionOptional.get();
+        
+        // Lấy thông tin về gói đăng ký để kiểm tra quyền
+        Optional<SubscriptionPlan> planOptional = 
+            subscriptionPlanRepository.findById(subscription.getPlanId());
+        
+        if (planOptional.isEmpty()) {
+            return false; // Không tìm thấy thông tin gói
+        }
+        
+        SubscriptionPlan plan = planOptional.get();
+        
+        // Kiểm tra gói có quyền bán hàng không
+        if (!plan.getCanSellProducts()) {
+            return false; // Gói không có quyền bán hàng
+        }
+        
+        // Kiểm tra xem người dùng đã được phê duyệt bán hàng chưa
+        return sellerRegistrationService.hasUserApprovedRegistration(userId);
+    }
+
+    @Override
+    public Object registerAsSeller() {
+        // Lấy thông tin người dùng hiện tại
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUserEmail = authentication.getName();
+        
+        // Tìm thông tin người dùng
+        Optional<User> userOptional = userRepository.findByEmail(currentUserEmail);
+        if (userOptional.isEmpty()) {
+            throw new EntityNotFoundException("Không tìm thấy thông tin người dùng");
+        }
+        
+        User currentUser = userOptional.get();
+        
+        // Kiểm tra xem người dùng có gói Premium không
+        // Lấy gói đăng ký hiện tại
+        Optional<UserSubscriptionDTO> subscriptionOptional = 
+            userSubscriptionService.getLatestActiveSubscription(currentUser.getId());
+        
+        if (subscriptionOptional.isEmpty()) {
+            throw new BusinessException("Bạn cần đăng ký gói Premium để có thể đăng ký bán hàng");
+        }
+        
+        // Lấy thông tin về gói đăng ký
+        UserSubscriptionDTO subscription = subscriptionOptional.get();
+        
+        // Lấy thông tin gói để kiểm tra quyền
+        Optional<SubscriptionPlan> planOptional = 
+            subscriptionPlanRepository.findById(subscription.getPlanId());
+        
+        if (planOptional.isEmpty()) {
+            throw new EntityNotFoundException("Không tìm thấy thông tin gói đăng ký");
+        }
+        
+        SubscriptionPlan plan = planOptional.get();
+        
+        // Kiểm tra gói có quyền bán hàng không
+        if (!plan.getCanSellProducts()) {
+            throw new BusinessException("Gói đăng ký của bạn không hỗ trợ quyền bán hàng. Vui lòng nâng cấp lên gói Premium.");
+        }
+        
+        // Kiểm tra người dùng đã có đơn đăng ký đang chờ xét duyệt chưa
+        if (sellerRegistrationService.hasCurrentUserPendingRegistration()) {
+            throw new BusinessException("Bạn đã có đơn đăng ký bán hàng đang chờ xét duyệt");
+        }
+        
+        // Kiểm tra người dùng đã được phê duyệt bán hàng chưa
+        if (sellerRegistrationService.hasCurrentUserApprovedRegistration()) {
+            throw new BusinessException("Bạn đã được phê duyệt bán hàng trước đó");
+        }
+        
+        // Tạo đơn đăng ký mới với trạng thái PENDING
+        SellerRegistrationDTO registrationDTO = 
+            SellerRegistrationDTO.builder()
+                .userId(currentUser.getId())
+                .status(SellerRegistrationStatus.PENDING.getValue())
+                // Các trường thông tin khác sẽ được cung cấp bởi người dùng trong form đăng ký
+                .build();
+        
+        // Lưu đơn đăng ký
+        return sellerRegistrationService.createRegistration(registrationDTO);
     }
 }

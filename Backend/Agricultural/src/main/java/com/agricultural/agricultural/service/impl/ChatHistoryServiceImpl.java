@@ -1,8 +1,8 @@
 package com.agricultural.agricultural.service.impl;
 
-import com.agricultural.agricultural.dto.ai.ChatBotRequest;
-import com.agricultural.agricultural.dto.ai.MessageHistoryRequest;
-import com.agricultural.agricultural.dto.ai.MessageHistoryResponse;
+import com.agricultural.agricultural.dto.ai.request.ChatBotRequest;
+import com.agricultural.agricultural.dto.ai.request.MessageHistoryRequest;
+import com.agricultural.agricultural.dto.ai.response.MessageHistoryResponse;
 import com.agricultural.agricultural.entity.ChatMessage;
 import com.agricultural.agricultural.entity.ChatSession;
 import com.agricultural.agricultural.repository.ChatMessageRepository;
@@ -34,7 +34,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
         // Tìm session hoặc tạo mới nếu không tồn tại
         ChatSession session = chatSessionRepository.findBySessionId(sessionId)
                 .orElseGet(() -> createSession(userId, source));
-        
+
         // Tạo tin nhắn người dùng
         ChatMessage userMsg = ChatMessage.builder()
                 .sessionId(session.getSessionId())
@@ -43,7 +43,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                 .role("user")
                 .timestamp(LocalDateTime.now())
                 .build();
-        
+
         // Tạo tin nhắn AI
         ChatMessage aiMsg = ChatMessage.builder()
                 .sessionId(session.getSessionId())
@@ -53,11 +53,11 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                 .source(source)
                 .timestamp(LocalDateTime.now().plusSeconds(1)) // Đảm bảo tin nhắn AI đến sau
                 .build();
-        
+
         // Lưu tin nhắn
         chatMessageRepository.save(userMsg);
         chatMessageRepository.save(aiMsg);
-        
+
         // Cập nhật tiêu đề phiên chat nếu chưa có
         if (session.getTitle() == null || session.getTitle().isEmpty()) {
             // Lấy 50 ký tự đầu tiên của tin nhắn người dùng làm tiêu đề
@@ -68,7 +68,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
             session.setTitle(title);
             chatSessionRepository.save(session);
         }
-        
+
         return session;
     }
 
@@ -77,14 +77,14 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     public ChatSession createSession(String userId, String model) {
         // Tạo ID ngẫu nhiên cho phiên chat
         String sessionId = UUID.randomUUID().toString();
-        
+
         ChatSession session = ChatSession.builder()
                 .sessionId(sessionId)
                 .userId(userId)
                 .active(true)
                 .model(model)
                 .build();
-        
+
         return chatSessionRepository.save(session);
     }
 
@@ -94,7 +94,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
             String sessionId = request.getSessionId();
             String userId = request.getUserId();
             int limit = request.getLimit() != null ? request.getLimit() : 50;
-            
+
             List<ChatMessage> messages;
             if (sessionId != null && !sessionId.isEmpty()) {
                 // Nếu có sessionId, lấy tin nhắn theo phiên
@@ -113,7 +113,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                         .error("Thiếu thông tin sessionId hoặc userId")
                         .build();
             }
-            
+
             // Chuyển đổi thành định dạng cần thiết cho response
             List<Map<String, String>> formattedMessages = messages.stream()
                     .map(message -> {
@@ -127,12 +127,12 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                         return msgMap;
                     })
                     .collect(Collectors.toList());
-            
+
             return MessageHistoryResponse.builder()
                     .success(true)
                     .messages(formattedMessages)
                     .build();
-            
+
         } catch (Exception e) {
             log.error("Error getting message history", e);
             return MessageHistoryResponse.builder()
@@ -150,13 +150,13 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     @Override
     public List<ChatBotRequest.MessageContext> getContextFromHistory(String sessionId, Integer limit) {
         List<ChatMessage> messages = chatMessageRepository.findBySessionIdOrderByTimestampAsc(sessionId);
-        
+
         // Giới hạn số lượng tin nhắn nếu cần
         if (limit != null && limit > 0 && messages.size() > limit) {
             // Lấy tin nhắn mới nhất theo limit
             messages = messages.subList(messages.size() - limit, messages.size());
         }
-        
+
         // Chuyển đổi sang MessageContext
         return messages.stream()
                 .map(message -> ChatBotRequest.MessageContext.builder()

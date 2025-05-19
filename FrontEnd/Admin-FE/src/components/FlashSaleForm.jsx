@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
   Dialog,
@@ -143,8 +143,8 @@ const FlashSaleForm = ({ open, onClose, flashSale, onSubmit }) => {
     // Chuẩn bị dữ liệu để gửi lên server
     const submissionData = {
       ...formData,
-      startDate: dayjs(formData.startDate).format("YYYY-MM-DD HH:mm:ss"),
-      endDate: dayjs(formData.endDate).format("YYYY-MM-DD HH:mm:ss"),
+      startTime: dayjs(formData.startDate).format("YYYY-MM-DD HH:mm:ss"),
+      endTime: dayjs(formData.endDate).format("YYYY-MM-DD HH:mm:ss"),
       discountPercentage: parseInt(formData.discountPercentage, 10),
       maxDiscountAmount: parseFloat(formData.maxDiscountAmount),
     };

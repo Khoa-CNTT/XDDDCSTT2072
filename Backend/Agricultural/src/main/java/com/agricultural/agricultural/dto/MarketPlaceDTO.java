@@ -57,6 +57,8 @@ public class MarketPlaceDTO {
     
     private Integer categoryId;
     
+    private String categoryName;
+    
     private Double weight;
     
     private String dimensions;

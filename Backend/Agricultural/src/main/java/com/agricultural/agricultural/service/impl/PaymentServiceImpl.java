@@ -40,6 +40,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import com.agricultural.agricultural.repository.IOrderCouponRepository;
+import com.agricultural.agricultural.entity.OrderCoupon;
+import com.agricultural.agricultural.repository.ICouponRepository;
+import com.agricultural.agricultural.entity.Coupon;
 
 @Service
 @Slf4j
@@ -54,6 +58,8 @@ public class PaymentServiceImpl implements IPaymentService {
     private final VNPayUtils vnPayUtils;
     private final QRCodeUtils qrCodeUtils;
     private final INotificationService notificationService;
+    private final IOrderCouponRepository orderCouponRepository;
+    private final ICouponRepository couponRepository;
 
     @Value("${app.backend-url:http://localhost:8080}")
     private String backendBaseUrl;
@@ -908,19 +914,28 @@ public class PaymentServiceImpl implements IPaymentService {
 
     @Override
     public void handlePaymentCallback(Integer orderId, boolean paymentSuccessful) {
+        log.info("=== BẮT ĐẦU XỬ LÝ CALLBACK SAU THANH TOÁN ===");
+        log.info("Xử lý callback cho đơn hàng ID: {}, Thanh toán thành công: {}", orderId, paymentSuccessful);
+        
         // Sử dụng final để đảm bảo an toàn khi sử dụng trong lambda expression
         final Integer finalOrderId = orderId;
         Order order = orderRepository.findById(finalOrderId).orElse(null);
 
         if (order != null) {
-            // Nếu thanh toán thành công, xóa các sản phẩm đã thanh toán khỏi giỏ hàng
+            log.info("Đã tìm thấy đơn hàng: ID={}, Trạng thái={}, BuyerId={}", order.getId(), order.getStatus(), order.getBuyerId());
+            
+            // Nếu thanh toán thành công, xóa các sản phẩm đã thanh toán khỏi giỏ hàng và cập nhật usage_count của coupon
             if (paymentSuccessful) {
                 try {
                     // Xóa các sản phẩm khỏi giỏ hàng
                     clearPaidItemsFromCart(order);
                     log.info("Đã xóa các sản phẩm đã thanh toán khỏi giỏ hàng cho đơn hàng: {}", order.getId());
+                    
+                    // Cập nhật usage_count cho các coupon được sử dụng trong đơn hàng này
+                    log.info("Bắt đầu cập nhật usage_count cho các coupon trong đơn hàng: {}", order.getId());
+                    updateCouponUsageCounts(order);
                 } catch (Exception e) {
-                    log.error("Lỗi khi xóa sản phẩm đã thanh toán khỏi giỏ hàng: {}", e.getMessage(), e);
+                    log.error("Lỗi khi xử lý sau thanh toán: {}", e.getMessage(), e);
                 }
             }
 
@@ -937,7 +952,51 @@ public class PaymentServiceImpl implements IPaymentService {
                     .redirectUrl("/orders/" + order.getId())
                     .build();
 
+            log.info("Gửi thông báo: {}", notification.getTitle());
             notificationService.sendRealTimeNotification(notification);
+        } else {
+            log.error("Không tìm thấy đơn hàng ID: {}", orderId);
+        }
+        
+        log.info("=== KẾT THÚC XỬ LÝ CALLBACK SAU THANH TOÁN ===");
+    }
+    
+    /**
+     * Cập nhật số lượng sử dụng của mã giảm giá sau khi thanh toán thành công
+     *
+     * @param order Đơn hàng đã thanh toán thành công
+     */
+    private void updateCouponUsageCounts(Order order) {
+        try {
+            // Lấy tất cả mã giảm giá được áp dụng cho đơn hàng này
+            List<OrderCoupon> orderCoupons = orderCouponRepository.findByOrderId(order.getId());
+            if (orderCoupons.isEmpty()) {
+                log.info("Đơn hàng ID: {} không sử dụng mã giảm giá", order.getId());
+                return;
+            }
+            
+            log.info("Cập nhật số lượng sử dụng cho {} mã giảm giá trong đơn hàng ID: {}", orderCoupons.size(), order.getId());
+            
+            for (OrderCoupon orderCoupon : orderCoupons) {
+                // Tìm coupon để cập nhật
+                Integer couponId = orderCoupon.getCouponId();
+                Optional<Coupon> couponOpt = couponRepository.findById(couponId);
+                if (couponOpt.isEmpty()) {
+                    log.warn("Không tìm thấy mã giảm giá ID: {} để cập nhật usage count", couponId);
+                    continue;
+                }
+                
+                Coupon coupon = couponOpt.get();
+                
+                // Bỏ qua việc kiểm tra người dùng đã sử dụng coupon, luôn tăng usage_count
+                Integer currentCount = coupon.getUsageCount() != null ? coupon.getUsageCount() : 0;
+                coupon.setUsageCount(currentCount + 1);
+                couponRepository.save(coupon);
+                log.info("Đã tăng số lượng sử dụng mã giảm giá ID: {} từ {} lên {}", 
+                        couponId, currentCount, coupon.getUsageCount());
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi cập nhật số lượng sử dụng mã giảm giá: {}", e.getMessage(), e);
         }
     }
 

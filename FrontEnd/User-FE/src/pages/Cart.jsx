@@ -389,6 +389,30 @@ const Cart = () => {
     );
   };
 
+  // Phân nhóm sản phẩm theo shop
+  const groupCartItemsByShop = () => {
+    const groupedItems = {};
+
+    cartItems.forEach((item) => {
+      const shopId = item.shopId || "unknown";
+      const shopName = item.shopName || "Cửa hàng không xác định";
+
+      if (!groupedItems[shopId]) {
+        groupedItems[shopId] = {
+          shopId,
+          shopName,
+          items: [],
+        };
+      }
+
+      groupedItems[shopId].items.push(item);
+    });
+
+    return Object.values(groupedItems);
+  };
+
+  const groupedCartItems = groupCartItemsByShop();
+
   if (isLoading) {
     return <Loading />;
   }
@@ -412,68 +436,127 @@ const Cart = () => {
             Giỏ Hàng Của Bạn
           </h2>
 
-          <table className="w-full border">
-            <thead className="bg-gray-100 text-left">
-              <tr>
-                <th className="p-4">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="select-all"
-                      checked={selectAll}
-                      onChange={handleSelectAll}
-                      className="mr-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <label htmlFor="select-all">Chọn tất cả</label>
-                  </div>
-                </th>
-                <th className="p-4">Thông tin sản phẩm</th>
-                <th className="text-center">Đơn giá</th>
-                <th className="text-center">Số lượng</th>
-                <th className="text-center">Thành tiền</th>
-                <th className="text-center"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {cartItems?.map((item, index) => (
-                <tr
-                  key={index}
-                  className={`border-b ${
-                    selectedItems[item.id] ? "bg-blue-50" : ""
-                  }`}
-                >
-                  <td className="px-4 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems[item.id] || false}
-                      onChange={() => handleSelectItem(item.id)}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                  </td>
-                  <td className="flex items-center gap-4 p-4">
-                    <img
-                      src={item.productImage}
-                      alt={item.productName}
-                      className="w-20 h-20 object-cover rounded"
-                    />
-                    <span>{item.productName}</span>
-                  </td>
-                  <td className="text-red-500 font-semibold text-center">
-                    {item.unitPrice.toLocaleString()}đ
-                  </td>
-                  <td className="text-center">
-                    <CartUpdate cartItemId={item.id} quantity={item.quantity} />
-                  </td>
-                  <td className="text-red-500 font-semibold text-center">
-                    {(item.unitPrice * item.quantity).toLocaleString()}đ
-                  </td>
-                  <td className="text-center">
-                    <CartDelete cartItemId={item.id} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="flex justify-between items-center p-4 bg-gray-100 rounded mb-4">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="select-all"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="mr-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="select-all">Chọn tất cả</label>
+            </div>
+            <span>Tổng: {cartItems.length} sản phẩm</span>
+          </div>
+
+          {/* Hiển thị sản phẩm theo nhóm shop */}
+          {groupedCartItems.map((group) => (
+            <div
+              key={group.shopId}
+              className="mb-6 border rounded-lg overflow-hidden"
+            >
+              {/* Header của shop */}
+              <div className="flex items-center gap-2 bg-gray-50 p-3 border-b">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id={`select-shop-${group.shopId}`}
+                    checked={group.items.every(
+                      (item) => selectedItems[item.id]
+                    )}
+                    onChange={() => {
+                      const allSelected = group.items.every(
+                        (item) => selectedItems[item.id]
+                      );
+
+                      // Toggle selection for all items in this shop
+                      const newSelection = { ...selectedItems };
+                      group.items.forEach((item) => {
+                        newSelection[item.id] = !allSelected;
+                      });
+
+                      setSelectedItems(newSelection);
+
+                      // Update selectAll state
+                      const everyItemSelected = cartItems.every(
+                        (item) => newSelection[item.id]
+                      );
+                      setSelectAll(everyItemSelected);
+
+                      // Reset coupon when selection changes
+                      if (appliedCoupon) {
+                        setAppliedCoupon(null);
+                        setDiscount(0);
+                        setCouponError("");
+                      }
+                    }}
+                    className="mr-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex items-center font-medium">
+                  <span className="mr-2">🏪</span>
+                  <span>{group.shopName}</span>
+                </div>
+              </div>
+
+              {/* Sản phẩm của shop */}
+              <table className="w-full">
+                <thead className="bg-gray-50 text-left">
+                  <tr>
+                    <th className="p-2 w-10"></th>
+                    <th className="p-2">Thông tin sản phẩm</th>
+                    <th className="text-center">Đơn giá</th>
+                    <th className="text-center">Số lượng</th>
+                    <th className="text-center">Thành tiền</th>
+                    <th className="text-center w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.items.map((item) => (
+                    <tr
+                      key={item.id}
+                      className={`border-t ${
+                        selectedItems[item.id] ? "bg-blue-50" : ""
+                      }`}
+                    >
+                      <td className="p-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems[item.id] || false}
+                          onChange={() => handleSelectItem(item.id)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="flex items-center gap-4 p-2">
+                        <img
+                          src={item.productImage}
+                          alt={item.productName}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                        <span>{item.productName}</span>
+                      </td>
+                      <td className="text-red-500 font-semibold text-center">
+                        {item.unitPrice.toLocaleString()}đ
+                      </td>
+                      <td className="text-center">
+                        <CartUpdate
+                          cartItemId={item.id}
+                          quantity={item.quantity}
+                        />
+                      </td>
+                      <td className="text-red-500 font-semibold text-center">
+                        {(item.unitPrice * item.quantity).toLocaleString()}đ
+                      </td>
+                      <td className="text-center">
+                        <CartDelete cartItemId={item.id} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
 
           {/* Phần áp dụng mã giảm giá */}
           <div className="flex flex-col mt-6 bg-gray-50 p-4 rounded-lg">

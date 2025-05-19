@@ -31,6 +31,7 @@ import {
   Edit as EditIcon,
   Refresh as RefreshIcon,
   ContentCopy as CopyIcon,
+  Sync as SyncIcon,
 } from "@mui/icons-material";
 import { useSnackbar } from "notistack";
 import { format } from "date-fns";
@@ -222,10 +223,8 @@ const CouponsPage = () => {
   };
 
   const handleStatusChange = (event) => {
-    const newStatus = event.target.value;
-    console.log("Chọn trạng thái mới:", newStatus);
-    setStatus(newStatus);
-    setPage(0);
+    setStatus(event.target.value);
+    setPage(0); // Reset to first page when changing status filter
   };
 
   const handleFormSubmit = async (couponData) => {
@@ -261,7 +260,6 @@ const CouponsPage = () => {
       }
 
       setOpenForm(false);
-      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       enqueueSnackbar(error.message || "Có lỗi xảy ra", { variant: "error" });
     }
@@ -273,7 +271,6 @@ const CouponsPage = () => {
         const response = await couponService.deleteCoupon(id);
         if (response.success) {
           enqueueSnackbar("Xóa mã giảm giá thành công", { variant: "success" });
-          setRefreshTrigger((prev) => prev + 1);
         } else {
           enqueueSnackbar(response.message || "Lỗi khi xóa mã giảm giá", {
             variant: "error",
@@ -302,9 +299,26 @@ const CouponsPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
+
     try {
+      // Xử lý trường hợp dateString là mảng (định dạng từ Java LocalDateTime)
+      if (Array.isArray(dateString)) {
+        // Mảng có dạng [năm, tháng, ngày, giờ, phút, giây]
+        const date = new Date(
+          dateString[0], // năm
+          dateString[1] - 1, // tháng (0-11)
+          dateString[2], // ngày
+          dateString[3] || 0, // giờ
+          dateString[4] || 0, // phút
+          dateString[5] || 0 // giây
+        );
+        return format(date, "dd/MM/yyyy HH:mm", { locale: vi });
+      }
+
+      // Xử lý trường hợp thông thường
       return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: vi });
     } catch (error) {
+      console.error("Lỗi khi định dạng ngày:", dateString, error);
       return "Invalid Date";
     }
   };
@@ -402,6 +416,57 @@ const CouponsPage = () => {
         String(coupon.specificProductId).includes(searchTerm))
   );
 
+  const handleSyncAllUsage = async () => {
+    try {
+      setLoading(true);
+      const response = await couponService.syncAllCouponsUsage();
+
+      if (response.success) {
+        enqueueSnackbar("Đã đồng bộ số lần sử dụng cho tất cả mã giảm giá", {
+          variant: "success",
+        });
+      } else {
+        enqueueSnackbar(
+          response.message || "Không thể đồng bộ số lần sử dụng",
+          {
+            variant: "error",
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Error syncing usage count:", error);
+      enqueueSnackbar("Đã xảy ra lỗi khi đồng bộ số lần sử dụng", {
+        variant: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSyncCouponUsage = async (id) => {
+    try {
+      const response = await couponService.syncCouponUsage(id);
+
+      if (response.success) {
+        enqueueSnackbar("Đã đồng bộ số lần sử dụng cho mã giảm giá", {
+          variant: "success",
+        });
+      } else {
+        enqueueSnackbar(
+          response.message || "Không thể đồng bộ số lần sử dụng",
+          {
+            variant: "error",
+          }
+        );
+      }
+    } catch (error) {
+      console.error(`Error syncing usage count for coupon ID ${id}:`, error);
+      enqueueSnackbar("Đã xảy ra lỗi khi đồng bộ số lần sử dụng", {
+        variant: "error",
+      });
+    }
+  };
+
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
@@ -466,6 +531,18 @@ const CouponsPage = () => {
             </Grid>
           </Grid>
         </Paper>
+
+        <Box mb={3} display="flex" justifyContent="flex-end">
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleSyncAllUsage}
+            disabled={loading}
+            startIcon={<SyncIcon />}
+          >
+            Đồng bộ số lần sử dụng
+          </Button>
+        </Box>
 
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
@@ -566,6 +643,23 @@ const CouponsPage = () => {
                         </TableCell>
                         <TableCell>
                           {coupon.usageCount || 0}/{coupon.usageLimit || "∞"}
+                          {coupon.usageCount > 0 && (
+                            <Typography
+                              variant="caption"
+                              display="block"
+                              color="textSecondary"
+                            >
+                              * Mỗi người dùng chỉ tính 1 lần
+                            </Typography>
+                          )}
+                          <Button
+                            size="small"
+                            onClick={() => handleSyncCouponUsage(coupon.id)}
+                            sx={{ mt: 1 }}
+                            startIcon={<SyncIcon fontSize="small" />}
+                          >
+                            Đồng bộ
+                          </Button>
                         </TableCell>
                         <TableCell>{getStatusChip(coupon)}</TableCell>
                         <TableCell align="right">
