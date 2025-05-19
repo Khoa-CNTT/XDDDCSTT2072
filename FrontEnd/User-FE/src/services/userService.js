@@ -394,3 +394,17 @@ export const deleteUserAccount = async (axios, userId, confirmationData) => {
     throw error;
   }
 };
+// Đăng nhập bằng Google ID Token
+export const loginWithGoogle = async (axios, idToken) => {
+  try {
+    console.log("Đang gửi request đăng nhập Google...");
+    const response = await axios.post("/auth/google/login", {
+      idToken: idToken
+    });
+    console.log("Response đăng nhập Google:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi đăng nhập Google:", error);
+    throw error;
+  }
+};

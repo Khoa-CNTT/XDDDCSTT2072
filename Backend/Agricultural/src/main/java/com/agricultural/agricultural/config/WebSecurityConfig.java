@@ -52,7 +52,8 @@ public class WebSecurityConfig {
                         // ✅ Cho phép API đăng nhập/đăng ký không cần token, chỉ định nhiều pattern để phủ hết các trường hợp
                         .requestMatchers("/api/v1/users/login", "/api/v1/users/register",
                                         "/api/users/login", "/api/users/register",
-                                "/api/v1/auth/forgot-password","/api/v1/auth/reset-password").permitAll()
+                                "/api/v1/auth/forgot-password","/api/v1/auth/reset-password", 
+                                "/api/v1/auth/google/login").permitAll()
                         .requestMatchers("/api/v1/ai/**").permitAll() // ✅ Cho phép truy cập API AI Chat mà không cần xác thực
                         .requestMatchers("/api/v1/gemini/**").permitAll() // ✅ Cho phép truy cập API Gemini mà không cần xác thực
                         .requestMatchers("/api/v1/forum/**").authenticated() // ✅ Yêu cầu đăng nhập với API forum

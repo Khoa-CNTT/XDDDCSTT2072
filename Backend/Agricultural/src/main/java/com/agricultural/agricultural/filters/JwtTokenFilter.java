@@ -154,6 +154,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 Pair.of(String.format("%s/auth/refresh-token", apiPrefix), "POST"),
                 Pair.of(String.format("%s/auth/logout", apiPrefix), "POST"),
                 
+                // Google Authentication
+                Pair.of(String.format("%s/auth/google/login", apiPrefix), "POST"),
+                
                 // Chỉ bypass các API công khai liên quan đến thời tiết
                 Pair.of(String.format("%s/weather/locations", apiPrefix), "GET"),
                 Pair.of(String.format("%s/weather/locations/[0-9]+$", apiPrefix), "GET"),
