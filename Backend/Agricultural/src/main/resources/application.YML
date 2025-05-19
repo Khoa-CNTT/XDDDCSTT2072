@@ -87,9 +87,6 @@ vnpay:
 # Cấu hình AI Service
 ai:
   service:
-    baseUrl: http://localhost:8000
-    apiKey: ${AI_SERVICE_API_KEY:}
-    timeout: 30000
     gemini:
       api:
         url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent

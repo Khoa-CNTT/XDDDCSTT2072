@@ -8,6 +8,7 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./context/AuthProvider.jsx";
+import { BrowserRouter } from "react-router-dom";
 
 // Cấu hình QueryClient với tùy chọn lưu trữ
 const queryClient = new QueryClient({
@@ -207,10 +208,12 @@ restoreDataFromLocalStorage();
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <App />
-        <ToastContainer position="top-right" autoClose={3000} />
-      </AuthProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+          <ToastContainer position="top-right" autoClose={3000} />
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>
 );

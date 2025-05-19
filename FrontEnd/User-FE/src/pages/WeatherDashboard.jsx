@@ -161,13 +161,86 @@ const WeatherDashboard = () => {
       if (response) {
         // API có thể trả về dữ liệu trực tiếp dưới dạng mảng
         if (Array.isArray(response)) {
-          setForecast(response);
-          console.log("Dự báo thời tiết:", response);
+          // Bổ sung lời khuyên nông nghiệp cho mỗi ngày dự báo
+          const forecastWithAdvice = await Promise.all(
+            response.map(async (day) => {
+              try {
+                // Gọi API lấy lời khuyên theo điều kiện thời tiết
+                const adviceResponse =
+                  await weatherService.getAdviceByWeatherCondition(
+                    day.weatherDescription,
+                    day.temperature,
+                    day.humidity
+                  );
+
+                // Nếu có lời khuyên từ API, sử dụng nó, ngược lại tạo lời khuyên mặc định
+                return {
+                  ...day,
+                  advice:
+                    adviceResponse ||
+                    weatherService.createDefaultAdvice(
+                      day.weatherDescription,
+                      day.temperature,
+                      day.humidity
+                    ),
+                };
+              } catch (error) {
+                console.error("Lỗi khi lấy lời khuyên cho ngày dự báo:", error);
+                // Tạo lời khuyên mặc định khi có lỗi
+                return {
+                  ...day,
+                  advice: weatherService.createDefaultAdvice(
+                    day.weatherDescription,
+                    day.temperature,
+                    day.humidity
+                  ),
+                };
+              }
+            })
+          );
+
+          setForecast(forecastWithAdvice);
+          console.log("Dự báo thời tiết với lời khuyên:", forecastWithAdvice);
         }
         // Hoặc có thể đóng gói trong thuộc tính data
         else if (response.data && Array.isArray(response.data)) {
-          setForecast(response.data);
-          console.log("Dự báo thời tiết:", response.data);
+          // Tương tự xử lý như trên
+          const forecastWithAdvice = await Promise.all(
+            response.data.map(async (day) => {
+              try {
+                const adviceResponse =
+                  await weatherService.getAdviceByWeatherCondition(
+                    day.weatherDescription,
+                    day.temperature,
+                    day.humidity
+                  );
+
+                return {
+                  ...day,
+                  advice:
+                    adviceResponse ||
+                    weatherService.createDefaultAdvice(
+                      day.weatherDescription,
+                      day.temperature,
+                      day.humidity
+                    ),
+                };
+              } catch (error) {
+                console.error("Lỗi khi lấy lời khuyên cho ngày dự báo:", error);
+                return {
+                  ...day,
+                  advice: weatherService.createDefaultAdvice(
+                    day.weatherDescription,
+                    day.temperature,
+                    day.humidity
+                  ),
+                };
+              }
+            })
+          );
+
+          setForecast(forecastWithAdvice);
+          console.log("Dự báo thời tiết với lời khuyên:", forecastWithAdvice);
         } else {
           console.warn(
             "Cấu trúc dữ liệu dự báo không đúng định dạng mảng:",
@@ -264,6 +337,180 @@ const WeatherDashboard = () => {
     }
   };
 
+  // Tạo lời khuyên mặc định dựa vào thông tin thời tiết
+  const createDefaultAdvice = (weatherData) => {
+    const desc = weatherData?.weatherDescription?.toLowerCase() || "";
+    const temp = weatherData?.temperature || 28;
+    const humidity = weatherData?.humidity || 70;
+
+    // Mưa
+    if (desc.includes("mưa to") || desc.includes("heavy rain")) {
+      return {
+        farmingAdvice:
+          "Hạn chế ra đồng, kiểm tra hệ thống thoát nước. Bảo vệ cây trồng tránh ngập úng.",
+        cropAdvice: "Không nên gieo hạt hoặc bón phân trong thời tiết mưa to.",
+        warnings: "Cảnh báo ngập úng, sạt lở. Gia cố mái che, rãnh thoát nước.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: false,
+      };
+    } else if (desc.includes("mưa") || desc.includes("rain")) {
+      return {
+        farmingAdvice:
+          "Tạm dừng phun thuốc, chăm sóc hệ thống thoát nước. Bón phân sau khi mưa tạnh.",
+        cropAdvice: "Phù hợp trồng lúa, rau muống và các loại cây ưa nước.",
+        warnings: "Lưu ý nấm bệnh có thể phát triển trong điều kiện ẩm ướt.",
+        isSuitableForPlanting: true,
+        isSuitableForHarvesting: false,
+      };
+    }
+    // Nắng
+    else if (temp > 35) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (temp > 30) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (temp > 25) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (temp > 20) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (temp > 15) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (temp > 10) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (temp > 5) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (temp > 0) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (temp < 0) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    }
+    // Nắng
+    else if (desc.includes("nắng gay gắt") || desc.includes("intense sun")) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    } else if (
+      desc.includes("nắng") ||
+      desc.includes("sunny") ||
+      desc.includes("clear")
+    ) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    }
+    // Foggy conditions - Điều kiện sương mù
+    else if (
+      desc.includes("sương mù") ||
+      desc.includes("fog") ||
+      desc.includes("mist")
+    ) {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    }
+    // Default condition
+    else {
+      return {
+        farmingAdvice:
+          "Tưới nước thường xuyên vào sáng sớm và chiều tối. Sử dụng lưới che nắng.",
+        cropAdvice:
+          "Phù hợp trồng các loại cây chịu nhiệt như đậu bắp, ớt, mướp.",
+        warnings: "Cảnh báo cháy nắng, thiếu nước. Tránh tưới nước giữa trưa.",
+        isSuitableForPlanting: false,
+        isSuitableForHarvesting: true,
+      };
+    }
+  };
+
   // Tạo dữ liệu dự báo giả
   const createMockForecast = () => {
     const mockForecast = [];
@@ -278,17 +525,32 @@ const WeatherDashboard = () => {
         .toString()
         .padStart(2, "0")}`;
 
+      // Tạo thông tin thời tiết ngẫu nhiên
+      const temperature = 28 + Math.floor(Math.random() * 8);
+      const weatherDescription = ["Nắng", "Mây", "Mưa nhẹ", "Nắng gián đoạn"][
+        Math.floor(Math.random() * 4)
+      ];
+      const humidity = 70 + Math.floor(Math.random() * 20);
+      const windSpeed = 8 + Math.floor(Math.random() * 10);
+
+      // Tạo lời khuyên dựa trên thông tin thời tiết ngẫu nhiên
+      const advice = weatherService.createDefaultAdvice(
+        weatherDescription,
+        temperature,
+        humidity
+      );
+
+      // Thêm dữ liệu dự báo với lời khuyên nông nghiệp tương ứng
       mockForecast.push({
         city: currentCity,
         country: currentCountry,
-        temperature: 28 + Math.floor(Math.random() * 8),
-        humidity: 70 + Math.floor(Math.random() * 20),
-        windSpeed: 8 + Math.floor(Math.random() * 10),
-        weatherDescription: ["Nắng", "Mây", "Mưa nhẹ", "Nắng gián đoạn"][
-          Math.floor(Math.random() * 4)
-        ],
+        temperature: temperature,
+        humidity: humidity,
+        windSpeed: windSpeed,
+        weatherDescription: weatherDescription,
         dataTime: date.toISOString(),
-        displayDate: displayDate, // Thêm trường displayDate để hiển thị
+        displayDate: displayDate,
+        advice: advice,
       });
     }
     setForecast(mockForecast);
@@ -302,7 +564,33 @@ const WeatherDashboard = () => {
         currentCountry
       );
       console.log("Lời khuyên nông nghiệp nhận được:", response);
-      setAdvice(response);
+
+      // Xử lý dữ liệu từ API để đảm bảo đúng định dạng
+      if (response) {
+        // Dữ liệu AgriculturalAdviceDTO đã được ánh xạ từ backend
+        const processedAdvice = {
+          // Chỉ sử dụng dữ liệu từ response, không thêm trường mới
+          id: response.id,
+          city: response.weatherData?.city || currentCity,
+          country: response.weatherData?.country || currentCountry,
+          weatherSummary: response.weatherSummary,
+          farmingAdvice: response.farmingAdvice,
+          cropAdvice: response.cropAdvice,
+          warnings: response.warnings,
+          isRainySeason: response.isRainySeason,
+          isDrySeason: response.isDrySeason,
+          isSuitableForPlanting: response.isSuitableForPlanting,
+          isSuitableForHarvesting: response.isSuitableForHarvesting,
+          recommendedActivities: response.recommendedActivities,
+          lastUpdated:
+            response.updatedAt ||
+            response.createdAt ||
+            new Date().toISOString(),
+        };
+        setAdvice(processedAdvice);
+      } else {
+        throw new Error("Không có dữ liệu lời khuyên nông nghiệp");
+      }
     } catch (error) {
       console.error("Lỗi khi tải lời khuyên nông nghiệp:", error);
 
@@ -787,7 +1075,8 @@ const WeatherDashboard = () => {
     console.log("Executing fetch requests...");
 
     // Force dùng dữ liệu giả trong trường hợp backend chưa hoạt động
-    const useMockData = false; // Set to true để debug giao diện
+    // Đặt thành true nếu muốn sử dụng dữ liệu giả để debugging/phát triển UI
+    const useMockData = false;
 
     if (useMockData) {
       console.log("Using mock data for development/debug purposes");
@@ -838,27 +1127,50 @@ const WeatherDashboard = () => {
     if (!description) return <Cloud className="w-12 h-12 text-gray-500" />;
 
     const desc = description.toLowerCase();
-    if (
+
+    // Rainy conditions - Điều kiện mưa
+    if (desc.includes("mưa to") || desc.includes("heavy rain")) {
+      return <CloudRain className="w-16 h-16 text-blue-700" />;
+    } else if (desc.includes("mưa nhẹ") || desc.includes("light rain")) {
+      return <CloudRain className="w-16 h-16 text-blue-400" />;
+    } else if (
+      desc.includes("mưa") ||
       desc.includes("rain") ||
-      desc.includes("shower") ||
-      desc.includes("mưa")
+      desc.includes("shower")
     ) {
       return <CloudRain className="w-16 h-16 text-blue-500" />;
-    } else if (desc.includes("cloud") || desc.includes("mây")) {
-      return <Cloud className="w-16 h-16 text-gray-500" />;
+    }
+    // Cloudy conditions - Điều kiện nhiều mây
+    else if (desc.includes("nhiều mây") || desc.includes("overcast")) {
+      return <Cloud className="w-16 h-16 text-gray-700" />;
     } else if (
-      desc.includes("clear") ||
+      desc.includes("mây rải rác") ||
+      desc.includes("scattered clouds")
+    ) {
+      return <Cloud className="w-16 h-16 text-gray-400" />;
+    } else if (desc.includes("mây") || desc.includes("cloud")) {
+      return <Cloud className="w-16 h-16 text-gray-500" />;
+    }
+    // Sunny conditions - Điều kiện nắng
+    else if (desc.includes("nắng gay gắt") || desc.includes("intense sun")) {
+      return <Sun className="w-16 h-16 text-orange-600" />;
+    } else if (
+      desc.includes("nắng") ||
       desc.includes("sunny") ||
-      desc.includes("nắng")
+      desc.includes("clear")
     ) {
       return <Sun className="w-16 h-16 text-yellow-500" />;
-    } else if (
+    }
+    // Foggy conditions - Điều kiện sương mù
+    else if (
+      desc.includes("sương mù") ||
       desc.includes("fog") ||
-      desc.includes("mist") ||
-      desc.includes("sương")
+      desc.includes("mist")
     ) {
       return <CloudFog className="w-16 h-16 text-gray-400" />;
-    } else {
+    }
+    // Default condition
+    else {
       return <Cloud className="w-16 h-16 text-gray-500" />;
     }
   };
@@ -898,27 +1210,50 @@ const WeatherDashboard = () => {
     if (!description) return "from-blue-500 to-blue-700";
 
     const desc = description.toLowerCase();
-    if (
+
+    // Rain conditions
+    if (desc.includes("mưa to") || desc.includes("heavy rain")) {
+      return "from-blue-700 to-indigo-900";
+    } else if (desc.includes("mưa nhẹ") || desc.includes("light rain")) {
+      return "from-blue-500 to-indigo-700";
+    } else if (
+      desc.includes("mưa") ||
       desc.includes("rain") ||
-      desc.includes("shower") ||
-      desc.includes("mưa")
+      desc.includes("shower")
     ) {
       return "from-blue-600 to-indigo-800";
-    } else if (desc.includes("cloud") || desc.includes("mây")) {
-      return "from-gray-400 to-gray-600";
+    }
+    // Cloud conditions
+    else if (desc.includes("nhiều mây") || desc.includes("overcast")) {
+      return "from-gray-500 to-gray-700";
     } else if (
-      desc.includes("clear") ||
+      desc.includes("mây rải rác") ||
+      desc.includes("scattered clouds")
+    ) {
+      return "from-gray-400 to-gray-600";
+    } else if (desc.includes("mây") || desc.includes("cloud")) {
+      return "from-gray-400 to-gray-600";
+    }
+    // Sunny conditions
+    else if (desc.includes("nắng gay gắt") || desc.includes("intense sun")) {
+      return "from-orange-500 to-red-600";
+    } else if (
+      desc.includes("nắng") ||
       desc.includes("sunny") ||
-      desc.includes("nắng")
+      desc.includes("clear")
     ) {
       return "from-orange-400 to-amber-600";
-    } else if (
+    }
+    // Fog conditions
+    else if (
+      desc.includes("sương mù") ||
       desc.includes("fog") ||
-      desc.includes("mist") ||
-      desc.includes("sương")
+      desc.includes("mist")
     ) {
       return "from-gray-300 to-slate-500";
-    } else {
+    }
+    // Default
+    else {
       return "from-blue-500 to-blue-700";
     }
   };
@@ -1064,6 +1399,77 @@ const WeatherDashboard = () => {
     return "Hãy chọn các sản phẩm phù hợp với điều kiện canh tác và nhu cầu cụ thể của cây trồng của bạn.";
   };
 
+  // Phân loại điều kiện thời tiết dựa trên mô tả và dữ liệu
+  const getWeatherConditionClass = (description, temp, humidity, windSpeed) => {
+    const desc = description?.toLowerCase() || "";
+
+    if (desc.includes("mưa to") || desc.includes("heavy rain")) {
+      return {
+        bgClass: "bg-blue-200",
+        textClass: "text-blue-800",
+        condition: "Mưa to",
+        icon: <CloudRain className="w-4 h-4 mr-1" />,
+      };
+    } else if (desc.includes("mưa") || desc.includes("rain")) {
+      return {
+        bgClass: "bg-blue-100",
+        textClass: "text-blue-700",
+        condition: "Mưa",
+        icon: <CloudRain className="w-4 h-4 mr-1" />,
+      };
+    } else if (temp > 32) {
+      return {
+        bgClass: "bg-orange-100",
+        textClass: "text-orange-700",
+        condition: "Nắng nóng",
+        icon: <Sun className="w-4 h-4 mr-1" />,
+      };
+    } else if (
+      desc.includes("nắng") ||
+      desc.includes("sunny") ||
+      desc.includes("clear")
+    ) {
+      return {
+        bgClass: "bg-yellow-100",
+        textClass: "text-yellow-700",
+        condition: "Nắng",
+        icon: <Sun className="w-4 h-4 mr-1" />,
+      };
+    } else if (humidity > 85) {
+      return {
+        bgClass: "bg-teal-100",
+        textClass: "text-teal-700",
+        condition: "Ẩm ướt",
+        icon: <Droplets className="w-4 h-4 mr-1" />,
+      };
+    } else if (windSpeed > 20) {
+      return {
+        bgClass: "bg-slate-100",
+        textClass: "text-slate-700",
+        condition: "Gió mạnh",
+        icon: <Wind className="w-4 h-4 mr-1" />,
+      };
+    } else if (
+      desc.includes("sương") ||
+      desc.includes("fog") ||
+      desc.includes("mist")
+    ) {
+      return {
+        bgClass: "bg-gray-100",
+        textClass: "text-gray-700",
+        condition: "Sương mù",
+        icon: <CloudFog className="w-4 h-4 mr-1" />,
+      };
+    } else {
+      return {
+        bgClass: "bg-gray-100",
+        textClass: "text-gray-700",
+        condition: "Có mây",
+        icon: <Cloud className="w-4 h-4 mr-1" />,
+      };
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-sky-50 to-indigo-100 relative">
       <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
@@ -1186,9 +1592,65 @@ const WeatherDashboard = () => {
                         <div className="text-4xl font-bold mb-1 transition-all duration-300 group-hover:text-blue-600">
                           {formatTemp(weatherData.temperature)}
                         </div>
-                        <div className="text-sm text-gray-500 mb-3">
+                        <div className="text-sm text-gray-500 mb-1">
                           {weatherData.weatherDescription || "Đang cập nhật"}
                         </div>
+
+                        {/* Add weather condition badge */}
+                        {(() => {
+                          const weatherCondition = getWeatherConditionClass(
+                            weatherData.weatherDescription,
+                            weatherData.temperature,
+                            weatherData.humidity,
+                            weatherData.windSpeed
+                          );
+
+                          // Determine weather severity
+                          let severityBadge = null;
+                          if (
+                            weatherData.weatherDescription
+                              ?.toLowerCase()
+                              .includes("mưa to") ||
+                            weatherData.temperature > 35 ||
+                            weatherData.windSpeed > 30
+                          ) {
+                            severityBadge = (
+                              <div className="ml-2 bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full flex items-center">
+                                <AlertTriangle className="w-3 h-3 mr-0.5" />
+                                Khắc nghiệt
+                              </div>
+                            );
+                          } else if (
+                            weatherData.weatherDescription
+                              ?.toLowerCase()
+                              .includes("mưa") ||
+                            weatherData.temperature > 32 ||
+                            weatherData.windSpeed > 20
+                          ) {
+                            severityBadge = (
+                              <div className="ml-2 bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full flex items-center">
+                                <AlertTriangle className="w-3 h-3 mr-0.5" />
+                                Chú ý
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="mb-3 flex items-center">
+                              <div
+                                className={`${weatherCondition.bgClass} rounded-full px-3 py-1 inline-flex items-center`}
+                              >
+                                {weatherCondition.icon}
+                                <span
+                                  className={`text-xs font-medium ${weatherCondition.textClass}`}
+                                >
+                                  {weatherCondition.condition}
+                                </span>
+                              </div>
+                              {severityBadge}
+                            </div>
+                          );
+                        })()}
 
                         <div className="grid grid-cols-3 gap-3 w-full">
                           <div className="flex flex-col items-center p-2 rounded-md bg-orange-50 transition-all duration-300 hover:bg-orange-100 hover:scale-105 transform group">
@@ -1632,6 +2094,66 @@ const WeatherDashboard = () => {
                               {safeDay.weatherDescription}
                             </div>
 
+                            {/* Add weather condition badge */}
+                            {(() => {
+                              const weatherCondition = getWeatherConditionClass(
+                                safeDay.weatherDescription,
+                                safeDay.temperature,
+                                safeDay.humidity,
+                                safeDay.windSpeed
+                              );
+
+                              // Determine weather severity for forecast
+                              let severityBadge = null;
+                              if (
+                                safeDay.weatherDescription
+                                  ?.toLowerCase()
+                                  .includes("mưa to") ||
+                                safeDay.temperature > 35 ||
+                                safeDay.windSpeed > 30
+                              ) {
+                                severityBadge = (
+                                  <span className="ml-1 bg-red-200 text-red-800 text-[8px] px-1.5 py-0.5 rounded-full flex items-center">
+                                    <AlertTriangle className="w-2 h-2 mr-0.5" />{" "}
+                                    Khắc nghiệt
+                                  </span>
+                                );
+                              } else if (
+                                safeDay.weatherDescription
+                                  ?.toLowerCase()
+                                  .includes("mưa") ||
+                                safeDay.temperature > 32 ||
+                                safeDay.windSpeed > 20
+                              ) {
+                                severityBadge = (
+                                  <span className="ml-1 bg-amber-200 text-amber-800 text-[8px] px-1.5 py-0.5 rounded-full flex items-center">
+                                    <AlertTriangle className="w-2 h-2 mr-0.5" />{" "}
+                                    Chú ý
+                                  </span>
+                                );
+                              }
+
+                              return (
+                                <div className="mx-auto mb-2 flex items-center justify-center flex-wrap">
+                                  <div
+                                    className={`${weatherCondition.bgClass} rounded-full px-2 py-0.5 inline-flex items-center`}
+                                  >
+                                    {weatherCondition.icon}
+                                    <span
+                                      className={`text-xs font-medium ${weatherCondition.textClass}`}
+                                    >
+                                      {weatherCondition.condition}
+                                    </span>
+                                  </div>
+                                  {severityBadge && (
+                                    <div className="w-full mt-1 flex justify-center">
+                                      {severityBadge}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
                             <div className="grid grid-cols-2 gap-2 mt-1">
                               <div className="flex flex-col items-center p-1 bg-blue-50 rounded">
                                 <Droplets className="w-4 h-4 text-blue-500 mb-1" />
@@ -1647,6 +2169,82 @@ const WeatherDashboard = () => {
                               </div>
                             </div>
                           </CardContent>
+
+                          {/* Phần hiển thị lời khuyên nông nghiệp */}
+                          {safeDay.advice && (
+                            <div className="border-t border-gray-100 pt-2 px-3 pb-3">
+                              <div className="text-center mb-2">
+                                <h4 className="text-xs font-semibold text-green-800 flex items-center justify-center">
+                                  <Leaf className="h-3 w-3 mr-1 text-green-700" />
+                                  Lời khuyên nông nghiệp
+                                </h4>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                {/* Hiển thị thông tin phù hợp cho trồng/thu hoạch */}
+                                <div className="flex justify-center gap-2 mb-2">
+                                  <div
+                                    className={`text-[9px] font-medium rounded-full px-2 py-0.5 ${
+                                      safeDay.advice.isSuitableForPlanting
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-gray-100 text-gray-500"
+                                    } flex items-center`}
+                                  >
+                                    <Sprout className="h-2 w-2 mr-0.5" />
+                                    {safeDay.advice.isSuitableForPlanting
+                                      ? "Phù hợp trồng"
+                                      : "Không nên trồng"}
+                                  </div>
+                                  <div
+                                    className={`text-[9px] font-medium rounded-full px-2 py-0.5 ${
+                                      safeDay.advice.isSuitableForHarvesting
+                                        ? "bg-amber-100 text-amber-700"
+                                        : "bg-gray-100 text-gray-500"
+                                    } flex items-center`}
+                                  >
+                                    <Shovel className="h-2 w-2 mr-0.5" />
+                                    {safeDay.advice.isSuitableForHarvesting
+                                      ? "Phù hợp thu hoạch"
+                                      : "Không nên thu hoạch"}
+                                  </div>
+                                </div>
+
+                                {/* Lời khuyên cho cây trồng */}
+                                {safeDay.advice.cropAdvice && (
+                                  <div className="bg-green-50 rounded p-1.5">
+                                    <p className="text-[9px] leading-tight text-green-800">
+                                      <span className="font-medium">
+                                        Cây trồng:{" "}
+                                      </span>
+                                      {safeDay.advice.cropAdvice}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Lời khuyên canh tác */}
+                                {safeDay.advice.farmingAdvice && (
+                                  <div className="bg-blue-50 rounded p-1.5">
+                                    <p className="text-[9px] leading-tight text-blue-800">
+                                      <span className="font-medium">
+                                        Canh tác:{" "}
+                                      </span>
+                                      {safeDay.advice.farmingAdvice}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Cảnh báo nếu có */}
+                                {safeDay.advice.warnings && (
+                                  <div className="bg-red-50 rounded p-1.5">
+                                    <p className="text-[9px] leading-tight text-red-800 flex items-start">
+                                      <AlertTriangle className="h-2.5 w-2.5 mr-0.5 mt-0.5 flex-shrink-0" />
+                                      <span>{safeDay.advice.warnings}</span>
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </Card>
                       );
                     })}
@@ -1727,7 +2325,11 @@ const WeatherDashboard = () => {
                           </h3>
                           <p className="text-sm text-gray-700">
                             {advice.soilCondition ||
-                              "Dựa trên độ ẩm hiện tại, đất có độ ẩm phù hợp cho nhiều loại cây trồng."}
+                              (advice.isRainySeason
+                                ? "Đất đang ẩm ướt, cần chú ý thoát nước tốt"
+                                : advice.isDrySeason
+                                ? "Đất dễ bị khô, cần đảm bảo đủ độ ẩm"
+                                : "Đất có độ ẩm trung bình, phù hợp cho nhiều loại cây trồng")}
                           </p>
                         </div>
                       </div>
@@ -1800,6 +2402,21 @@ const WeatherDashboard = () => {
                               </p>
                             </div>
                           </div>
+                          {advice.recommendedActivities && (
+                            <div className="flex items-start gap-2 group/item hover:bg-purple-50 p-2 rounded-md transition-colors duration-300 border-t border-gray-100 mt-1 pt-2">
+                              <div className="bg-purple-100 p-1 rounded-full mt-0.5 group-hover/item:bg-purple-200 transition-colors duration-300">
+                                <LightbulbIcon className="h-4 w-4 text-purple-600 group-hover/item:scale-110 transition-transform duration-300" />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-900">
+                                  Hoạt động đề xuất
+                                </h4>
+                                <p className="text-xs text-gray-700">
+                                  {advice.recommendedActivities}
+                                </p>
+                              </div>
+                            </div>
+                          )}
                           <div className="flex items-start gap-2 group/item hover:bg-red-50 p-2 rounded-md transition-colors duration-300">
                             <div className="bg-red-100 p-1 rounded-full mt-0.5 group-hover/item:bg-red-200 transition-colors duration-300">
                               <AlertTriangle className="h-4 w-4 text-red-600 group-hover/item:scale-110 transition-transform duration-300" />

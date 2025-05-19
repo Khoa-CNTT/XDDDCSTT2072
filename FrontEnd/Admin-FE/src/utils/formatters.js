@@ -1,13 +1,16 @@
 /**
  * Định dạng số tiền sang dạng tiền tệ Việt Nam
  * @param {number} amount - Số tiền cần định dạng
+ * @param {string} currency - The currency code (default: VND)
  * @returns {string} Chuỗi đã định dạng
  */
-export const formatCurrency = (amount) => {
-  if (amount == null) return '';
+export const formatCurrency = (amount, currency = "VND") => {
+  if (amount === undefined || amount === null) return "N/A";
   
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'decimal',
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
 };
@@ -48,22 +51,61 @@ export const formatDateTime = (dateTime) => {
 };
 
 /**
- * Định dạng ngày sang dạng dd/MM/yyyy
- * @param {string|Date} date - Ngày cần định dạng
- * @returns {string} Chuỗi đã định dạng
+ * Format a date string to the user's locale
+ * @param {string|Date} dateString - The date string or Date object
+ * @param {object} options - Intl.DateTimeFormat options
+ * @returns {string} - Formatted date string
  */
-export const formatDate = (date) => {
-  if (!date) return '';
+export const formatDate = (dateString, options = {}) => {
+  if (!dateString) return "N/A";
   
-  const dateObj = new Date(date);
+  const date = dateString instanceof Date ? dateString : new Date(dateString);
   
-  if (isNaN(dateObj.getTime())) return '';
+  // Check if date is valid
+  if (isNaN(date.getTime())) return "N/A";
   
-  const day = String(dateObj.getDate()).padStart(2, '0');
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const year = dateObj.getFullYear();
+  // Default options
+  const defaultOptions = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
   
-  return `${day}/${month}/${year}`;
+  return new Intl.DateTimeFormat("vi-VN", { ...defaultOptions, ...options }).format(date);
+};
+
+/**
+ * Format date with custom fallback for invalid dates
+ * @param {string} dateString - The date string to format
+ * @param {string} fallback - The fallback string to return if date is invalid
+ * @returns {string} Formatted date string or fallback
+ */
+export const formatDateWithFallback = (dateString, fallback = "N/A") => {
+  if (!dateString) return fallback;
+  
+  // Try to create a date object
+  const date = new Date(dateString);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  try {
+    // Format the date
+    return new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(date);
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return fallback;
+  }
 };
 
 /**
@@ -72,9 +114,9 @@ export const formatDate = (date) => {
  * @returns {string} Chuỗi đã định dạng
  */
 export const formatNumber = (value) => {
-  if (value == null) return '';
+  if (value === undefined || value === null) return "N/A";
   
-  return new Intl.NumberFormat('vi-VN').format(value);
+  return new Intl.NumberFormat("vi-VN").format(value);
 };
 
 /**
@@ -122,18 +164,26 @@ export const formatPercent = (number, decimalPlaces = 0) => {
 };
 
 /**
- * Hàm rút gọn văn bản
- * @param {string} text - Văn bản cần rút gọn
- * @param {number} maxLength - Độ dài tối đa
- * @returns {string} - Văn bản đã rút gọn
+ * Truncate a string to a maximum length and add ellipsis
+ * @param {string} str - The string to truncate
+ * @param {number} maxLength - Maximum length
+ * @returns {string} - Truncated string
  */
-export const truncateText = (text, maxLength = 100) => {
-  if (!text) return '';
+export const truncateString = (str, maxLength = 100) => {
+  if (!str) return "";
   
-  if (text.length <= maxLength) return text;
+  if (str.length <= maxLength) return str;
   
-  return text.substring(0, maxLength) + '...';
+  return str.slice(0, maxLength) + "...";
 };
+
+/**
+ * Alias of truncateString for backward compatibility
+ * @param {string} text - The text to truncate
+ * @param {number} maxLength - Maximum length
+ * @returns {string} Truncated text
+ */
+export const truncateText = truncateString;
 
 /**
  * Hàm chuyển đổi chuỗi thành slug

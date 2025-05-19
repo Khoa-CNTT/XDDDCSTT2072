@@ -22,8 +22,6 @@ import {
   DialogActions,
   CircularProgress,
   Alert,
-  Tabs,
-  Tab,
   Grid,
   Select,
   MenuItem,
@@ -44,12 +42,10 @@ import subscriptionPlanService from "../services/subscriptionPlanService";
 import userService from "../services/userService";
 
 const UserSubscriptionsPage = () => {
-  const [activeTab, setActiveTab] = useState(0);
   const [subscriptions, setSubscriptions] = useState([]);
   const [users, setUsers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchUserId, setSearchUserId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -66,15 +62,8 @@ const UserSubscriptionsPage = () => {
   useEffect(() => {
     fetchUsers();
     fetchPlans();
+    fetchAllSubscriptions();
   }, []);
-
-  useEffect(() => {
-    if (activeTab === 0 && searchUserId) {
-      fetchUserSubscriptions(searchUserId);
-    } else if (activeTab === 1) {
-      fetchAllSubscriptions();
-    }
-  }, [activeTab]);
 
   const fetchUsers = async () => {
     try {
@@ -100,23 +89,6 @@ const UserSubscriptionsPage = () => {
     }
   };
 
-  const fetchUserSubscriptions = async (userId) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await userSubscriptionService.getUserSubscriptions(userId);
-      setSubscriptions(data);
-    } catch (error) {
-      console.error(`Lỗi khi lấy đăng ký của người dùng ID ${userId}:`, error);
-      setError(
-        `Không thể tải danh sách đăng ký của người dùng ID ${userId}. Vui lòng thử lại sau.`
-      );
-      setSubscriptions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchAllSubscriptions = async () => {
     setLoading(true);
     setError(null);
@@ -129,18 +101,6 @@ const UserSubscriptionsPage = () => {
       setSubscriptions([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
-
-  const handleSearch = () => {
-    if (searchUserId.trim()) {
-      fetchUserSubscriptions(searchUserId);
-    } else {
-      setError("Vui lòng nhập ID người dùng để tìm kiếm.");
     }
   };
 
@@ -176,7 +136,7 @@ const UserSubscriptionsPage = () => {
 
   const handleOpenAddDialog = () => {
     setNewSubscription({
-      userId: searchUserId || "",
+      userId: "",
       planId: "",
       autoRenew: false,
     });
@@ -207,14 +167,7 @@ const UserSubscriptionsPage = () => {
       handleCloseAddDialog();
 
       // Cập nhật danh sách đăng ký
-      if (searchUserId === newSubscription.userId) {
-        fetchUserSubscriptions(newSubscription.userId);
-      }
-
-      // Cập nhật searchUserId nếu trước đó chưa có
-      if (!searchUserId) {
-        setSearchUserId(newSubscription.userId);
-      }
+      fetchAllSubscriptions();
     } catch (error) {
       console.error("Lỗi khi đăng ký gói:", error);
       enqueueSnackbar(
@@ -267,47 +220,13 @@ const UserSubscriptionsPage = () => {
   return (
     <Container maxWidth="lg">
       <Typography variant="h4" component="h1" sx={{ mt: 3, mb: 2 }}>
-        Quản Lý Đăng Ký Dịch Vụ
+        Quản Lý Đăng Ký Bán Hàng
       </Typography>
-
-      <Paper sx={{ mb: 3 }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          indicatorColor="primary"
-          textColor="primary"
-          variant="fullWidth"
-        >
-          <Tab label="Đăng Ký Theo Người Dùng" />
-          <Tab label="Tất Cả Đăng Ký" />
-        </Tabs>
-      </Paper>
 
       {/* Thanh tìm kiếm */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          {activeTab === 0 && (
-            <Grid item xs={12} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>ID Người Dùng</InputLabel>
-                <Select
-                  value={searchUserId}
-                  onChange={(e) => setSearchUserId(e.target.value)}
-                  label="ID Người Dùng"
-                >
-                  <MenuItem value="">
-                    <em>Chọn người dùng</em>
-                  </MenuItem>
-                  {users.map((user) => (
-                    <MenuItem key={user.id} value={user.id}>
-                      {user.fullName || user.userName} (ID: {user.id})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          )}
-          <Grid item xs={12} md={activeTab === 0 ? 4 : 8}>
+          <Grid item xs={12} md={8}>
             <TextField
               fullWidth
               label="Tìm kiếm"
@@ -329,11 +248,10 @@ const UserSubscriptionsPage = () => {
               fullWidth
               variant="contained"
               color="primary"
-              onClick={activeTab === 0 ? handleSearch : fetchAllSubscriptions}
+              onClick={fetchAllSubscriptions}
               startIcon={<RefreshIcon />}
-              disabled={activeTab === 0 && !searchUserId}
             >
-              {activeTab === 0 ? "Tìm kiếm" : "Làm mới"}
+              Làm mới
             </Button>
           </Grid>
           <Grid item xs={12} md={2}>
@@ -382,8 +300,6 @@ const UserSubscriptionsPage = () => {
                   <TableCell>Gói Đăng Ký</TableCell>
                   <TableCell>Ngày Bắt Đầu</TableCell>
                   <TableCell>Ngày Kết Thúc</TableCell>
-                  <TableCell>Số Địa Điểm</TableCell>
-                  <TableCell>Số Dư</TableCell>
                   <TableCell>Thanh Toán</TableCell>
                   <TableCell>Trạng Thái</TableCell>
                   <TableCell align="center">Thao Tác</TableCell>
@@ -416,12 +332,6 @@ const UserSubscriptionsPage = () => {
                         {formatDateTime(subscription.endDate)}
                       </TableCell>
                       <TableCell>
-                        {subscription.locationsUsed}/{subscription.maxLocations}
-                      </TableCell>
-                      <TableCell>
-                        {subscription.remainingLocations} địa điểm
-                      </TableCell>
-                      <TableCell>
                         {formatCurrency(subscription.paymentAmount)}
                       </TableCell>
                       <TableCell>
@@ -447,9 +357,7 @@ const UserSubscriptionsPage = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={10} align="center">
-                      {activeTab === 0 && !searchUserId
-                        ? "Vui lòng chọn người dùng để tìm kiếm đăng ký"
-                        : "Không tìm thấy đăng ký nào"}
+                      Không tìm thấy đăng ký nào
                     </TableCell>
                   </TableRow>
                 )}
@@ -459,35 +367,14 @@ const UserSubscriptionsPage = () => {
         )}
       </Paper>
 
-      {/* Dialog xác nhận xóa */}
-      <Dialog
-        open={openDeleteDialog}
-        onClose={() => setOpenDeleteDialog(false)}
-      >
-        <DialogTitle>Xác nhận hủy đăng ký</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Bạn có chắc chắn muốn hủy đăng ký gói &quot;
-            {getPlanName(selectedSubscription?.planId)}&quot; cho người dùng{" "}
-            {getUserName(selectedSubscription?.userId)}?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>Hủy</Button>
-          <Button
-            onClick={handleDeleteConfirm}
-            color="error"
-            variant="contained"
-          >
-            Xác nhận
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       {/* Dialog thêm đăng ký mới */}
       <Dialog open={openAddDialog} onClose={handleCloseAddDialog}>
-        <DialogTitle>Thêm đăng ký mới</DialogTitle>
+        <DialogTitle>Đăng ký quyền bán hàng</DialogTitle>
         <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Đăng ký gói bán hàng cho người dùng. Gói Premium cho phép người dùng
+            đăng ký bán hàng trên hệ thống.
+          </DialogContentText>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <FormControl fullWidth>
@@ -531,9 +418,29 @@ const UserSubscriptionsPage = () => {
                   </MenuItem>
                   {plans.map((plan) => (
                     <MenuItem key={plan.id} value={plan.id}>
-                      {plan.name} - {formatCurrency(plan.price)}
+                      {plan.name} ({formatCurrency(plan.price)}/
+                      {plan.durationDays} ngày)
                     </MenuItem>
                   ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <Typography variant="subtitle2" gutterBottom>
+                  Tự động gia hạn
+                </Typography>
+                <Select
+                  value={newSubscription.autoRenew ? "true" : "false"}
+                  onChange={(e) =>
+                    setNewSubscription({
+                      ...newSubscription,
+                      autoRenew: e.target.value === "true",
+                    })
+                  }
+                >
+                  <MenuItem value="false">Không</MenuItem>
+                  <MenuItem value="true">Có</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -543,14 +450,37 @@ const UserSubscriptionsPage = () => {
           <Button onClick={handleCloseAddDialog}>Hủy</Button>
           <Button
             onClick={handleAddSubscription}
-            color="primary"
             variant="contained"
+            color="primary"
+            disabled={loading}
           >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Đăng Ký"
-            )}
+            {loading ? <CircularProgress size={24} /> : "Đăng Ký Gói"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog xác nhận xóa */}
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+      >
+        <DialogTitle>Xác nhận hủy đăng ký bán hàng</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn hủy quyền bán hàng của người dùng này? Sau khi
+            hủy, người dùng sẽ không thể bán hàng trên hệ thống cho đến khi đăng
+            ký lại.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>Hủy</Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : "Xác nhận hủy"}
           </Button>
         </DialogActions>
       </Dialog>

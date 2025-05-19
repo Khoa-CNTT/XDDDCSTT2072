@@ -235,11 +235,19 @@ const Header = ({ handleDrawerToggle }) => {
 
           {/* Logo và tiêu đề */}
           <LogoContainer>
-            <img
-              src="/vite.svg"
-              alt="Logo"
-              style={{ width: 35, height: 35, marginRight: 10 }}
-            />
+            <Avatar
+              src="/admin-logo.png"
+              alt="Admin Logo"
+              sx={{
+                width: 40,
+                height: 40,
+                marginRight: 1,
+                bgcolor: "rgba(255, 255, 255, 0.9)",
+                boxShadow: "0 0 8px rgba(0, 0, 0, 0.1)",
+              }}
+            >
+              A
+            </Avatar>
             <Typography
               variant="h6"
               noWrap

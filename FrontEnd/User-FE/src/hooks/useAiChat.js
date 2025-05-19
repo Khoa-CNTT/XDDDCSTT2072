@@ -56,7 +56,9 @@ const useAiChat = () => {
         const formattedMessages = chatHistory.messages.map(msg => ({
           role: msg.role || "assistant",
           content: msg.content || "",
-          timestamp: msg.timestamp || new Date().toISOString()
+          timestamp: msg.timestamp || new Date().toISOString(),
+          products: msg.products || [], // Thêm danh sách sản phẩm nếu có
+          source: msg.source // Thêm nguồn tin nhắn nếu có
         }));
         
         setMessages(formattedMessages);
@@ -138,7 +140,8 @@ const useAiChat = () => {
           role: "assistant",
           content: response.message || "Xin lỗi, tôi không thể trả lời ngay bây giờ.",
           timestamp: new Date().toISOString(),
-          source: response.source
+          source: response.source,
+          products: response.products || [] // Lưu danh sách sản phẩm nếu có
         };
         
         setMessages(prev => [...prev, aiMessage]);

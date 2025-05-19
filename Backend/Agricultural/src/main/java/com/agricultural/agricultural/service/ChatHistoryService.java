@@ -1,8 +1,8 @@
 package com.agricultural.agricultural.service;
 
-import com.agricultural.agricultural.dto.ai.ChatBotRequest;
-import com.agricultural.agricultural.dto.ai.MessageHistoryRequest;
-import com.agricultural.agricultural.dto.ai.MessageHistoryResponse;
+import com.agricultural.agricultural.dto.ai.request.ChatBotRequest;
+import com.agricultural.agricultural.dto.ai.request.MessageHistoryRequest;
+import com.agricultural.agricultural.dto.ai.response.MessageHistoryResponse;
 import com.agricultural.agricultural.entity.ChatMessage;
 import com.agricultural.agricultural.entity.ChatSession;
 
@@ -22,7 +22,7 @@ public interface ChatHistoryService {
      * @return Phiên chat đã được cập nhật
      */
     ChatSession saveMessages(String sessionId, String userId, String userMessage, String aiResponse, String source);
-    
+
     /**
      * Khởi tạo phiên chat mới
      * @param userId ID của người dùng (có thể null)
@@ -30,21 +30,21 @@ public interface ChatHistoryService {
      * @return Phiên chat mới
      */
     ChatSession createSession(String userId, String model);
-    
+
     /**
      * Lấy lịch sử chat dựa trên ID phiên hoặc ID người dùng
      * @param request Thông tin yêu cầu lịch sử
      * @return Kết quả lịch sử tin nhắn
      */
     MessageHistoryResponse getMessageHistory(MessageHistoryRequest request);
-    
+
     /**
      * Lấy danh sách tin nhắn của một phiên
      * @param sessionId ID của phiên
      * @return Danh sách tin nhắn
      */
     List<ChatMessage> getSessionMessages(String sessionId);
-    
+
     /**
      * Chuyển đổi danh sách ChatBotRequest.MessageContext từ lịch sử chat
      * @param sessionId ID của phiên
@@ -52,7 +52,7 @@ public interface ChatHistoryService {
      * @return Danh sách MessageContext cho ChatBotRequest
      */
     List<ChatBotRequest.MessageContext> getContextFromHistory(String sessionId, Integer limit);
-    
+
     /**
      * Lấy danh sách phiên chat của một người dùng
      * @param userId ID của người dùng

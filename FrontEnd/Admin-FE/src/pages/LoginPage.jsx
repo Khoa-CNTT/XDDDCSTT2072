@@ -151,6 +151,14 @@ const LoginPage = () => {
 
     try {
       await authService.login(credentials.email, credentials.password);
+
+      // Thêm log để kiểm tra thông tin sau khi đăng nhập
+      console.log("=== THÔNG TIN ĐĂNG NHẬP ===");
+      console.log("Token:", localStorage.getItem("token"));
+      console.log("User:", localStorage.getItem("user"));
+      console.log("userRole:", localStorage.getItem("userRole"));
+      console.log("============================");
+
       navigate("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);

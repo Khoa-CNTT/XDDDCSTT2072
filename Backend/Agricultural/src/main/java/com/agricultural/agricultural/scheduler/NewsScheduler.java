@@ -13,17 +13,22 @@ public class NewsScheduler {
 
     private final NewsService newsService;
 
-    /**
-     * Tự động thu thập tin tức từ tất cả các nguồn được kích hoạt mỗi 6 giờ
-     */
-    @Scheduled(cron = "0 0 */6 * * *") // Chạy vào 0 giây, 0 phút, mỗi 6 giờ
-    public void scheduledNewsFetching() {
-        log.info("Starting scheduled news fetching task");
+    @Scheduled(cron = "0 0 */1 * * *") // Chạy mỗi giờ
+    public void thuThapTinTucTheoLich() {
+        log.info("Bắt đầu tác vụ thu thập tin tức theo lịch");
         try {
+            long soLuongTruoc = newsService.getNewsCount();
             newsService.fetchNewsFromSources();
-            log.info("Completed scheduled news fetching task");
+            long soLuongSau = newsService.getNewsCount();
+            long soTinMoi = soLuongSau - soLuongTruoc;
+
+            if (soTinMoi > 0) {
+                log.info("Hoàn thành thu thập tin tức. Đã thêm {} bài viết mới", soTinMoi);
+            } else {
+                log.info("Hoàn thành thu thập tin tức. Không có bài viết mới");
+            }
         } catch (Exception e) {
-            log.error("Error in scheduled news fetching task", e);
+            log.error("Lỗi khi thực hiện thu thập tin tức theo lịch", e);
         }
     }
-} 
+}

@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.dto.ai;
+package com.agricultural.agricultural.dto.ai.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

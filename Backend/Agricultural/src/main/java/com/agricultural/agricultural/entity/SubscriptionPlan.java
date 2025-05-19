@@ -45,6 +45,30 @@ public class SubscriptionPlan {
     @Column(name = "is_free", nullable = false)
     private Boolean isFree = false;
     
+    /**
+     * Quyền đăng ký bán hàng (Chỉ gói Premium có quyền này)
+     */
+    @Column(name = "can_sell_products", nullable = false)
+    private Boolean canSellProducts = false;
+    
+    /**
+     * Quyền tham gia diễn đàn (Cả Free và Premium đều có)
+     */
+    @Column(name = "can_access_forum", nullable = false)
+    private Boolean canAccessForum = true;
+    
+    /**
+     * Quyền mua sản phẩm (Cả Free và Premium đều có)
+     */
+    @Column(name = "can_purchase_products", nullable = false)
+    private Boolean canPurchaseProducts = true;
+    
+    /**
+     * Quyền sử dụng AI chat (Cả Free và Premium đều có)
+     */
+    @Column(name = "can_use_ai_chat", nullable = false)
+    private Boolean canUseAIChat = true;
+    
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -12,4 +12,6 @@ public interface NewsSourceRepository extends JpaRepository<NewsSource, Long> {
     List<NewsSource> findAllByActiveTrue();
     
     List<NewsSource> findAllByActiveTrueAndCategoryIgnoreCase(String category);
+    
+    List<NewsSource> findByNameContainingIgnoreCase(String name);
 } 

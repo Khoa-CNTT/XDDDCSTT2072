@@ -201,6 +201,31 @@ const PaymentsPage = ({ showStatisticsTab = false }) => {
       console.log("Processed payments data:", paymentsData);
       console.log("Total items:", totalElementsCount);
 
+      // In ra dữ liệu thời gian từ tất cả các bản ghi
+      if (paymentsData && paymentsData.length > 0) {
+        console.log("== CHI TIẾT DỮ LIỆU THỜI GIAN TỪ API ==");
+        paymentsData.forEach((payment, index) => {
+          console.log(`Payment ${index + 1} (ID: ${payment.id}):`);
+          console.log(
+            `  - createdAt: ${payment.createdAt} (${typeof payment.createdAt})`
+          );
+          console.log(
+            `  - updatedAt: ${payment.updatedAt} (${typeof payment.updatedAt})`
+          );
+
+          // Kiểm tra xem mảng có phải là mảng không
+          if (Array.isArray(payment.createdAt)) {
+            console.log(
+              `  - createdAt là mảng với ${payment.createdAt.length} phần tử:`,
+              payment.createdAt
+            );
+          }
+        });
+      }
+
+      // Không thêm thời gian hiện tại cho dữ liệu từ API nữa
+      // Để hiển thị giá trị thời gian thực từ database
+
       setPayments(paymentsData);
       setTotalItems(totalElementsCount);
 
@@ -539,9 +564,107 @@ const PaymentsPage = ({ showStatisticsTab = false }) => {
 
   // Định dạng ngày giờ
   const formatDateTime = (dateTimeStr) => {
-    if (!dateTimeStr) return "";
-    const date = new Date(dateTimeStr);
-    return format(date, "HH:mm:ss dd/MM/yyyy", { locale: vi });
+    console.log("DATA THỜI GIAN NHẬN VÀO:", dateTimeStr, typeof dateTimeStr);
+
+    // Kiểm tra nếu không có dữ liệu
+    if (!dateTimeStr) {
+      console.log("Không có dữ liệu thời gian:", dateTimeStr);
+      return "N/A";
+    }
+
+    try {
+      // Xử lý trường hợp dữ liệu là mảng (Array[7]) từ Java LocalDateTime
+      if (Array.isArray(dateTimeStr)) {
+        console.log("Dữ liệu thời gian là mảng:", dateTimeStr);
+        // Mảng thường có dạng [năm, tháng, ngày, giờ, phút, giây, mili giây]
+        if (dateTimeStr.length >= 3) {
+          const year = dateTimeStr[0];
+          const month = dateTimeStr[1] - 1; // Tháng trong JS bắt đầu từ 0
+          const day = dateTimeStr[2];
+          const hour = dateTimeStr.length > 3 ? dateTimeStr[3] : 0;
+          const minute = dateTimeStr.length > 4 ? dateTimeStr[4] : 0;
+          const second = dateTimeStr.length > 5 ? dateTimeStr[5] : 0;
+
+          const date = new Date(year, month, day, hour, minute, second);
+          if (!isNaN(date.getTime())) {
+            return format(date, "HH:mm:ss dd/MM/yyyy", { locale: vi });
+          }
+        }
+      }
+
+      // Log để debug
+      console.log("Xử lý dữ liệu thời gian:", dateTimeStr, typeof dateTimeStr);
+
+      // Xử lý định dạng ngày giờ từ nhiều nguồn khác nhau
+      let date;
+
+      // Xử lý timestamp số
+      if (typeof dateTimeStr === "number" || !isNaN(Number(dateTimeStr))) {
+        const timestamp = Number(dateTimeStr);
+        date = new Date(timestamp);
+      }
+      // Xử lý đối tượng Date
+      else if (dateTimeStr instanceof Date) {
+        date = dateTimeStr;
+      }
+      // Xử lý chuỗi ISO hoặc định dạng khác
+      else if (typeof dateTimeStr === "string") {
+        // Thử phân tích như chuỗi ISO
+        date = new Date(dateTimeStr);
+
+        // Kiểm tra xem date có hợp lệ không
+        if (isNaN(date.getTime())) {
+          // Thử xử lý định dạng Java LocalDateTime
+          if (dateTimeStr.includes("T")) {
+            const parts = dateTimeStr.split("T");
+            if (parts.length === 2) {
+              // Định dạng: "yyyy-MM-ddTHH:mm:ss"
+              const datePart = parts[0].split("-");
+              let timePart = parts[1].split(":");
+
+              // Xử lý trường hợp có phần thập phân giây
+              if (timePart[2] && timePart[2].includes(".")) {
+                timePart[2] = timePart[2].split(".")[0];
+              }
+
+              // Xử lý trường hợp có 'Z' ở cuối
+              if (timePart[2] && timePart[2].endsWith("Z")) {
+                timePart[2] = timePart[2].slice(0, -1);
+              }
+
+              if (datePart.length === 3 && timePart.length >= 2) {
+                const year = parseInt(datePart[0]);
+                const month = parseInt(datePart[1]) - 1; // Tháng trong JS bắt đầu từ 0
+                const day = parseInt(datePart[2]);
+                const hour = parseInt(timePart[0]);
+                const minute = parseInt(timePart[1]);
+                const second = timePart[2] ? parseInt(timePart[2]) : 0;
+
+                date = new Date(year, month, day, hour, minute, second);
+              }
+            }
+          }
+        }
+      }
+
+      // Kiểm tra lại xem date có hợp lệ không
+      if (!date || isNaN(date.getTime())) {
+        console.warn("Dữ liệu thời gian không hợp lệ:", dateTimeStr);
+
+        // Hiển thị thời gian hiện tại thay vì N/A vì đó là yêu cầu của bạn
+        const now = new Date();
+        return format(now, "HH:mm:ss dd/MM/yyyy", { locale: vi });
+      }
+
+      // Định dạng thời gian
+      return format(date, "HH:mm:ss dd/MM/yyyy", { locale: vi });
+    } catch (error) {
+      console.error("Lỗi định dạng thời gian:", error, "Giá trị:", dateTimeStr);
+
+      // Hiển thị thời gian hiện tại thay vì N/A vì đó là yêu cầu của bạn
+      const now = new Date();
+      return format(now, "HH:mm:ss dd/MM/yyyy", { locale: vi });
+    }
   };
 
   // Xử lý chuyển tab
@@ -806,46 +929,57 @@ const PaymentsPage = ({ showStatisticsTab = false }) => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      payments.map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell>{payment.id}</TableCell>
-                          <TableCell>{payment.orderId}</TableCell>
-                          <TableCell>{payment.transactionId}</TableCell>
-                          <TableCell>{payment.paymentMethod}</TableCell>
-                          <TableCell>
-                            {formatCurrency(payment.amount)}
-                          </TableCell>
-                          <TableCell>{getStatusChip(payment.status)}</TableCell>
-                          <TableCell>
-                            {formatDateTime(payment.createdAt)}
-                          </TableCell>
-                          <TableCell align="center">
-                            <Tooltip title="Xem chi tiết">
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() => handleViewDetails(payment)}
-                              >
-                                <ViewIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                      payments.map((payment) => {
+                        // Log giá trị thời gian để debug
+                        console.log(
+                          `Payment ID ${payment.id} createdAt:`,
+                          payment.createdAt,
+                          typeof payment.createdAt
+                        );
 
-                            {payment.status === "COMPLETED" && (
-                              <Tooltip title="Hoàn tiền">
+                        return (
+                          <TableRow key={payment.id}>
+                            <TableCell>{payment.id}</TableCell>
+                            <TableCell>{payment.orderId}</TableCell>
+                            <TableCell>{payment.transactionId}</TableCell>
+                            <TableCell>{payment.paymentMethod}</TableCell>
+                            <TableCell>
+                              {formatCurrency(payment.amount)}
+                            </TableCell>
+                            <TableCell>
+                              {getStatusChip(payment.status)}
+                            </TableCell>
+                            <TableCell>
+                              {formatDateTime(payment.createdAt)}
+                            </TableCell>
+                            <TableCell align="center">
+                              <Tooltip title="Xem chi tiết">
                                 <IconButton
                                   size="small"
-                                  color="secondary"
-                                  onClick={() =>
-                                    handleOpenRefundDialog(payment)
-                                  }
+                                  color="primary"
+                                  onClick={() => handleViewDetails(payment)}
                                 >
-                                  <RefundIcon fontSize="small" />
+                                  <ViewIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
+
+                              {payment.status === "COMPLETED" && (
+                                <Tooltip title="Hoàn tiền">
+                                  <IconButton
+                                    size="small"
+                                    color="secondary"
+                                    onClick={() =>
+                                      handleOpenRefundDialog(payment)
+                                    }
+                                  >
+                                    <RefundIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>

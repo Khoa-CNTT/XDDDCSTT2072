@@ -33,7 +33,29 @@ const flashSaleService = {
         if (activeResponse.data && activeResponse.data.code === 200 && activeResponse.data.data) {
           console.log("ACTIVE data:", activeResponse.data.data);
           if (Array.isArray(activeResponse.data.data)) {
-            allFlashSales.push(...activeResponse.data.data);
+            // Đảm bảo rằng chúng ta có thuộc tính startTime và endTime cho frontend
+            const processedData = activeResponse.data.data.map(item => {
+              // Xử lý dữ liệu ngày tháng đến dưới dạng mảng [năm, tháng, ngày, giờ, phút] hoặc chuỗi
+              let startTime = item.startTime || item.startDate;
+              let endTime = item.endTime || item.endDate;
+              
+              // Nếu dữ liệu là mảng, chuyển thành đối tượng Date
+              if (Array.isArray(startTime)) {
+                startTime = new Date(startTime[0], startTime[1]-1, startTime[2], startTime[3], startTime[4]);
+              }
+              
+              if (Array.isArray(endTime)) {
+                endTime = new Date(endTime[0], endTime[1]-1, endTime[2], endTime[3], endTime[4]);
+              }
+              
+              // Đảm bảo chúng ta có cả startDate/endDate và startTime/endTime
+              return {
+                ...item,
+                startTime: startTime,
+                endTime: endTime
+              };
+            });
+            allFlashSales.push(...processedData);
           }
         }
         
@@ -41,7 +63,28 @@ const flashSaleService = {
         if (upcomingResponse.data && upcomingResponse.data.code === 200 && upcomingResponse.data.data) {
           console.log("UPCOMING data:", upcomingResponse.data.data);
           if (Array.isArray(upcomingResponse.data.data)) {
-            allFlashSales.push(...upcomingResponse.data.data);
+            // Đảm bảo rằng chúng ta có thuộc tính startTime và endTime cho frontend
+            const processedData = upcomingResponse.data.data.map(item => {
+              // Xử lý dữ liệu ngày tháng đến dưới dạng mảng [năm, tháng, ngày, giờ, phút] hoặc chuỗi
+              let startTime = item.startTime || item.startDate;
+              let endTime = item.endTime || item.endDate;
+              
+              // Nếu dữ liệu là mảng, chuyển thành đối tượng Date
+              if (Array.isArray(startTime)) {
+                startTime = new Date(startTime[0], startTime[1]-1, startTime[2], startTime[3], startTime[4]);
+              }
+              
+              if (Array.isArray(endTime)) {
+                endTime = new Date(endTime[0], endTime[1]-1, endTime[2], endTime[3], endTime[4]);
+              }
+              
+              return {
+                ...item,
+                startTime: startTime,
+                endTime: endTime
+              };
+            });
+            allFlashSales.push(...processedData);
           }
         }
         
@@ -49,7 +92,28 @@ const flashSaleService = {
         if (endedResponse.data && endedResponse.data.code === 200 && endedResponse.data.data) {
           console.log("ENDED data:", endedResponse.data.data);
           if (Array.isArray(endedResponse.data.data)) {
-            allFlashSales.push(...endedResponse.data.data);
+            // Đảm bảo rằng chúng ta có thuộc tính startTime và endTime cho frontend
+            const processedData = endedResponse.data.data.map(item => {
+              // Xử lý dữ liệu ngày tháng đến dưới dạng mảng [năm, tháng, ngày, giờ, phút] hoặc chuỗi
+              let startTime = item.startTime || item.startDate;
+              let endTime = item.endTime || item.endDate;
+              
+              // Nếu dữ liệu là mảng, chuyển thành đối tượng Date
+              if (Array.isArray(startTime)) {
+                startTime = new Date(startTime[0], startTime[1]-1, startTime[2], startTime[3], startTime[4]);
+              }
+              
+              if (Array.isArray(endTime)) {
+                endTime = new Date(endTime[0], endTime[1]-1, endTime[2], endTime[3], endTime[4]);
+              }
+              
+              return {
+                ...item,
+                startTime: startTime,
+                endTime: endTime
+              };
+            });
+            allFlashSales.push(...processedData);
           }
         }
         
@@ -84,10 +148,32 @@ const flashSaleService = {
       
       // Xử lý cấu trúc dữ liệu thực tế từ API (có code, message, data)
       if (response.data && response.data.code === 200 && response.data.data) {
+        // Đảm bảo rằng chúng ta có thuộc tính startTime và endTime cho frontend
+        const processedData = response.data.data.map(item => {
+          // Xử lý dữ liệu ngày tháng đến dưới dạng mảng [năm, tháng, ngày, giờ, phút] hoặc chuỗi
+          let startTime = item.startTime || item.startDate;
+          let endTime = item.endTime || item.endDate;
+          
+          // Nếu dữ liệu là mảng, chuyển thành đối tượng Date
+          if (Array.isArray(startTime)) {
+            startTime = new Date(startTime[0], startTime[1]-1, startTime[2], startTime[3], startTime[4]);
+          }
+          
+          if (Array.isArray(endTime)) {
+            endTime = new Date(endTime[0], endTime[1]-1, endTime[2], endTime[3], endTime[4]);
+          }
+          
+          return {
+            ...item,
+            startTime: startTime,
+            endTime: endTime
+          };
+        });
+        
         return {
           success: true,
           message: response.data.message || `Lấy danh sách flash sale ${status} thành công`,
-          data: response.data.data
+          data: processedData
         };
       } else {
         console.warn(`Dữ liệu flash sale trạng thái ${status} không hợp lệ:`, response.data);
@@ -143,17 +229,64 @@ const flashSaleService = {
       
       console.log(`[flashSaleService] Kết quả chi tiết Flash Sale ID=${id}:`, response.data);
       
-      // Nếu response có cấu trúc đúng
-      if (response.data && response.data.code === 200) {
+      // Xử lý dữ liệu
+      let processedData = null;
+      if (response.data && response.data.code === 200 && response.data.data) {
+        // Xử lý ngày tháng
+        const item = response.data.data;
+        
+        // Xử lý dữ liệu ngày tháng đến dưới dạng mảng [năm, tháng, ngày, giờ, phút] hoặc chuỗi
+        let startTime = item.startTime || item.startDate;
+        let endTime = item.endTime || item.endDate;
+        
+        // Nếu dữ liệu là mảng, chuyển thành đối tượng Date
+        if (Array.isArray(startTime)) {
+          startTime = new Date(startTime[0], startTime[1]-1, startTime[2], startTime[3], startTime[4]);
+        }
+        
+        if (Array.isArray(endTime)) {
+          endTime = new Date(endTime[0], endTime[1]-1, endTime[2], endTime[3], endTime[4]);
+        }
+        
+        processedData = {
+          ...item,
+          startTime: startTime,
+          endTime: endTime
+        };
+        
         return {
           success: true,
           message: response.data.message || "Lấy chi tiết Flash Sale thành công",
-          data: response.data.data || {}
+          data: processedData
         };
       }
       
       // Nếu response đã có cấu trúc success-message-data
       if (response.data && 'success' in response.data) {
+        // Xử lý dữ liệu nếu có
+        if (response.data.data) {
+          const item = response.data.data;
+          
+          // Xử lý dữ liệu ngày tháng đến dưới dạng mảng [năm, tháng, ngày, giờ, phút] hoặc chuỗi
+          let startTime = item.startTime || item.startDate;
+          let endTime = item.endTime || item.endDate;
+          
+          // Nếu dữ liệu là mảng, chuyển thành đối tượng Date
+          if (Array.isArray(startTime)) {
+            startTime = new Date(startTime[0], startTime[1]-1, startTime[2], startTime[3], startTime[4]);
+          }
+          
+          if (Array.isArray(endTime)) {
+            endTime = new Date(endTime[0], endTime[1]-1, endTime[2], endTime[3], endTime[4]);
+          }
+          
+          response.data.data = {
+            ...item,
+            startTime: startTime,
+            endTime: endTime
+          };
+        }
+        
         return response.data;
       }
       

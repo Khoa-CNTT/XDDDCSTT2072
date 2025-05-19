@@ -17,6 +17,8 @@ import PaymentResult from "@/pages/PaymentResult";
 import UnreviewedProducts from "@/pages/UnreviewedProducts";
 import UserSellerDashboard from "@/pages/UserSellerDashboard";
 import SellerProductForm from "@/pages/SellerProductForm";
+import SellerRegistration from "@/pages/SellerRegistration";
+import SellerOrdersPage from "@/pages/SellerOrdersPage";
 
 const router = createBrowserRouter([
   {
@@ -84,8 +86,16 @@ const router = createBrowserRouter([
         element: <UnreviewedProducts />,
       },
       {
+        path: "seller-registration",
+        element: <SellerRegistration />,
+      },
+      {
         path: "seller/dashboard",
         element: <UserSellerDashboard />,
+      },
+      {
+        path: "seller/orders",
+        element: <SellerOrdersPage />,
       },
       {
         path: "seller/add-product",

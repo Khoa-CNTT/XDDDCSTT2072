@@ -12,10 +12,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/constant/queryKeys";
-import { getUnreviewedProducts } from "@/services/feedbackService";
-import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1";
 
@@ -26,21 +24,6 @@ const PaymentResult = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const axiosPrivate = useAxiosPrivate();
-
-  // Lấy danh sách sản phẩm chưa đánh giá khi thanh toán thành công
-  const {
-    data: unreviewedProductsData,
-    isLoading: isLoadingUnreviewedProducts,
-  } = useQuery({
-    queryKey: ["unreviewedProducts"],
-    queryFn: () => getUnreviewedProducts(axiosPrivate),
-    enabled: paymentStatus === "success", // Chỉ kích hoạt khi thanh toán thành công
-    staleTime: 5 * 60 * 1000, // 5 phút
-  });
-
-  // Lấy danh sách sản phẩm chưa đánh giá
-  const unreviewedProducts = unreviewedProductsData?.data || [];
 
   // Hàm gọi API để kiểm tra và cập nhật trạng thái thanh toán
   const updatePaymentStatus = async (transactionNo, txnRef) => {
@@ -622,50 +605,26 @@ const PaymentResult = () => {
                 <div className="mt-6 bg-blue-50 p-4 rounded-lg">
                   <div className="flex items-center mb-3">
                     <Star className="w-5 h-5 text-yellow-500 mr-2" />
-                    <h3 className="font-semibold">Đánh giá sản phẩm</h3>
+                    <h3 className="font-semibold">Xem lại đơn hàng đã mua</h3>
                   </div>
 
                   <p className="text-sm text-gray-600 mb-4">
-                    Hãy chia sẻ cảm nhận của bạn về sản phẩm đã mua để giúp
-                    người khác có trải nghiệm mua sắm tốt hơn.
+                    Bạn có thể xem lại thông tin đơn hàng và theo dõi trạng thái
+                    giao hàng trong lịch sử đơn hàng.
                   </p>
 
-                  {isLoadingUnreviewedProducts ? (
-                    <div className="flex justify-center py-3">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                    </div>
-                  ) : unreviewedProducts.length > 0 ? (
-                    <div className="flex flex-col space-y-2">
-                      <Button
-                        className="w-full flex items-center justify-center"
-                        onClick={() => {
-                          // Lấy sản phẩm đầu tiên từ danh sách chưa đánh giá
-                          if (
-                            unreviewedProducts &&
-                            unreviewedProducts.length > 0
-                          ) {
-                            const firstProduct = unreviewedProducts[0];
-                            // Chuyển đến trang chi tiết sản phẩm với tab đánh giá được chọn và form đánh giá mở
-                            navigate(`/marketplace/${firstProduct.id}`, {
-                              state: {
-                                showReviewForm: true,
-                                activeTab: "reviews",
-                              },
-                            });
-                          } else {
-                            navigate("/reviews/pending");
-                          }
-                        }}
-                      >
-                        <Star className="w-4 h-4 mr-2" />
-                        Đánh giá sản phẩm đã mua
-                      </Button>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic text-center">
-                      Bạn sẽ có thể đánh giá sản phẩm sau khi nhận được hàng.
-                    </p>
-                  )}
+                  <div className="flex flex-col space-y-2">
+                    <Button
+                      className="w-full flex items-center justify-center"
+                      onClick={() => {
+                        // Chuyển đến trang lịch sử đơn hàng
+                        navigate("/order-history");
+                      }}
+                    >
+                      <Star className="w-4 h-4 mr-2" />
+                      Xem lại đơn hàng
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

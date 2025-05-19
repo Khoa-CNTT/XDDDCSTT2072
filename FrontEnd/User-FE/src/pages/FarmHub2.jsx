@@ -9,7 +9,6 @@ import farmHub_bg_3 from "@/assets/images/farmHub_bg_3.jpg";
 import farmHub_bg_4 from "@/assets/images/farmHub_bg_4.jpg";
 import { Outlet, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
-import { motion } from "framer-motion";
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -18,8 +17,14 @@ import {
   FaLeaf,
   FaSeedling,
   FaCarrot,
+  FaFire,
+  FaBolt,
+  FaClock,
 } from "react-icons/fa";
 import PropTypes from "prop-types";
+
+// Add global styles
+import "@/assets/css/flashSale.css";
 
 const slides = [
   {
@@ -47,6 +52,11 @@ const FarmHub2 = () => {
   const [newProducts, setNewProducts] = useState([]);
   const [saleProducts, setSaleProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [flashSaleTimeLeft, setFlashSaleTimeLeft] = useState({
+    hours: 5,
+    minutes: 0,
+    seconds: 0,
+  });
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -83,6 +93,34 @@ const FarmHub2 = () => {
     fetchProducts();
   }, [axiosPrivate]);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFlashSaleTimeLeft((prev) => {
+        let newSeconds = prev.seconds - 1;
+        let newMinutes = prev.minutes;
+        let newHours = prev.hours;
+
+        if (newSeconds < 0) {
+          newSeconds = 59;
+          newMinutes -= 1;
+        }
+
+        if (newMinutes < 0) {
+          newMinutes = 59;
+          newHours -= 1;
+        }
+
+        if (newHours < 0) {
+          return { hours: 5, minutes: 0, seconds: 0 };
+        }
+
+        return { hours: newHours, minutes: newMinutes, seconds: newSeconds };
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const settings = {
     dots: true,
     infinite: true,
@@ -96,32 +134,15 @@ const FarmHub2 = () => {
     nextArrow: <CustomNextArrow />,
   };
 
-  // Hiệu ứng cho sản phẩm
-  const productVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: (i) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.05,
-        duration: 0.3,
-      },
-    }),
-  };
-
   const handleProductClick = (id) => {
     navigate(`/farmhub2/product/${id}`);
   };
 
   // Component hiển thị sản phẩm
-  const ProductCard = ({ product, index }) => {
+  const ProductCard = ({ product }) => {
     return (
-      <motion.div
-        className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
-        variants={productVariants}
-        initial="hidden"
-        animate="visible"
-        custom={index}
+      <div
+        className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-500"
         onClick={() => handleProductClick(product.id)}
       >
         <div className="relative">
@@ -130,7 +151,7 @@ const FarmHub2 = () => {
               product.imageUrl || "https://placehold.co/300x300?text=No+Image"
             }
             alt={product.productName}
-            className="w-full h-48 object-cover transition-transform hover:scale-105 duration-300"
+            className="w-full h-48 object-cover transition-transform hover:scale-105 duration-700"
           />
           {product.onSale && (
             <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -164,7 +185,7 @@ const FarmHub2 = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -177,7 +198,72 @@ const FarmHub2 = () => {
       salePrice: PropTypes.number,
       onSale: PropTypes.bool,
     }).isRequired,
-    index: PropTypes.number.isRequired,
+  };
+
+  // Component hiển thị sản phẩm cho Flash Sale với hiệu ứng chậm
+  const FlashSaleProductCard = ({ product }) => {
+    return (
+      <div
+        className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all flash-sale-item"
+        onClick={() => handleProductClick(product.id)}
+      >
+        <div className="relative">
+          <img
+            src={
+              product.imageUrl || "https://placehold.co/300x300?text=No+Image"
+            }
+            alt={product.productName}
+            className="w-full h-48 object-cover transition-transform"
+          />
+          {product.onSale && (
+            <div className="absolute top-0 right-0">
+              <div className="bg-red-500 text-white font-bold px-4 py-2 rounded-bl-lg flex items-center">
+                <FaBolt className="mr-1 text-yellow-300 slow-pulse" />
+                <span>
+                  {Math.round(
+                    ((product.price - product.salePrice) / product.price) * 100
+                  )}
+                  %
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 h-14">
+            {product.productName}
+          </h3>
+          <div className="flex justify-between items-end mt-2">
+            <div>
+              {product.onSale && (
+                <div>
+                  <span className="text-gray-500 line-through text-sm">
+                    {product.price.toLocaleString()}đ
+                  </span>
+                  <p className="text-red-500 font-bold">
+                    {product.salePrice.toLocaleString()}đ
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="bg-red-500 p-2 rounded-full text-white hover:bg-red-600">
+              <FaShoppingBasket />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  FlashSaleProductCard.propTypes = {
+    product: PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      productName: PropTypes.string.isRequired,
+      imageUrl: PropTypes.string,
+      price: PropTypes.number.isRequired,
+      salePrice: PropTypes.number,
+      onSale: PropTypes.bool,
+    }).isRequired,
   };
 
   const SectionTitle = ({ title, icon }) => (
@@ -264,6 +350,75 @@ const FarmHub2 = () => {
             </div>
           ) : (
             <>
+              {/* Sản phẩm đang giảm giá - Moved to the top for better visibility */}
+              {saleProducts.length > 0 && (
+                <section className="mb-12 bg-gradient-to-r from-yellow-400 to-red-500 rounded-2xl overflow-hidden border-2 border-yellow-300 shadow-xl">
+                  <div className="py-8 px-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+                      <div className="flex items-center">
+                        <div className="bg-white rounded-full p-3 mr-4 shadow-md">
+                          <FaFire
+                            size={24}
+                            className="text-red-500 animate-pulse"
+                          />
+                        </div>
+                        <div>
+                          <h2 className="text-3xl font-bold text-white flex items-center text-shadow">
+                            FLASH SALE{" "}
+                            <FaBolt className="ml-2 text-yellow-300" />
+                          </h2>
+                          <p className="text-white font-medium">
+                            Ưu đãi đặc biệt - Số lượng có hạn
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Countdown timer */}
+                      <div className="flex items-center bg-white px-5 py-3 rounded-lg shadow-md">
+                        <FaClock className="text-red-500 mr-3" />
+                        <span className="text-red-600 font-bold mr-3">
+                          Kết thúc sau:
+                        </span>
+                        <div className="flex ml-2">
+                          <div className="bg-red-500 text-white font-bold px-3 py-2 rounded shadow-sm mx-1">
+                            {String(flashSaleTimeLeft.hours).padStart(2, "0")}
+                          </div>
+                          <span className="text-red-600 font-bold text-xl mx-1">
+                            :
+                          </span>
+                          <div className="bg-red-500 text-white font-bold px-3 py-2 rounded shadow-sm mx-1">
+                            {String(flashSaleTimeLeft.minutes).padStart(2, "0")}
+                          </div>
+                          <span className="text-red-600 font-bold text-xl mx-1">
+                            :
+                          </span>
+                          <div className="bg-red-500 text-white font-bold px-3 py-2 rounded shadow-sm mx-1">
+                            {String(flashSaleTimeLeft.seconds).padStart(2, "0")}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                      {saleProducts.slice(0, 4).map((product) => (
+                        <FlashSaleProductCard
+                          key={product.id}
+                          product={product}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-center mt-8">
+                      <button
+                        className="bg-white text-red-500 px-8 py-3 rounded-lg hover:bg-red-50 transition-colors font-bold shadow-md"
+                        onClick={() => navigate("/farmhub2/on-sale")}
+                      >
+                        Xem tất cả ưu đãi
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )}
+
               {/* Sản phẩm nổi bật */}
               <section className="mb-12">
                 <SectionTitle
@@ -271,12 +426,8 @@ const FarmHub2 = () => {
                   icon={<FaTag size={20} />}
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                  {featuredProducts.map((product, index) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      index={index}
-                    />
+                  {featuredProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
                 <div className="text-center mt-8">
@@ -289,33 +440,6 @@ const FarmHub2 = () => {
                 </div>
               </section>
 
-              {/* Sản phẩm đang giảm giá */}
-              {saleProducts.length > 0 && (
-                <section className="mb-12 py-8 px-6 bg-red-50 rounded-2xl">
-                  <SectionTitle
-                    title="Đang giảm giá"
-                    icon={<FaTag size={20} />}
-                  />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                    {saleProducts.slice(0, 4).map((product, index) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        index={index}
-                      />
-                    ))}
-                  </div>
-                  <div className="text-center mt-8">
-                    <button
-                      className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                      onClick={() => navigate("/farmhub2/on-sale")}
-                    >
-                      Xem tất cả ưu đãi
-                    </button>
-                  </div>
-                </section>
-              )}
-
               {/* Sản phẩm mới */}
               <section className="mb-12">
                 <SectionTitle
@@ -323,12 +447,8 @@ const FarmHub2 = () => {
                   icon={<FaLeaf size={20} />}
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                  {newProducts.slice(0, 8).map((product, index) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      index={index}
-                    />
+                  {newProducts.slice(0, 8).map((product) => (
+                    <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
                 <div className="text-center mt-8">

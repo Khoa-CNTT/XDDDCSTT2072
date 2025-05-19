@@ -25,12 +25,12 @@ public class FlashSaleRequest {
     @NotNull(message = "Ngày bắt đầu không được để trống")
     @Future(message = "Ngày bắt đầu phải là thời gian trong tương lai")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startDate;
+    private LocalDateTime startTime;
     
     @NotNull(message = "Ngày kết thúc không được để trống")
     @Future(message = "Ngày kết thúc phải là thời gian trong tương lai")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endDate;
+    private LocalDateTime endTime;
     
     @NotNull(message = "Trạng thái không được để trống")
     private FlashSaleStatus status;
