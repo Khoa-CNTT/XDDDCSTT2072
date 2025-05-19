@@ -7,6 +7,7 @@ import com.agricultural.agricultural.dto.response.ErrorResponse;
 import com.agricultural.agricultural.dto.response.TokenRefreshResponse;
 import com.agricultural.agricultural.entity.RefreshToken;
 import com.agricultural.agricultural.exception.TokenRefreshException;
+import com.agricultural.agricultural.service.IGoogleService;
 import com.agricultural.agricultural.service.IPasswordResetService;
 import com.agricultural.agricultural.service.IRefreshTokenService;
 import com.agricultural.agricultural.service.IUserService;
@@ -26,6 +27,7 @@ public class AuthController {
     private final IRefreshTokenService refreshTokenService;
     private final IUserService userService;
     private final JwtTokenUtil jwtTokenUtil;
+    private final IGoogleService googleService;
 
     // Gửi email reset password
     @PostMapping("/forgot-password")
@@ -104,6 +106,19 @@ public class AuthController {
                 .body(ErrorResponse.builder()
                     .error(true)
                     .message(e.getMessage())
+                    .build());
+        }
+    }
+
+    @PostMapping("/google/login")
+    public ResponseEntity<?> googleLogin(@Valid @RequestBody GoogleLoginDTO googleLoginDTO) {
+        try {
+            return ResponseEntity.ok(googleService.loginWithGoogle(googleLoginDTO.getIdToken()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.builder()
+                    .error(true)
+                    .message("Đăng nhập Google thất bại: " + e.getMessage())
                     .build());
         }
     }
