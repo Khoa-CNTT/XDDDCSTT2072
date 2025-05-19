@@ -1,0 +1,62 @@
+/* Flash Sale Styles */
+.text-shadow {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Custom duration classes */
+.duration-1500 {
+  transition-duration: 1500ms;
+}
+
+.duration-2000 {
+  transition-duration: 2000ms;
+}
+
+.duration-3000 {
+  transition-duration: 3000ms;
+}
+
+.duration-4000 {
+  transition-duration: 4000ms;
+}
+
+.duration-5000 {
+  transition-duration: 5000ms;
+}
+
+/* Siêu chậm cho hiệu ứng flash sale */
+.flash-sale-item {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 2000ms;
+}
+
+.flash-sale-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.flash-sale-item:hover img {
+  transform: scale(1.05);
+  transition-duration: 3000ms;
+}
+
+/* Hiệu ứng pulse chậm cho icon */
+.slow-pulse {
+  animation: slowPulse 3s infinite;
+}
+
+@keyframes slowPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+} 
