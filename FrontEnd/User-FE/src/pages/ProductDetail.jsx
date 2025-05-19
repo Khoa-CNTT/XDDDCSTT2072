@@ -42,13 +42,13 @@ import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import Header from "@/layout/Header";
 import Footer from "@/layout/Footer";
 import CouponList from "@/components/product/CouponList";
 import ReviewsSection from "@/components/product/ReviewsSection";
 
 import { useCartActions } from "@/hooks/useCartActions";
-
 
 // Ảnh mặc định khi ảnh sản phẩm không tải được
 const DEFAULT_PRODUCT_IMAGE = "https://placehold.co/600x600?text=No+Image";
@@ -435,7 +435,7 @@ const ProductDetail = () => {
 
       await getCartQuery.refetch();
       toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
-    
+
       // Chuyển đến trang thanh toán
       navigate("/checkout", {
         state: {
@@ -445,7 +445,6 @@ const ProductDetail = () => {
           flashSalePrice: flashSalePrice,
         },
       });
-
     } catch (error) {
       console.error("Lỗi khi mua ngay:", error);
       if (error.response && error.response.status === 400) {
