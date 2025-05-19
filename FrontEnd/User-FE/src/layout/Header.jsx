@@ -6,8 +6,8 @@ import { toast } from "react-toastify";
 import avatarUser from "@/assets/images/avatar.jpg";
 import Search from "@/components/header/Search.jsx";
 import Cart from "@/components/header/Cart.jsx";
+import { Button } from "@/components/ui/button.jsx";
 import {
-  Bell,
   Menu,
   Home,
   Users,
@@ -24,11 +24,11 @@ import {
   Cloud,
   FileText,
   Store,
-  Heart,
 } from "lucide-react";
 import { FaClipboardList } from "react-icons/fa";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import Notification from "@/components/header/Notification.jsx";
+import logoImage from "@/assets/images/logo.jpg";
 
 const Header = () => {
   const { setAuth, auth } = useAuth();
@@ -116,25 +116,23 @@ const Header = () => {
 
   return (
     <div
-      className={`w-full bg-gradient-to-r from-lime-500 to-green-600 px-4 md:px-8 py-3 shadow-lg rounded-b-2xl dark:from-gray-800 dark:to-gray-900 transition-all duration-300 fixed z-40 top-0 ${
+      className={`w-full bg-gradient-to-r from-green-600 to-lime-500 px-4  py-3 shadow-lg rounded-b-2xl dark:from-gray-800 dark:to-gray-900 transition-all duration-300 fixed z-40 top-0 ${
         isScrolled ? "py-2 shadow-xl" : ""
       }`}
     >
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <div className="max-w flex justify-between items-center">
         {/* Logo */}
-        <div className="flex items-center">
-          <Link
-            to="/"
-            className="text-[18px] text-white py-2 px-5 rounded-full bg-black dark:bg-gray-950 font-semibold italic shadow-md hover:shadow-lg transition-all duration-300 btn-interactive flex items-center gap-2"
-          >
-            <Leaf size={18} className="text-lime-300" />
-            Agro
-          </Link>
+        <div>
+          <img
+            src={logoImage}
+            alt="logo"
+            className="max-h-16 max-w-16 rounded-full"
+          />
         </div>
 
         {/* Menu desktop */}
         <div className="relative hidden md:flex flex-1 justify-center">
-          <ul className="flex gap-8 text-white font-medium relative px-4">
+          <ul className="flex gap-13 text-white font-medium relative px-4">
             {list.map((item, index) => (
               <li
                 key={index}
@@ -144,7 +142,7 @@ const Header = () => {
               >
                 <Link
                   to={item.path}
-                  className={`h-10 hover:text-yellow-300 transition-all duration-200 flex items-center gap-1.5 ${
+                  className={`h-10 font-bold hover:text-yellow-300 transition-all duration-200 flex items-center gap-1.5 ${
                     activeIndex === index ? "font-semibold text-yellow-300" : ""
                   }`}
                 >
@@ -180,132 +178,125 @@ const Header = () => {
           </div>
 
           {/* Notifications */}
-          <div className="header-icon relative hover:scale-110 transition-transform cursor-pointer ml-2">
-            <Bell size={20} className="text-white" />
-            <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold shadow-md">
-              3
-            </Badge>
-          </div>
+          <Notification />
 
           {/* Cart */}
           <div className="header-icon ml-2">
             <Cart />
           </div>
-
-          {/* Avatar dropdown */}
-          <div className="relative hidden md:block ml-1">
-            <div
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 cursor-pointer bg-green-600 dark:bg-gray-700 hover:bg-green-700 dark:hover:bg-gray-600 transition-colors py-1.5 px-3 rounded-full h-10"
-            >
-              <Avatar className="w-7 h-7 border-2 border-white/50">
-                <AvatarImage src={auth?.user?.imageUrl || avatarUser} />
-                <AvatarFallback className="bg-green-700 text-white">
-                  {auth?.user?.userName?.[0]?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-white text-sm font-medium hidden sm:block">
-                {auth?.user?.userName || "User"}
-              </span>
-              <ChevronDown size={16} className="text-white" />
-            </div>
-
-            {isDropdownOpen && (
+          {auth.user ? (
+            <div className="relative hidden md:block ml-1">
               <div
-                ref={dropdownRef}
-                className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-xl rounded-xl w-52 p-2 z-50 text-gray-700 dark:text-white"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-2 cursor-pointer bg-green-600 dark:bg-gray-700 hover:bg-green-700 dark:hover:bg-gray-600 transition-colors py-1.5 px-3 rounded-full h-10"
               >
-                <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
-                  <p className="font-semibold text-sm">
-                    {auth?.user?.userName || "User"}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {auth?.user?.email || "email@example.com"}
-                  </p>
-                </div>
-                <ul className="py-1">
-                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Link
-                      to={`/profile/${auth?.user?.id}`}
-                      className="py-2 px-3 flex items-center gap-2 text-sm w-full"
-                    >
-                      <User size={16} className="text-blue-500" />
-                      Hồ sơ
-                    </Link>
-                  </li>
-                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Link
-                      to="/seller/dashboard"
-                      className="py-2 px-3 flex items-center gap-2 text-sm w-full"
-                    >
-                      <Store size={16} className="text-green-500" />
-                      Người bán
-                    </Link>
-                  </li>
-                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Link
-                      to="/seller/orders"
-                      className="py-2 px-3 flex items-center gap-2 text-sm w-full"
-                    >
-                      <FaClipboardList size={16} className="text-blue-500" />
-                      Quản lý đơn hàng
-                    </Link>
-                  </li>
-                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Link
-                      to="/users/search"
-                      className="py-2 px-3 flex items-center gap-2 text-sm w-full"
-                    >
-                      <SearchIcon size={16} className="text-green-500" />
-                      Tìm người dùng
-                    </Link>
-                  </li>
-                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <Link
-                      to="/wishlists"
-                      className="py-2 px-3 flex items-center gap-2 text-sm w-full"
-                    >
-                      <Heart size={16} className="text-red-500" />
-                      Danh sách yêu thích
-                    </Link>
-                  </li>
-                  <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                    <button className="py-2 px-3 flex items-center gap-2 text-sm w-full text-left">
-                      <Settings size={16} className="text-gray-500" />
-                      Cài đặt
-                    </button>
-                  </li>
-                  <li
-                    onClick={toggleDarkMode}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <div className="py-2 px-3 flex items-center gap-2 text-sm w-full">
-                      {isDarkMode ? (
-                        <>
-                          <Sun size={16} className="text-amber-500" />
-                          Chế độ sáng
-                        </>
-                      ) : (
-                        <>
-                          <Moon size={16} className="text-indigo-500" />
-                          Chế độ tối
-                        </>
-                      )}
-                    </div>
-                  </li>
-                  <li className="mt-1 pt-1 border-t border-gray-100 dark:border-gray-700">
-                    <button
-                      onClick={handleLogout}
-                      className="py-2 px-3 flex items-center gap-2 text-sm w-full text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    >
-                      <LogOut size={16} />
-                      Đăng xuất
-                    </button>
-                  </li>
-                </ul>
+                <Avatar className="w-7 h-7 border-2 border-white/50">
+                  <AvatarImage src={auth?.user?.imageUrl || avatarUser} />
+                  <AvatarFallback className="bg-green-700 text-white">
+                    {auth?.user?.userName?.[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-white text-sm font-medium hidden sm:block">
+                  {auth?.user?.userName || "User"}
+                </span>
+                <ChevronDown size={16} className="text-white" />
               </div>
-            )}
-          </div>
+
+              {isDropdownOpen && (
+                <div
+                  ref={dropdownRef}
+                  className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-xl rounded-xl w-52 p-2 z-50 text-gray-700 dark:text-white"
+                >
+                  <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                    <p className="font-semibold text-sm">
+                      {auth?.user?.userName || "User"}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {auth?.user?.email || "email@example.com"}
+                    </p>
+                  </div>
+                  <ul className="py-1">
+                    <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                      <Link
+                        to={`/profile/${auth?.user?.id}`}
+                        className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                      >
+                        <User size={16} className="text-blue-500" />
+                        Hồ sơ
+                      </Link>
+                    </li>
+                    <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                      <Link
+                        to="/seller/dashboard"
+                        className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                      >
+                        <Store size={16} className="text-green-500" />
+                        Người bán
+                      </Link>
+                    </li>
+                    <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                      <Link
+                        to="/seller/orders"
+                        className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                      >
+                        <FaClipboardList size={16} className="text-blue-500" />
+                        Quản lý đơn hàng
+                      </Link>
+                    </li>
+                    <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                      <Link
+                        to="/users/search"
+                        className="py-2 px-3 flex items-center gap-2 text-sm w-full"
+                      >
+                        <SearchIcon size={16} className="text-green-500" />
+                        Tìm người dùng
+                      </Link>
+                    </li>
+                    <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                      <button className="py-2 px-3 flex items-center gap-2 text-sm w-full text-left">
+                        <Settings size={16} className="text-gray-500" />
+                        Cài đặt
+                      </button>
+                    </li>
+                    <li
+                      onClick={toggleDarkMode}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <div className="py-2 px-3 flex items-center gap-2 text-sm w-full">
+                        {isDarkMode ? (
+                          <>
+                            <Sun size={16} className="text-amber-500" />
+                            Chế độ sáng
+                          </>
+                        ) : (
+                          <>
+                            <Moon size={16} className="text-indigo-500" />
+                            Chế độ tối
+                          </>
+                        )}
+                      </div>
+                    </li>
+                    <li className="mt-1 pt-1 border-t border-gray-100 dark:border-gray-700">
+                      <button
+                        onClick={handleLogout}
+                        className="py-2 px-3 flex items-center gap-2 text-sm w-full text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <LogOut size={16} />
+                        Đăng xuất
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/account/login">
+              <Button className="ml-2 rounded-full bg-white text-green-700 hover:bg-green-100 border border-green-500 shadow-sm px-5 py-2 font-semibold transition-all">
+                Đăng nhập
+              </Button>
+            </Link>
+          )}
+          {/* Avatar dropdown */}
 
           {/* Mobile menu button */}
           <div
@@ -388,24 +379,6 @@ const Header = () => {
                 >
                   <FaClipboardList size={16} className="text-blue-500" />
                   Quản lý đơn hàng
-                </Link>
-              </li>
-              <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                <Link
-                  to="/users/search"
-                  className="py-2 px-3 flex items-center gap-2 text-sm w-full"
-                >
-                  <SearchIcon size={16} className="text-green-500" />
-                  Tìm người dùng
-                </Link>
-              </li>
-              <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                <Link
-                  to="/wishlists"
-                  className="py-2 px-3 flex items-center gap-2 text-sm w-full"
-                >
-                  <Heart size={16} className="text-red-500" />
-                  Danh sách yêu thích
                 </Link>
               </li>
               <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
