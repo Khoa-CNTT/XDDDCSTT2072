@@ -22,6 +22,26 @@
     @apply flex items-center justify-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer transition-all duration-300;
     color: black; /* Chỉnh lại màu cho biểu tượng */
   }
+  .like-button {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .like-button.liked {
+    background: #e6f3ff;
+    border-color: #1a73e8;
+    color: #1a73e8;
+  }
+
+  .like-button:hover {
+    background: #f5f5f5;
+  }
+
+  .like-button.liked:hover {
+    background: #d4e7ff;
+  }
 }
 
 @theme inline {
@@ -142,24 +162,48 @@
 
 /* FarmHub Animations and Effects */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes scaleIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes slideInLeft {
-  from { transform: translateX(-30px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes pulseGlow {
-  0% { box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(72, 187, 120, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(72, 187, 120, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(72, 187, 120, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+  }
 }
 
 .farmhub-animate-fadeIn {
@@ -275,13 +319,17 @@
 }
 
 .farmhub-category-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -298,7 +346,7 @@
 }
 
 .farmhub-section-title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -357,8 +405,14 @@
 }
 
 @keyframes tabIndicator {
-  from { transform: scaleX(0); opacity: 0; }
-  to { transform: scaleX(1); opacity: 1; }
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
 }
 
 .social-tab[data-state="active"] {
@@ -395,7 +449,11 @@
 
 .connection-role-badge {
   @apply text-xs px-2 py-0.5 rounded-full font-medium;
-  background: linear-gradient(to right, var(--badge-from, #e0f2fe), var(--badge-to, #bae6fd));
+  background: linear-gradient(
+    to right,
+    var(--badge-from, #e0f2fe),
+    var(--badge-to, #bae6fd)
+  );
   color: var(--badge-text, #0284c7);
 }
 
@@ -426,11 +484,13 @@
 /* 5. Giao diện tổng thể cải tiến */
 .card-3d {
   @apply bg-white rounded-xl border border-gray-100 transition-all duration-300;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .card-3d:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
 .gradient-border {
@@ -454,9 +514,15 @@
 
 /* 6. Tương tác người dùng cải tiến */
 @keyframes buttonPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.98); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .btn-interactive {
@@ -483,8 +549,14 @@
 }
 
 @keyframes toastFadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 7. Bài viết cải tiến */
@@ -494,7 +566,8 @@
 }
 
 .post-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
   transform: translateY(-2px);
 }
 
@@ -531,15 +604,15 @@
   .mobile-menu {
     @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex items-center justify-around py-2 px-4 z-50;
   }
-  
+
   .mobile-menu-item {
     @apply flex flex-col items-center justify-center text-xs text-gray-600;
   }
-  
+
   .mobile-menu-item.active {
     @apply text-green-600;
   }
-  
+
   .mobile-menu-icon {
     @apply mb-1 text-current;
   }
@@ -590,8 +663,12 @@
 }
 
 @keyframes skeletonWave {
-  0% { background-position: 0% 0%; }
-  100% { background-position: -200% 0%; }
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: -200% 0%;
+  }
 }
 
 .lazyload-fade {

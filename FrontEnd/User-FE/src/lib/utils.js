@@ -1,5 +1,7 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
 /**
  * Kết hợp nhiều class name và xử lý xung đột Tailwind CSS
@@ -84,3 +86,16 @@ export const formatDateWithFallback = (dateString, fallback = "N/A") => {
 export const formatDateOnly = (dateString) => {
   return formatDate(dateString, false);
 }; 
+dayjs.extend(relativeTime);
+
+export function timeAgo(updatedAt) {
+  const date = new Date(
+    updatedAt[0],
+    updatedAt[1] - 1,
+    updatedAt[2],
+    updatedAt[3],
+    updatedAt[4],
+    updatedAt[5]
+  );
+  return dayjs(date).fromNow();
+}

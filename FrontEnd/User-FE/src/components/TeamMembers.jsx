@@ -16,8 +16,8 @@ const instructor = {
 };
 
 const members = [
-  { name: "Lâm Quang Bách", role: "FrontEnd Developer", imageBg: bgMember1, imageMb: imageMember },
-  { name: "Phan Quang Đức", role: "FrontEnd Developer", imageBg: bgMember2, imageMb: imageMember },
+  { name: "Lâm Quang Bách", role: "Frontend Developer", imageBg: bgMember1, imageMb: imageMember },
+  { name: "Phan Quang Đức", role: "Frontend Developer", imageBg: bgMember2, imageMb: imageMember },
   { name: "Hoàng Văn Dũng", role: "Trưởng nhóm - Backend Developer", imageBg: bgMember3, imageMb: imageMember },
   { name: "Nguyễn Tấn Quang Thông", role: "Backend Developer", imageBg: bgMember4, imageMb: imageMember },
   { name: "Phạm Duy Truyền", role: "Backend Developer", imageBg: bgMember5, imageMb: imageMember },
