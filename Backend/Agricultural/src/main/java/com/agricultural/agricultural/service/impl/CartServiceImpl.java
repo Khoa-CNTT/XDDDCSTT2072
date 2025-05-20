@@ -130,6 +130,11 @@ public class CartServiceImpl implements ICartService {
         MarketPlace product = marketPlaceRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + productId));
         
+        // Kiểm tra người mua không phải là người bán của sản phẩm
+        if (product.getUser() != null && Objects.equals(product.getUser().getId(), currentUser.getId())) {
+            throw new BadRequestException("Bạn không thể mua sản phẩm do chính mình đăng bán");
+        }
+        
         // Kiểm tra số lượng tồn kho
         if (product.getQuantity() < quantity) {
             throw new BadRequestException("Sản phẩm " + product.getProductName() + " chỉ còn " + product.getQuantity() + " sản phẩm");

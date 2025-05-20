@@ -4,9 +4,6 @@ import Header from "@/layout/Header";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import farmHub_bg_2 from "@/assets/images/farmHub_bg_2.jpg";
-import farmHub_bg_3 from "@/assets/images/farmHub_bg_3.jpg";
-import farmHub_bg_4 from "@/assets/images/farmHub_bg_4.jpg";
 import { Outlet, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import {
@@ -24,24 +21,39 @@ import {
 import PropTypes from "prop-types";
 
 // Add global styles
-import "@/assets/css/flashSale.css";
+import "../assets/css/flashSale.css";
 
+// Mảng chứa các slide cho banner
 const slides = [
   {
-    image: farmHub_bg_2,
-    title: "Sản phẩm nông nghiệp chất lượng cao",
+    image: "/banner1.jpg",
+    title: "Giải pháp nông nghiệp hiện đại",
     description:
-      "Nguồn sản phẩm được lựa chọn kỹ lưỡng từ các nhà cung cấp uy tín",
+      "Sản phẩm công nghệ nông nghiệp tiên tiến giúp tăng năng suất canh tác",
   },
   {
-    image: farmHub_bg_3,
-    title: "Giảm giá đặc biệt mỗi tuần",
-    description: "Cập nhật thường xuyên ưu đãi hấp dẫn cho các sản phẩm",
+    image: "/banner2.jpg",
+    title: "Ruộng bậc thang miền núi",
+    description:
+      "Vẻ đẹp của nông nghiệp truyền thống Việt Nam qua các thửa ruộng bậc thang",
   },
   {
-    image: farmHub_bg_4,
-    title: "Giao hàng tận nơi toàn quốc",
-    description: "Đặt hàng dễ dàng, nhận sản phẩm nhanh chóng",
+    image: "/banner3.jpg",
+    title: "Phân bón hữu cơ",
+    description:
+      "Phân bón tự nhiên, thân thiện với môi trường, tốt cho cây trồng và đất",
+  },
+  {
+    image: "/banner3.jpg",
+    title: "Hạt giống chất lượng cao",
+    description:
+      "Đa dạng các loại hạt giống với tỷ lệ nảy mầm cao, phù hợp với mọi vùng đất",
+  },
+  {
+    image: "/banner5.jpg",
+    title: "Rau hữu cơ tươi sạch",
+    description:
+      "Rau tươi từ nông trại đến bàn ăn của bạn, đảm bảo an toàn và chất lượng",
   },
 ];
 
@@ -128,10 +140,11 @@ const FarmHub2 = () => {
     slidesToShow: 1,
     slidesToScroll: 1,
     autoplay: true,
-    autoplaySpeed: 3000,
+    autoplaySpeed: 5000,
     arrows: true,
-    prevArrow: <CustomPrevArrow />,
-    nextArrow: <CustomNextArrow />,
+    prevArrow: <PrevArrow />,
+    nextArrow: <NextArrow />,
+    adaptiveHeight: true,
   };
 
   const handleProductClick = (id) => {
@@ -200,70 +213,30 @@ const FarmHub2 = () => {
     }).isRequired,
   };
 
-  // Component hiển thị sản phẩm cho Flash Sale với hiệu ứng chậm
-  const FlashSaleProductCard = ({ product }) => {
+  function PrevArrow(props) {
+    const { onClick } = props;
     return (
-      <div
-        className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all flash-sale-item"
-        onClick={() => handleProductClick(product.id)}
-      >
-        <div className="relative">
-          <img
-            src={
-              product.imageUrl || "https://placehold.co/300x300?text=No+Image"
-            }
-            alt={product.productName}
-            className="w-full h-48 object-cover transition-transform"
-          />
-          {product.onSale && (
-            <div className="absolute top-0 right-0">
-              <div className="bg-red-500 text-white font-bold px-4 py-2 rounded-bl-lg flex items-center">
-                <FaBolt className="mr-1 text-yellow-300 slow-pulse" />
-                <span>
-                  {Math.round(
-                    ((product.price - product.salePrice) / product.price) * 100
-                  )}
-                  %
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="p-4">
-          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 h-14">
-            {product.productName}
-          </h3>
-          <div className="flex justify-between items-end mt-2">
-            <div>
-              {product.onSale && (
-                <div>
-                  <span className="text-gray-500 line-through text-sm">
-                    {product.price.toLocaleString()}đ
-                  </span>
-                  <p className="text-red-500 font-bold">
-                    {product.salePrice.toLocaleString()}đ
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="bg-red-500 p-2 rounded-full text-white hover:bg-red-600">
-              <FaShoppingBasket />
-            </div>
-          </div>
-        </div>
-      </div>
+      <button className="banner-arrow prev-arrow" onClick={onClick}>
+        <FaChevronLeft />
+      </button>
     );
+  }
+
+  PrevArrow.propTypes = {
+    onClick: PropTypes.func,
   };
 
-  FlashSaleProductCard.propTypes = {
-    product: PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      productName: PropTypes.string.isRequired,
-      imageUrl: PropTypes.string,
-      price: PropTypes.number.isRequired,
-      salePrice: PropTypes.number,
-      onSale: PropTypes.bool,
-    }).isRequired,
+  function NextArrow(props) {
+    const { onClick } = props;
+    return (
+      <button className="banner-arrow next-arrow" onClick={onClick}>
+        <FaChevronRight />
+      </button>
+    );
+  }
+
+  NextArrow.propTypes = {
+    onClick: PropTypes.func,
   };
 
   const SectionTitle = ({ title, icon }) => (
@@ -287,29 +260,39 @@ const FarmHub2 = () => {
 
         {/* Banner Slider */}
         <div className="w-full mb-8 mt-16">
-          <Slider {...settings}>
-            {slides.map((slide, index) => (
-              <div key={index} className="relative">
-                <img
-                  src={slide.image}
-                  alt={`Slide ${index + 1}`}
-                  className="w-full h-[400px] object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col justify-center px-16">
-                  <h2 className="text-white text-4xl font-bold mb-4">
-                    {slide.title}
-                  </h2>
-                  <p className="text-white text-xl">{slide.description}</p>
-                  <button
-                    className="bg-green-500 text-white py-2 px-6 rounded-lg mt-6 hover:bg-green-600 transition-colors w-fit"
-                    onClick={() => navigate("/farmhub2")}
-                  >
-                    Khám phá ngay
-                  </button>
+          <div className="banner-slider-container">
+            <Slider {...settings}>
+              {slides.map((slide, index) => (
+                <div key={index}>
+                  <div className="relative banner-slide">
+                    <img
+                      src={slide.image}
+                      alt={slide.title}
+                      className="w-full h-[400px] object-cover"
+                      onError={(e) => {
+                        console.error("Error loading image:", e.target.src);
+                        e.target.onerror = null;
+                        e.target.src =
+                          "https://placehold.co/1200x400?text=Banner+Image";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-16">
+                      <h2 className="text-white text-4xl font-bold mb-4">
+                        {slide.title}
+                      </h2>
+                      <p className="text-white text-xl">{slide.description}</p>
+                      <button
+                        className="bg-green-500 text-white py-2 px-6 rounded-lg mt-6 hover:bg-green-600 transition-colors w-fit"
+                        onClick={() => navigate("/farmhub2")}
+                      >
+                        Khám phá ngay
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </Slider>
+              ))}
+            </Slider>
+          </div>
         </div>
 
         {/* Thể loại quicklinks */}
@@ -401,10 +384,7 @@ const FarmHub2 = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                       {saleProducts.slice(0, 4).map((product) => (
-                        <FlashSaleProductCard
-                          key={product.id}
-                          product={product}
-                        />
+                        <ProductCard key={product.id} product={product} />
                       ))}
                     </div>
                     <div className="text-center mt-8">
@@ -488,39 +468,6 @@ CategoryButton.propTypes = {
   icon: PropTypes.node.isRequired,
   color: PropTypes.string.isRequired,
   onClick: PropTypes.func.isRequired,
-};
-
-// Custom arrows cho slider
-const CustomPrevArrow = (props) => {
-  const { onClick } = props;
-  return (
-    <button
-      className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-white bg-opacity-50 rounded-full p-2 hover:bg-opacity-80"
-      onClick={onClick}
-    >
-      <FaChevronLeft className="text-gray-800" />
-    </button>
-  );
-};
-
-CustomPrevArrow.propTypes = {
-  onClick: PropTypes.func,
-};
-
-const CustomNextArrow = (props) => {
-  const { onClick } = props;
-  return (
-    <button
-      className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-white bg-opacity-50 rounded-full p-2 hover:bg-opacity-80"
-      onClick={onClick}
-    >
-      <FaChevronRight className="text-gray-800" />
-    </button>
-  );
-};
-
-CustomNextArrow.propTypes = {
-  onClick: PropTypes.func,
 };
 
 export default FarmHub2;

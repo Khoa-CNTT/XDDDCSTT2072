@@ -14,16 +14,20 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/constant/queryKeys";
+import useAxiosPrivate from "@/hooks/useAxiosPrivate";
+import { useCartActions } from "@/hooks/useCartActions";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1";
 
 const PaymentResult = () => {
+  const axiosPrivate = useAxiosPrivate();
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [paymentInfo, setPaymentInfo] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { getCartQuery } = useCartActions();
 
   // Hàm gọi API để kiểm tra và cập nhật trạng thái thanh toán
   const updatePaymentStatus = async (transactionNo, txnRef) => {
@@ -376,6 +380,8 @@ const PaymentResult = () => {
           // Thông báo thành công
           toast.success("Thanh toán thành công!");
 
+          // xóa cartItem đã thanh toán khỏi cart
+
           // Làm mới giỏ hàng khi thanh toán thành công
           refreshCart();
 
@@ -445,6 +451,42 @@ const PaymentResult = () => {
   const refreshCart = async () => {
     try {
       console.log("Làm mới giỏ hàng sau khi thanh toán thành công");
+      // Phan Duc moi them day
+      const cartResponse = await axiosPrivate.get("/cart");
+      const cartItems = cartResponse.data.cartItems || [];
+      console.log(cartItems);
+
+      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+      console.log(orders, ": here");
+      const latestOrder = orders[0];
+      console.log(latestOrder);
+
+      if (latestOrder && Array.isArray(latestOrder.orderDetails)) {
+        for (const orderItem of latestOrder.orderDetails) {
+          const matchingCartItem = cartItems.find(
+            (cartItem) => cartItem.productId === orderItem.productId
+          );
+
+          if (matchingCartItem) {
+            try {
+              const res = await axiosPrivate.delete(
+                `/cart/items/${matchingCartItem.id}`
+              );
+              await getCartQuery.refetch();
+              return res;
+            } catch (err) {
+              console.error(
+                `Lỗi xoá cart item id=${matchingCartItem.id}:`,
+                err
+              );
+            }
+          } else {
+            console.warn(
+              `Không tìm thấy cart item cho productId=${orderItem.productId}`
+            );
+          }
+        }
+      }
 
       // Lấy token từ localStorage
       const token = localStorage.getItem("token");

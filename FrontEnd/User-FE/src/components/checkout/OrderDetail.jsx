@@ -2,10 +2,23 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "@/layout/Header";
 import { Button } from "@/components/ui/button";
-import { FaArrowLeft } from "react-icons/fa";
+import {
+  ArrowLeft,
+  Package,
+  Truck,
+  Calendar,
+  CreditCard,
+  ImageOff,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import useAuth from "@/hooks/useAuth";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
+import { motion } from "framer-motion";
+import {
+  getDefaultImage,
+  getAdjustedImageUrl,
+  handleImageError as handleImageErrorUtil,
+} from "@/assets/imageUtil";
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -14,6 +27,7 @@ const OrderDetail = () => {
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const axiosPrivate = useAxiosPrivate();
+  const [imageError, setImageError] = useState({});
 
   // Kiểm tra đăng nhập ngay khi vào trang chi tiết đơn hàng
   useEffect(() => {
@@ -212,14 +226,89 @@ const OrderDetail = () => {
     return methods[method.toUpperCase()] || method;
   };
 
+  // Get order status with color
+  const getOrderStatus = (order) => {
+    // Logic đơn giản để xác định trạng thái đơn hàng
+    const status = order?.status || "pending";
+
+    switch (status.toLowerCase()) {
+      case "completed":
+      case "delivered":
+      case "done":
+        return {
+          label: "Đã giao hàng",
+          color: "bg-green-100 text-green-800",
+          badgeColor: "bg-green-500",
+          icon: <Package className="w-5 h-5" />,
+        };
+      case "processing":
+      case "shipping":
+      case "in_transit":
+        return {
+          label: "Đang vận chuyển",
+          color: "bg-blue-100 text-blue-800",
+          badgeColor: "bg-blue-500",
+          icon: <Truck className="w-5 h-5" />,
+        };
+      case "cancelled":
+        return {
+          label: "Đã hủy",
+          color: "bg-red-100 text-red-800",
+          badgeColor: "bg-red-500",
+          icon: <Package className="w-5 h-5" />,
+        };
+      case "pending":
+      case "waiting":
+      default:
+        return {
+          label: "Chờ xử lý",
+          color: "bg-amber-100 text-amber-800",
+          badgeColor: "bg-amber-500",
+          icon: <Package className="w-5 h-5" />,
+        };
+    }
+  };
+
+  // Xử lý ảnh lỗi
+  const handleImageError = (itemId) => {
+    setImageError((prev) => ({ ...prev, [itemId]: true }));
+  };
+
+  // Hàm điều chỉnh URL ảnh nếu cần
+  const getAdjustedImageUrl = (image) => {
+    if (!image) return null;
+
+    console.log("Đang kiểm tra URL ảnh:", image);
+
+    // Nếu ảnh là URL đầy đủ, trả về nguyên bản
+    if (image.startsWith("http")) {
+      return image;
+    }
+
+    // Nếu ảnh là đường dẫn tương đối, thêm baseURL
+    const baseURL = "http://localhost:8080"; // Thay đổi thành URL API của bạn
+    return `${baseURL}${image.startsWith("/") ? "" : "/"}${image}`;
+  };
+
   if (isLoading) {
     return (
       <>
         <Header />
-        <div className="max-w-6xl mx-auto mt-28 px-4 py-8">
-          <div className="animate-pulse flex flex-col items-center">
-            <div className="w-full h-8 bg-gray-200 rounded mb-4"></div>
-            <div className="w-full h-64 bg-gray-200 rounded mb-4"></div>
+        <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-teal-50 pt-16">
+          <div className="max-w-6xl mx-auto px-4 py-12">
+            <div className="animate-pulse space-y-6">
+              <div className="h-10 bg-white/60 rounded-lg w-1/3"></div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="h-32 bg-white/60 rounded-lg w-full"></div>
+                  <div className="h-64 bg-white/60 rounded-lg w-full"></div>
+                </div>
+                <div className="space-y-6">
+                  <div className="h-48 bg-white/60 rounded-lg w-full"></div>
+                  <div className="h-32 bg-white/60 rounded-lg w-full"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </>
@@ -230,18 +319,32 @@ const OrderDetail = () => {
     return (
       <>
         <Header />
-        <div className="max-w-6xl mx-auto mt-28 px-4 py-8 text-center">
-          <h2 className="text-2xl font-bold mb-6">Không tìm thấy đơn hàng</h2>
-          <p className="text-gray-600 mb-6">
-            Đơn hàng bạn tìm kiếm không tồn tại hoặc đã bị xóa.
-          </p>
-          <Button
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => navigate("/order-history")}
-          >
-            <FaArrowLeft className="mr-2" />
-            Quay lại lịch sử đơn hàng
-          </Button>
+        <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-teal-50 pt-16">
+          <div className="max-w-6xl mx-auto px-4 py-12 text-center">
+            <motion.div
+              className="bg-white rounded-xl shadow-md p-12"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="flex justify-center mb-6">
+                <Package className="h-16 w-16 text-gray-300" />
+              </div>
+              <h2 className="text-2xl font-bold mb-6">
+                Không tìm thấy đơn hàng
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Đơn hàng bạn tìm kiếm không tồn tại hoặc đã bị xóa.
+              </p>
+              <Button
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-full px-6"
+                onClick={() => navigate("/order-history")}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Quay lại lịch sử đơn hàng
+              </Button>
+            </motion.div>
+          </div>
         </div>
       </>
     );
@@ -251,6 +354,7 @@ const OrderDetail = () => {
   const subtotal = calculateSubtotal(order);
   const shippingFee = getShippingFee(order);
   const total = getOrderTotal(order);
+  const orderStatus = getOrderStatus(order);
 
   // Lấy danh sách sản phẩm từ các nguồn khác nhau trong API
   const orderItems = order.items || order.orderItems || order.lineItems || [];
@@ -265,22 +369,8 @@ const OrderDetail = () => {
       return (
         <div className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
+            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+              <ImageOff className="w-6 h-6 text-gray-400" />
             </div>
             <div>
               <p className="font-medium">
@@ -292,7 +382,7 @@ const OrderDetail = () => {
               </p>
             </div>
           </div>
-          <p className="text-red-500 font-semibold">
+          <p className="text-emerald-600 font-semibold">
             {Number(order.subtotal).toLocaleString()}đ
           </p>
         </div>
@@ -319,37 +409,72 @@ const OrderDetail = () => {
         const quantity = Number(item.quantity || 1);
 
         // Lấy hình ảnh
-        const image =
+        const rawImage =
           item.productImage ||
           item.image ||
           (item.product
             ? item.product.image || item.product.productImage
-            : null) ||
-          "https://via.placeholder.com/150";
+            : null);
+
+        // Log thông tin ảnh để debug
+        console.log(`Thông tin ảnh sản phẩm "${productName}":`, rawImage);
+
+        // Điều chỉnh URL ảnh nếu cần
+        const image = getAdjustedImageUrl(rawImage, {
+          baseApiUrl: "https://nongsan.online",
+          fallbackId: item.id || index,
+        });
+
+        const itemId = item.id || index;
+        const hasImageError = imageError[itemId];
 
         return (
-          <div
+          <motion.div
             key={index}
-            className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0"
+            className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0 mb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
           >
             <div className="flex items-center gap-4">
-              <img
-                src={image}
-                alt={productName}
-                className="w-16 h-16 object-cover rounded"
-              />
+              <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                {!hasImageError && image ? (
+                  <img
+                    src={image}
+                    alt={productName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      handleImageErrorUtil(e, {
+                        id: itemId,
+                        imageUrl: image,
+                        setErrorState: (id) => handleImageError(id),
+                        apiBaseUrl: "https://nongsan.online",
+                        apiImagePath: "/api/images",
+                      });
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <ImageOff className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+              </div>
               <div>
-                <p className="font-medium">{productName}</p>
-                <p className="text-sm text-gray-500">SL: {quantity}</p>
-                <p className="text-sm text-gray-500">
-                  Đơn giá: {price.toLocaleString()}đ
-                </p>
+                <p className="font-medium text-gray-800">{productName}</p>
+                <div className="flex gap-2 items-center mt-1">
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-600">
+                    SL: {quantity}
+                  </span>
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-600">
+                    {price.toLocaleString()}đ
+                  </span>
+                </div>
               </div>
             </div>
-            <p className="text-red-500 font-semibold">
+            <p className="text-emerald-600 font-semibold">
               {(price * quantity).toLocaleString()}đ
             </p>
-          </div>
+          </motion.div>
         );
       });
     }
@@ -364,111 +489,173 @@ const OrderDetail = () => {
   return (
     <>
       <Header />
-      <div className="max-w-6xl mx-auto mt-28 px-4 py-8">
-        <div className="flex items-center mb-6">
-          <Button
-            variant="ghost"
-            className="mr-2"
-            onClick={() => navigate("/order-history")}
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-teal-50 pt-16">
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <motion.div
+            className="flex items-center mb-8 gap-3"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            <FaArrowLeft />
-          </Button>
-          <h2 className="text-2xl font-bold">Chi tiết đơn hàng #{order.id}</h2>
-        </div>
+            <Button
+              variant="ghost"
+              className="rounded-full p-2 hover:bg-white/80"
+              onClick={() => navigate("/order-history")}
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </Button>
+            <h2 className="text-3xl font-bold text-gray-800">
+              Chi tiết đơn hàng #{order.id}
+            </h2>
+            <span
+              className={`ml-auto px-3 py-1 rounded-full text-xs font-medium ${orderStatus.color}`}
+            >
+              {orderStatus.label}
+            </span>
+          </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Order Info */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="flex flex-wrap gap-4 mb-4">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">
-                    Đơn hàng #{order.id}
-                  </p>
-                  <p className="text-sm">
-                    Ngày đặt:{" "}
-                    {formatDate(
-                      order.orderDate ||
-                        order.createdAt ||
-                        order.createDate ||
-                        order.date
-                    )}
-                  </p>
-                  {order.orderNumber && (
-                    <p className="text-sm">Mã đơn hàng: {order.orderNumber}</p>
-                  )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Order Info */}
+              <motion.div
+                className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-emerald-600" />
+                    Thông tin đơn hàng
+                  </h3>
+                  <div
+                    className={`w-3 h-3 rounded-full ${orderStatus.badgeColor}`}
+                  ></div>
                 </div>
-              </div>
-            </div>
 
-            {/* Order Items */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-4">Sản phẩm</h3>
-
-              <div className="space-y-4">{renderOrderItems()}</div>
-            </div>
-
-            {/* Additional Notes */}
-            {order.note && (
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <h3 className="text-lg font-semibold mb-4">Ghi chú</h3>
-                <p className="text-gray-700">{order.note}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Order Summary */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-4">Tóm tắt đơn hàng</h3>
-
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Tạm tính:</span>
-                  <span>{subtotal.toLocaleString()}đ</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Phí vận chuyển:</span>
-                  <span>{shippingFee.toLocaleString()}đ</span>
-                </div>
-                <div className="border-t border-gray-200 pt-3 mt-3">
-                  <div className="flex justify-between font-semibold">
-                    <span>Tổng cộng:</span>
-                    <span className="text-red-500 text-xl">
-                      {total.toLocaleString()}đ
-                    </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-gray-50">
+                    <p className="text-sm text-gray-500">Mã đơn hàng</p>
+                    <p className="font-medium">
+                      {order.orderNumber || `#${order.id}`}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-gray-50">
+                    <p className="text-sm text-gray-500">Ngày đặt</p>
+                    <p className="font-medium">
+                      {formatDate(
+                        order.orderDate ||
+                          order.createdAt ||
+                          order.createDate ||
+                          order.date
+                      )}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-gray-50">
+                    <p className="text-sm text-gray-500">Trạng thái</p>
+                    <p className="font-medium flex items-center gap-1">
+                      {orderStatus.icon}
+                      {orderStatus.label}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-gray-50">
+                    <p className="text-sm text-gray-500">
+                      Phương thức thanh toán
+                    </p>
+                    <p className="font-medium">
+                      {getPaymentMethodName(order.paymentMethod)}
+                    </p>
                   </div>
                 </div>
-              </div>
-            </div>
+              </motion.div>
 
-            {/* Payment Information */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-4">
-                Thông tin thanh toán
-              </h3>
-
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Phương thức:</span>
-                  <span className="font-medium">
-                    {getPaymentMethodName(order.paymentMethod)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate("/farmhub2")}
+              {/* Order Items */}
+              <motion.div
+                className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
               >
-                Tiếp tục mua sắm
-              </Button>
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                  <Package className="h-5 w-5 text-emerald-600" />
+                  Sản phẩm
+                </h3>
+
+                <div className="space-y-4">{renderOrderItems()}</div>
+              </motion.div>
+
+              {/* Additional Notes */}
+              {order.note && (
+                <motion.div
+                  className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.2 }}
+                >
+                  <h3 className="text-lg font-semibold mb-4">Ghi chú</h3>
+                  <p className="text-gray-700 p-3 rounded-lg bg-gray-50 italic">
+                    {order.note}
+                  </p>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Order Summary */}
+              <motion.div
+                className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-emerald-600" />
+                  Tóm tắt đơn hàng
+                </h3>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between p-3 rounded-lg bg-gray-50">
+                    <span>Tạm tính:</span>
+                    <span>{subtotal.toLocaleString()}đ</span>
+                  </div>
+                  <div className="flex justify-between p-3 rounded-lg bg-gray-50">
+                    <span>Phí vận chuyển:</span>
+                    <span>{shippingFee.toLocaleString()}đ</span>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex justify-between p-4 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 font-semibold">
+                      <span>Tổng cộng:</span>
+                      <span className="text-emerald-600 text-xl">
+                        {total.toLocaleString()}đ
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Actions */}
+              <motion.div
+                className="space-y-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+              >
+                <Button
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-full"
+                  onClick={() => navigate("/farmhub2")}
+                >
+                  Tiếp tục mua sắm
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 rounded-full"
+                  onClick={() => navigate("/order-history")}
+                >
+                  Quay lại lịch sử đơn hàng
+                </Button>
+              </motion.div>
             </div>
           </div>
         </div>

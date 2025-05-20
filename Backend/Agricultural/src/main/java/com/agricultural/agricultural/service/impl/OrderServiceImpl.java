@@ -84,6 +84,11 @@ public class OrderServiceImpl implements IOrderService {
         if (sellerId == null) {
             throw new BadRequestException("Không tìm thấy thông tin người bán của sản phẩm");
         }
+        
+        // Kiểm tra người mua không phải là người bán
+        if (Objects.equals(currentUser.getId(), sellerId)) {
+            throw new BadRequestException("Bạn không thể mua sản phẩm do chính mình đăng bán");
+        }
 
         // Tạo đơn hàng mới với đầy đủ thông tin
             Order order = initializeOrder(orderDTO, currentUser, sellerId, firstProduct);
@@ -133,6 +138,19 @@ public class OrderServiceImpl implements IOrderService {
     private void validateOrderInput(OrderDTO orderDTO) {
         if (orderDTO.getOrderDetails() == null || orderDTO.getOrderDetails().isEmpty()) {
             throw new BadRequestException("Chi tiết đơn hàng không được để trống");
+        }
+        
+        // Thêm các kiểm tra khác nếu cần
+        User currentUser = getCurrentUser();
+        
+        // Kiểm tra tất cả sản phẩm trong đơn hàng
+        for (OrderDetailDTO detail : orderDTO.getOrderDetails()) {
+            MarketPlace product = findAndValidateProduct(detail.getProductId());
+            
+            // Kiểm tra người mua không phải là người bán của sản phẩm
+            if (product.getUser() != null && Objects.equals(product.getUser().getId(), currentUser.getId())) {
+                throw new BadRequestException("Bạn không thể mua sản phẩm '" + product.getProductName() + "' do chính mình đăng bán");
+            }
         }
     }
     

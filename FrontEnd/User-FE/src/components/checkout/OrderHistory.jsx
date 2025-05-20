@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/layout/Header";
 import { Button } from "@/components/ui/button";
+import { EyeIcon, ShoppingBagIcon, PackageOpen, Calendar } from "lucide-react";
+import { motion } from "framer-motion";
 import useAuth from "@/hooks/useAuth";
 import { toast } from "react-toastify";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
@@ -260,12 +262,21 @@ const OrderHistory = () => {
     return (
       <>
         <Header />
-        <div className="max-w-6xl mx-auto mt-28 px-4 py-8">
-          <h2 className="text-2xl font-bold mb-8">Lịch sử đơn hàng</h2>
-          <div className="animate-pulse space-y-4">
-            <div className="h-10 bg-gray-200 rounded-md w-full"></div>
-            <div className="h-10 bg-gray-200 rounded-md w-full"></div>
-            <div className="h-10 bg-gray-200 rounded-md w-full"></div>
+        <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-teal-50 pt-16">
+          <div className="max-w-6xl mx-auto px-4 py-12">
+            <div className="flex items-center mb-8 gap-3">
+              <ShoppingBagIcon className="h-7 w-7 text-emerald-600" />
+              <h2 className="text-3xl font-bold text-gray-800">
+                Lịch sử đơn hàng
+              </h2>
+            </div>
+
+            <div className="animate-pulse space-y-6">
+              <div className="h-20 bg-white/60 rounded-xl w-full"></div>
+              <div className="h-20 bg-white/60 rounded-xl w-full"></div>
+              <div className="h-20 bg-white/60 rounded-xl w-full"></div>
+              <div className="h-20 bg-white/60 rounded-xl w-full"></div>
+            </div>
           </div>
         </div>
       </>
@@ -275,92 +286,102 @@ const OrderHistory = () => {
   return (
     <>
       <Header />
-      <div className="max-w-6xl mx-auto mt-28 px-4 py-8">
-        <h2 className="text-2xl font-bold mb-8">Lịch sử đơn hàng</h2>
+      <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-teal-50 pt-16">
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <motion.div
+            className="flex items-center mb-8 gap-3"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <ShoppingBagIcon className="h-7 w-7 text-emerald-600" />
+            <h2 className="text-3xl font-bold text-gray-800">
+              Lịch sử đơn hàng
+            </h2>
+          </motion.div>
 
-        {orders.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-500 mb-4">Bạn chưa có đơn hàng nào.</p>
-            <Button
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => navigate("/farmhub2")}
+          {orders.length === 0 ? (
+            <motion.div
+              className="bg-white rounded-xl shadow-md p-12 text-center"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
             >
-              Mua sắm ngay
-            </Button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mã đơn hàng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày đặt
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng tiền
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thao tác
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="font-medium">#{order.id}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {formatDate(
-                          order.orderDate ||
-                            order.createdAt ||
-                            order.createDate ||
-                            order.order_date ||
-                            order.date ||
-                            order.created_at
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-red-600 font-medium">
-                          {(() => {
-                            // Tính tổng trực tiếp từ subtotal và shippingFee
-                            const subtotal = order.subtotal
-                              ? Number(order.subtotal)
-                              : 0;
-                            const shippingFee = order.shippingFee
-                              ? Number(order.shippingFee)
-                              : 0;
-                            const total = subtotal + shippingFee;
+              <div className="flex justify-center mb-6">
+                <PackageOpen className="h-16 w-16 text-gray-300" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-3">
+                Chưa có đơn hàng nào
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Bạn chưa thực hiện đơn hàng nào. Hãy khám phá các sản phẩm của
+                chúng tôi.
+              </p>
+              <Button
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-full px-6"
+                onClick={() => navigate("/farmhub2")}
+              >
+                Mua sắm ngay
+              </Button>
+            </motion.div>
+          ) : (
+            <div className="space-y-6">
+              {orders.map((order, index) => {
+                const total = (() => {
+                  // Tính tổng trực tiếp từ subtotal và shippingFee
+                  const subtotal = order.subtotal ? Number(order.subtotal) : 0;
+                  const shippingFee = order.shippingFee
+                    ? Number(order.shippingFee)
+                    : 0;
+                  return subtotal + shippingFee;
+                })();
 
-                            console.log(
-                              `Order ${order.id}: subtotal=${subtotal}, shipping=${shippingFee}, total=${total}`
-                            );
+                return (
+                  <motion.div
+                    key={order.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 group"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <div className="px-6 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg font-semibold text-gray-800">
+                            Đơn hàng #{order.id}
+                          </span>
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Calendar className="h-4 w-4" />
+                            {formatDate(
+                              order.orderDate ||
+                                order.createdAt ||
+                                order.createDate ||
+                                order.order_date ||
+                                order.date ||
+                                order.created_at
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-xl font-bold text-emerald-600">
+                          {total.toLocaleString()}đ
+                        </div>
+                      </div>
 
-                            return total.toLocaleString();
-                          })()}
-                          đ
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <Button
-                          variant="outline"
-                          className="text-sm"
-                          onClick={() => navigate(`/order/${order.id}`)}
-                        >
-                          Chi tiết
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      <Button
+                        variant="outline"
+                        className="rounded-full border-emerald-200 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 transition-colors group-hover:bg-emerald-50"
+                        onClick={() => navigate(`/order/${order.id}`)}
+                      >
+                        <EyeIcon className="w-4 h-4 mr-2" />
+                        Xem chi tiết
+                      </Button>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </>
   );
