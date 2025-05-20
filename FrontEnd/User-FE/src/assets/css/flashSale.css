@@ -1,6 +1,6 @@
 /* Flash Sale Styles */
 .text-shadow {
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* Custom duration classes */
@@ -26,14 +26,11 @@
 
 /* Siêu chậm cho hiệu ứng flash sale */
 .flash-sale-item {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-  transition-duration: 2000ms;
+  transition: transform 0.3s ease-in-out;
 }
 
 .flash-sale-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-10px);
 }
 
 .flash-sale-item:hover img {
@@ -43,20 +40,111 @@
 
 /* Hiệu ứng pulse chậm cho icon */
 .slow-pulse {
-  animation: slowPulse 3s infinite;
+  animation: slow-pulse 2s infinite;
 }
 
-@keyframes slowPulse {
+@keyframes slow-pulse {
   0% {
-    transform: scale(1);
-    opacity: 1;
+    opacity: 0.7;
+    transform: scale(0.9);
   }
   50% {
+    opacity: 1;
     transform: scale(1.1);
-    opacity: 0.8;
   }
   100% {
-    transform: scale(1);
-    opacity: 1;
+    opacity: 0.7;
+    transform: scale(0.9);
   }
+}
+
+/* CSS cho Banner Slider */
+.banner-slider-container {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  overflow: hidden;
+}
+
+.banner-slide {
+  display: block !important;
+  width: 100%;
+  height: 400px;
+  position: relative;
+}
+
+.banner-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  border: none;
+  outline: none;
+  color: #333;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.prev-arrow {
+  left: 20px;
+}
+
+.next-arrow {
+  right: 20px;
+}
+
+/* Dots styling */
+.banner-slider .slick-dots {
+  bottom: 15px;
+  z-index: 20;
+}
+
+.banner-slider .slick-dots li button:before {
+  color: white;
+  opacity: 0.7;
+  font-size: 10px;
+}
+
+.banner-slider .slick-dots li.slick-active button:before {
+  color: #22c55e;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .banner-arrow {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .prev-arrow {
+    left: 10px;
+  }
+  
+  .next-arrow {
+    right: 10px;
+  }
+}
+
+/* Hiệu ứng fade cho slider */
+.banner-slider .slick-slide {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.banner-slider .slick-active {
+  opacity: 1;
+}
+
+/* Đảm bảo hình ảnh hiển thị đúng */
+.banner-slider img {
+  display: block;
+  width: 100%;
+  object-fit: cover;
 } 

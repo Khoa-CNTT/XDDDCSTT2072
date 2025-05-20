@@ -63,7 +63,7 @@ const productCardVariants = {
   hover: {
     scale: 1.05,
     rotateY: 5,
-    boxShadow: "0 10px 25px rgba(126, 34, 206, 0.2)",
+    boxShadow: "0 10px 25px rgba(16, 185, 129, 0.2)",
     transition: { duration: 0.3 },
   },
 };
@@ -91,8 +91,8 @@ const suggestionVariants = {
   }),
   hover: {
     scale: 1.03,
-    backgroundColor: "#f5f3ff",
-    boxShadow: "0 4px 20px rgba(126, 34, 206, 0.1)",
+    backgroundColor: "#f0fdf4",
+    boxShadow: "0 4px 20px rgba(16, 185, 129, 0.1)",
     transition: { duration: 0.2 },
   },
 };
@@ -223,7 +223,7 @@ function ChatAI() {
         >
           <div className="text-center mb-8 max-w-2xl">
             <motion.div
-              className="inline-block bg-gradient-to-r from-purple-100 to-indigo-100 p-4 rounded-full mb-6"
+              className="inline-block bg-gradient-to-r from-emerald-100 to-teal-100 p-4 rounded-full mb-6"
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{
@@ -233,10 +233,10 @@ function ChatAI() {
                 delay: 0.3,
               }}
             >
-              <BotIcon size={48} className="text-purple-500" />
+              <BotIcon size={48} className="text-emerald-500" />
             </motion.div>
             <motion.h3
-              className="text-2xl font-medium text-purple-900 mb-3"
+              className="text-2xl font-medium text-emerald-900 mb-3"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.5 }}
@@ -262,7 +262,7 @@ function ChatAI() {
             animate="visible"
           >
             <motion.div
-              className="bg-gray-50 hover:bg-purple-50 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+              className="bg-emerald-50 hover:bg-emerald-100 p-4 rounded-lg border border-emerald-200 cursor-pointer transition-colors"
               variants={suggestionVariants}
               custom={0}
               whileHover="hover"
@@ -270,15 +270,15 @@ function ChatAI() {
                 handleSelectSuggestion("Kỹ thuật trồng lúa hiệu quả?")
               }
             >
-              <h4 className="font-medium text-gray-800 mb-1">
+              <h4 className="font-medium text-emerald-800 mb-1">
                 🌱 Kỹ thuật trồng trọt
               </h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-emerald-600">
                 Hướng dẫn về cách trồng và chăm sóc cây trồng
               </p>
             </motion.div>
             <motion.div
-              className="bg-gray-50 hover:bg-purple-50 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+              className="bg-emerald-50 hover:bg-emerald-100 p-4 rounded-lg border border-emerald-200 cursor-pointer transition-colors"
               variants={suggestionVariants}
               custom={1}
               whileHover="hover"
@@ -286,13 +286,15 @@ function ChatAI() {
                 handleSelectSuggestion("Cách chăn nuôi bò sữa hiệu quả?")
               }
             >
-              <h4 className="font-medium text-gray-800 mb-1">🐄 Chăn nuôi</h4>
-              <p className="text-sm text-gray-600">
+              <h4 className="font-medium text-emerald-800 mb-1">
+                🐄 Chăn nuôi
+              </h4>
+              <p className="text-sm text-emerald-600">
                 Thông tin về chăn nuôi và phòng bệnh cho vật nuôi
               </p>
             </motion.div>
             <motion.div
-              className="bg-gray-50 hover:bg-purple-50 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+              className="bg-emerald-50 hover:bg-emerald-100 p-4 rounded-lg border border-emerald-200 cursor-pointer transition-colors"
               variants={suggestionVariants}
               custom={2}
               whileHover="hover"
@@ -300,15 +302,15 @@ function ChatAI() {
                 handleSelectSuggestion("Ảnh hưởng của thời tiết đến vụ mùa?")
               }
             >
-              <h4 className="font-medium text-gray-800 mb-1">
+              <h4 className="font-medium text-emerald-800 mb-1">
                 ⛅ Thời tiết và mùa vụ
               </h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-emerald-600">
                 Hướng dẫn về thời vụ và ảnh hưởng của thời tiết
               </p>
             </motion.div>
             <motion.div
-              className="bg-gray-50 hover:bg-purple-50 p-4 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+              className="bg-emerald-50 hover:bg-emerald-100 p-4 rounded-lg border border-emerald-200 cursor-pointer transition-colors"
               variants={suggestionVariants}
               custom={3}
               whileHover="hover"
@@ -316,10 +318,10 @@ function ChatAI() {
                 handleSelectSuggestion("Tôi cần mua thuốc trừ sâu cho cây lúa")
               }
             >
-              <h4 className="font-medium text-gray-800 mb-1">
+              <h4 className="font-medium text-emerald-800 mb-1">
                 🦠 Phòng trừ sâu bệnh
               </h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-emerald-600">
                 Cách nhận biết và đối phó với sâu bệnh hại
               </p>
             </motion.div>
@@ -340,7 +342,7 @@ function ChatAI() {
             <motion.div
               key={index}
               className={`py-6 px-4 ${
-                index < messages.length - 1 ? "border-b border-gray-200" : ""
+                index < messages.length - 1 ? "border-b border-emerald-200" : ""
               }`}
               variants={messageVariants}
               initial="hidden"
@@ -355,13 +357,13 @@ function ChatAI() {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: "spring", stiffness: 260, damping: 20 }}
                   >
-                    <Avatar className="h-10 w-10 mr-4 mt-1 flex-shrink-0 border-2 border-blue-100 p-0.5">
+                    <Avatar className="h-10 w-10 mr-4 mt-1 flex-shrink-0 border-2 border-emerald-100 p-0.5">
                       <AvatarImage
                         src={auth?.user?.imageUrl || "/placeholder-avatar.png"}
                         alt={auth?.user?.userName || "User"}
                         className="rounded-full"
                       />
-                      <AvatarFallback className="bg-blue-100 text-blue-800">
+                      <AvatarFallback className="bg-emerald-100 text-emerald-800">
                         {auth?.user?.userName?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
@@ -372,13 +374,13 @@ function ChatAI() {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: "spring", stiffness: 260, damping: 20 }}
                   >
-                    <Avatar className="h-10 w-10 mr-4 mt-1 flex-shrink-0 border-2 border-purple-100 p-0.5">
+                    <Avatar className="h-10 w-10 mr-4 mt-1 flex-shrink-0 border-2 border-teal-100 p-0.5">
                       <AvatarImage
                         src="/agrosphere-ai-avatar.svg"
                         alt="AgroSphere AI"
                         className="rounded-full"
                       />
-                      <AvatarFallback className="bg-purple-100 text-purple-800">
+                      <AvatarFallback className="bg-teal-100 text-teal-800">
                         AI
                       </AvatarFallback>
                     </Avatar>
@@ -390,15 +392,15 @@ function ChatAI() {
                     <span
                       className={`font-medium ${
                         msg.role === "assistant"
-                          ? "text-purple-700"
-                          : "text-blue-700"
+                          ? "text-emerald-700"
+                          : "text-teal-700"
                       }`}
                     >
                       {msg.role === "assistant"
                         ? "AgroSphere AI"
                         : auth?.user?.userName || "Bạn"}
                     </span>
-                    <span className="text-xs text-gray-400 ml-2">
+                    <span className="text-xs text-emerald-400 ml-2">
                       {formatTime(msg.timestamp)}
                     </span>
                   </div>
@@ -414,7 +416,11 @@ function ChatAI() {
                     transition={{ delay: 0.2, duration: 0.3 }}
                   >
                     <motion.div
-                      className="whitespace-pre-wrap bg-gradient-to-r from-purple-50 to-white rounded-lg p-4 border border-purple-100 shadow-sm"
+                      className={`whitespace-pre-wrap rounded-lg p-4 shadow-sm border ${
+                        msg.role === "assistant"
+                          ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200"
+                          : "bg-gradient-to-r from-teal-50 to-green-50 border-teal-200"
+                      }`}
                       style={{
                         perspective: "1000px",
                         transformStyle: "preserve-3d",
@@ -426,7 +432,7 @@ function ChatAI() {
 
                   {msg.source && (
                     <motion.div
-                      className="mt-2 text-xs text-gray-500 italic"
+                      className="mt-2 text-xs text-emerald-600 italic"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.4 }}
@@ -445,14 +451,14 @@ function ChatAI() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5, duration: 0.4 }}
                       >
-                        <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                        <h4 className="text-sm font-semibold text-emerald-700 mb-2">
                           Sản phẩm liên quan:
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                           {msg.products.map((product) => (
                             <motion.div
                               key={product.id}
-                              className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                              className="border border-emerald-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer bg-white"
                               onClick={() =>
                                 navigate(`/farmhub2/product/${product.id}`)
                               }
@@ -463,7 +469,7 @@ function ChatAI() {
                                 transformStyle: "preserve-3d",
                               }}
                             >
-                              <motion.div className="w-full h-32 bg-gray-100 rounded-md mb-2 overflow-hidden">
+                              <motion.div className="w-full h-32 bg-emerald-50 rounded-md mb-2 overflow-hidden">
                                 <motion.img
                                   src={
                                     product.imageUrl ||
@@ -475,11 +481,11 @@ function ChatAI() {
                                   transition={{ duration: 0.5 }}
                                 />
                               </motion.div>
-                              <h5 className="font-medium text-sm text-gray-800 line-clamp-2 mb-1">
+                              <h5 className="font-medium text-sm text-emerald-800 line-clamp-2 mb-1">
                                 {product.productName}
                               </h5>
                               <div className="flex items-center">
-                                <span className="text-purple-600 font-medium">
+                                <span className="text-emerald-600 font-medium">
                                   {product.salePrice ? (
                                     <>
                                       {new Intl.NumberFormat("vi-VN", {
@@ -515,142 +521,138 @@ function ChatAI() {
     );
   };
 
-  // Hiển thị thanh bên lịch sử chat
-  const renderSidebar = () => (
-    <motion.div
-      className={`bg-purple-900 text-white h-[calc(100vh-64px)] w-80 flex flex-col ${
-        showSidebar ? "block" : "hidden"
-      } md:block transition-all duration-300 ease-in-out`}
-      initial={{ x: -50, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="p-4 flex justify-between items-center border-b border-purple-800">
-        <h2 className="font-semibold text-lg">Lịch sử trò chuyện</h2>
-        <div className="flex items-center space-x-2">
-          <motion.div
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onHoverStart={() => setShowTooltip(true)}
-            onHoverEnd={() => setShowTooltip(false)}
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearChatHistory}
-              className="text-purple-300 hover:text-white hover:bg-purple-800 p-1 h-8 w-8 rounded-full relative"
-              title="Cuộc trò chuyện mới"
-            >
-              <PlusIcon size={16} />
-              <AnimatePresence>
-                {showTooltip && (
-                  <motion.div
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-purple-800 text-white text-xs rounded whitespace-nowrap"
-                    variants={tooltipVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="hidden"
-                  >
-                    Tạo cuộc trò chuyện mới
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Button>
-          </motion.div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-auto px-2 py-3">
-        {loadingSessions ? (
-          <div className="flex justify-center items-center py-8">
-            <motion.div
-              className="rounded-full h-6 w-6 border-b-2 border-purple-300"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            ></motion.div>
-          </div>
-        ) : sessions.length === 0 ? (
-          <motion.div
-            className="text-center py-6 px-4 text-purple-200"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <div className="mb-2">
-              <HistoryIcon className="inline-block h-10 w-10 opacity-50 mb-2" />
-            </div>
-            <p>Không có lịch sử trò chuyện</p>
-            <p className="text-xs mt-2">Trò chuyện mới sẽ xuất hiện ở đây</p>
-          </motion.div>
-        ) : (
-          <div className="space-y-2">
-            <AnimatePresence>
-              {sessions.map((session, index) => (
+  return (
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-gradient-to-b from-emerald-50 to-teal-50">
+      <Header />
+      <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
+        {/* Sidebar */}
+        {showSidebar && (
+          <div className="w-80 bg-emerald-800 text-white flex flex-col h-full">
+            <div className="p-4 flex justify-between items-center border-b border-emerald-700">
+              <h2 className="font-semibold text-lg">Lịch sử trò chuyện</h2>
+              <div className="flex items-center space-x-2">
                 <motion.div
-                  key={session.sessionId}
-                  className={`px-3 py-3 hover:bg-purple-800 rounded-lg cursor-pointer transition-colors ${
-                    session.sessionId === sessionId
-                      ? "bg-purple-800 border-l-4 border-purple-400"
-                      : ""
-                  }`}
-                  onClick={() => handleSelectSession(session.sessionId)}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05, duration: 0.3 }}
-                  whileHover={{ x: 5 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onHoverStart={() => setShowTooltip(true)}
+                  onHoverEnd={() => setShowTooltip(false)}
                 >
-                  <div className="flex items-center">
-                    <HistoryIcon
-                      size={14}
-                      className="text-purple-300 mr-2 flex-shrink-0"
-                    />
-                    <span className="text-sm truncate font-medium">
-                      {session.title || "Cuộc trò chuyện mới"}
-                    </span>
-                  </div>
-                  <div className="text-xs text-purple-300 mt-1 pl-6 flex items-center">
-                    <ClockIcon size={12} className="mr-1" />
-                    {formatDate(session.createdAt)}
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearChatHistory}
+                    className="text-emerald-300 hover:text-white hover:bg-emerald-700 p-1 h-8 w-8 rounded-full relative"
+                    title="Cuộc trò chuyện mới"
+                  >
+                    <PlusIcon size={16} />
+                    <AnimatePresence>
+                      {showTooltip && (
+                        <motion.div
+                          className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-emerald-700 text-white text-xs rounded whitespace-nowrap"
+                          variants={tooltipVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="hidden"
+                        >
+                          Tạo cuộc trò chuyện mới
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Button>
                 </motion.div>
-              ))}
-            </AnimatePresence>
+              </div>
+            </div>
+
+            <div className="overflow-auto flex-1 px-2 py-3">
+              {loadingSessions ? (
+                <div className="flex justify-center items-center py-8">
+                  <motion.div
+                    className="rounded-full h-6 w-6 border-b-2 border-emerald-300"
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  ></motion.div>
+                </div>
+              ) : sessions.length === 0 ? (
+                <motion.div
+                  className="text-center py-6 px-4 text-emerald-200"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <div className="mb-2">
+                    <HistoryIcon className="inline-block h-10 w-10 opacity-50 mb-2" />
+                  </div>
+                  <p>Không có lịch sử trò chuyện</p>
+                  <p className="text-xs mt-2">
+                    Trò chuyện mới sẽ xuất hiện ở đây
+                  </p>
+                </motion.div>
+              ) : (
+                <div className="space-y-2">
+                  <AnimatePresence>
+                    {sessions.map((session, index) => (
+                      <motion.div
+                        key={session.sessionId}
+                        className={`px-3 py-3 hover:bg-emerald-700 rounded-lg cursor-pointer transition-colors ${
+                          session.sessionId === sessionId
+                            ? "bg-emerald-700 border-l-4 border-emerald-400"
+                            : ""
+                        }`}
+                        onClick={() => handleSelectSession(session.sessionId)}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05, duration: 0.3 }}
+                        whileHover={{ x: 5 }}
+                      >
+                        <div className="flex items-center">
+                          <HistoryIcon
+                            size={14}
+                            className="text-emerald-300 mr-2 flex-shrink-0"
+                          />
+                          <span className="text-sm truncate font-medium">
+                            {session.title || "Cuộc trò chuyện mới"}
+                          </span>
+                        </div>
+                        <div className="text-xs text-emerald-300 mt-1 pl-6 flex items-center">
+                          <ClockIcon size={12} className="mr-1" />
+                          {formatDate(session.createdAt)}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
           </div>
         )}
-      </div>
-    </motion.div>
-  );
-
-  return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <div className="flex h-[calc(100vh-64px)] mt-16">
-        {/* Sidebar */}
-        {renderSidebar()}
 
         {/* Main content */}
-        <motion.div
-          className="flex-1 flex flex-col h-full relative"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-        >
+        <div className="flex-1 flex flex-col h-full relative bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100">
           {/* Mobile menu button */}
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+          <motion.div
+            className="md:hidden absolute top-4 left-4 z-10"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowSidebar(!showSidebar)}
-              className="md:hidden absolute top-4 left-4 z-10 bg-white border shadow-sm rounded-full p-2 h-10 w-10"
+              className="bg-emerald-100 border shadow-sm rounded-full p-2 h-10 w-10"
             >
-              <MenuIcon size={20} className="text-purple-600" />
+              <MenuIcon size={20} className="text-emerald-600" />
             </Button>
           </motion.div>
 
           {/* Messages container */}
           <div
             ref={messageContainerRef}
-            className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-purple-50 scroll-smooth"
+            className="flex-1 overflow-y-auto py-4 px-2"
+            style={{ height: "calc(100% - 84px)" }}
           >
             {renderMessages()}
 
@@ -662,7 +664,7 @@ function ChatAI() {
                 exit={{ opacity: 0 }}
               >
                 <motion.div
-                  className="rounded-full h-8 w-8 border-b-2 border-purple-500"
+                  className="rounded-full h-8 w-8 border-b-2 border-emerald-500"
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 ></motion.div>
@@ -701,12 +703,7 @@ function ChatAI() {
           </div>
 
           {/* Input container */}
-          <motion.div
-            className="bg-white border-t border-purple-100 p-4 shadow-md"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
+          <div className="bg-gradient-to-r from-emerald-100 to-teal-100 p-4 shadow-md w-full h-[84px]">
             <div className="max-w-3xl mx-auto">
               <form onSubmit={handleSendMessage}>
                 <div className="relative">
@@ -715,7 +712,7 @@ function ChatAI() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Hỏi về nông nghiệp, kỹ thuật trồng trọt, chăn nuôi..."
-                    className="min-h-[60px] pr-16 py-3 px-4 resize-none border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-sm"
+                    className="min-h-[60px] pr-16 py-3 px-4 resize-none border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm bg-white"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -730,7 +727,7 @@ function ChatAI() {
                     <Button
                       type="submit"
                       disabled={loading || !message.trim()}
-                      className="absolute right-2 bottom-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white h-10 w-10 rounded-lg p-0 flex items-center justify-center shadow-sm transition-colors"
+                      className="absolute right-2 bottom-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white h-10 w-10 rounded-lg p-0 flex items-center justify-center shadow-sm transition-colors"
                     >
                       {loading ? (
                         <RotateCwIcon size={18} className="animate-spin" />
@@ -740,13 +737,13 @@ function ChatAI() {
                     </Button>
                   </motion.div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 text-center">
+                <p className="text-xs text-emerald-700 mt-2 text-center">
                   Nhấn Enter để gửi, Shift+Enter để xuống dòng
                 </p>
               </form>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </div>
   );

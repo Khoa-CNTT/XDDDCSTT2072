@@ -37,6 +37,7 @@ import {
   FaArrowRight,
   FaClock,
   FaPercentage,
+  FaInfoCircle,
 } from "react-icons/fa";
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
@@ -85,6 +86,8 @@ const ProductDetail = () => {
   // Thêm state cho wishlist
   const [addingToWishlist, setAddingToWishlist] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  // State to check if current user is the seller of this product
+  const [isCurrentUserSeller, setIsCurrentUserSeller] = useState(false);
 
   // Kiểm tra người dùng có thể đánh giá không
   const { data: canReviewData } = useQuery({
@@ -111,7 +114,7 @@ const ProductDetail = () => {
   // Kiểm tra nếu có yêu cầu hiển thị form đánh giá từ location state
   useEffect(() => {
     if (location.state?.showReviewForm) {
-      // Chỉ hiển thị form đánh giá nếu người dùng đã mua sản phẩm
+      // Chỉ hiển thị form đánh giá nếu ng  ời dùng đã mua sản phẩm
       if (canReviewData?.data?.canReview) {
         setShowReviewForm(true);
       } else if (canReviewData?.data) {
@@ -142,6 +145,14 @@ const ProductDetail = () => {
       console.error("Lỗi khi tải sản phẩm:", error);
     },
   });
+
+  // Kiểm tra nếu người dùng hiện tại là người bán sản phẩm
+  useEffect(() => {
+    if (product && auth?.user?.id) {
+      // So sánh ID người bán của sản phẩm với ID người dùng hiện tại
+      setIsCurrentUserSeller(product.userId === auth.user.id);
+    }
+  }, [product, auth]);
 
   // Lấy sản phẩm liên quan (cùng danh mục)
   const {
@@ -502,6 +513,7 @@ const ProductDetail = () => {
         cartData.flashSalePrice
       );
       toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+      await getCartQuery.refetch();
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
       if (error.response && error.response.status === 400) {
@@ -832,7 +844,7 @@ const ProductDetail = () => {
 
       // Gọi service để thêm vào danh sách yêu thích mặc định
       const response = await addToDefaultWishlist(axiosPrivate, wishlistItem);
-      console.log("Phản hồi từ API:", response);
+      console.log("Phản hồi t   API:", response);
 
       setIsInWishlist(true);
       toast.success("Đã thêm vào danh sách yêu thích");
@@ -1021,20 +1033,36 @@ const ProductDetail = () => {
 
                 {/* Nút mua hàng */}
                 <div className="flex flex-wrap gap-4 mt-6">
-                  <button
-                    className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 flex-1 justify-center"
-                    onClick={buyNow}
-                  >
-                    <FaBolt />
-                    Mua ngay
-                  </button>
-                  <button
-                    className="bg-orange-100 text-orange-500 hover:bg-orange-200 px-6 py-3 rounded-lg flex items-center gap-2 flex-1 justify-center"
-                    onClick={addToCart}
-                  >
-                    <FaShoppingCart />
-                    Thêm vào giỏ
-                  </button>
+                  {isCurrentUserSeller ? (
+                    <div className="w-full p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FaInfoCircle className="text-yellow-500" />
+                        <p className="font-medium">
+                          Bạn là người bán sản phẩm này
+                        </p>
+                      </div>
+                      <p className="text-sm">
+                        Bạn không thể mua sản phẩm do chính mình đăng bán.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 flex-1 justify-center"
+                        onClick={buyNow}
+                      >
+                        <FaBolt />
+                        Mua ngay
+                      </button>
+                      <button
+                        className="bg-orange-100 text-orange-500 hover:bg-orange-200 px-6 py-3 rounded-lg flex items-center gap-2 flex-1 justify-center"
+                        onClick={addToCart}
+                      >
+                        <FaShoppingCart />
+                        Thêm vào giỏ
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Chia sẻ và thích */}

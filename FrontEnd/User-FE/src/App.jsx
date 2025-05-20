@@ -32,6 +32,7 @@ import UserSellerDashboard from "./pages/UserSellerDashboard";
 import SellerProductForm from "./pages/SellerProductForm";
 import SellerOrdersPage from "./pages/SellerOrdersPage";
 import SellerRegistration from "./pages/SellerRegistration";
+import WebsiteChatbot from "./components/chat/WebsiteChatbot";
 
 import Category from "./components/farmhub2/Category";
 import NewProducts from "./components/farmhub2/NewProducts";
@@ -135,6 +136,9 @@ function App() {
 
       {/* Thông báo đánh giá sản phẩm */}
       <ReviewNotification getUnreviewedProducts={getUnreviewedProducts} />
+
+      {/* Website Chatbot - available on all pages */}
+      <WebsiteChatbot />
 
       {/* Add React Query Devtools - only in development */}
       {import.meta.env.DEV && (
