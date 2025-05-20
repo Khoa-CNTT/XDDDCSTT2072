@@ -46,6 +46,7 @@ import FeaturedProducts from "./components/farmhub2/FeaturedProducts";
 import OnSaleProducts from "./components/farmhub2/OnSaleProducts";
 import Wishlist from "./pages/Wishlist";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import Home2 from "./pages/Home2";
 
 const ROLES = {
   User: "User",
@@ -63,7 +64,8 @@ function App() {
           <Route path="reset-password" element={<ResetPassword />} />
         </Route>
         <Route path="/" element={<Main />}>
-          <Route index element={<Home />} />
+          <Route index element={<Home2 />} />
+          <Route path="home" element={<Home2/>}/>
           <Route path="home" element={<Home />} />
           <Route path="about" element={<AboutUs />} />
           <Route path="news" element={<News />} />
