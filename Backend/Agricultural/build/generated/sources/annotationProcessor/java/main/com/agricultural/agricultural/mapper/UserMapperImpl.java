@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-05-08T02:40:55+0700",
+    date = "2025-05-20T02:18:07+0700",
     comments = "version: 1.5.5.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-8.12.1.jar, environment: Java 23.0.2 (Oracle Corporation)"
 )
 @Component
@@ -27,6 +27,7 @@ public class UserMapperImpl implements UserMapper {
         userDTO.id( user.getId() );
         userDTO.email( user.getEmail() );
         userDTO.phone( user.getPhone() );
+        userDTO.keepExistingPassword( user.isKeepExistingPassword() );
 
         return userDTO.build();
     }
@@ -40,6 +41,7 @@ public class UserMapperImpl implements UserMapper {
         User.UserBuilder user = User.builder();
 
         user.userName( userDTO.getUserName() );
+        user.keepExistingPassword( userDTO.isKeepExistingPassword() );
         user.id( userDTO.getId() );
         user.password( userDTO.getPassword() );
         user.email( userDTO.getEmail() );

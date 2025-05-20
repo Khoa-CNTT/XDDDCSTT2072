@@ -1,4 +1,4 @@
-# Logs
+# Tệp nhật ký
 logs
 *.log
 npm-debug.log*
@@ -7,18 +7,48 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Thư mục phụ thuộc
 node_modules
+/.pnp
+.pnp.js
+
+# Thư mục kiểm thử
+/coverage
+
+# Thư mục sản phẩm
+/build
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Tệp khác
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Thư mục và tệp của trình soạn thảo
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Thư mục bộ nhớ đệm npm (tùy chọn)
+.npm
+
+# Bộ nhớ đệm eslint (tùy chọn)
+.eslintcache
+
+# Tệp toàn vẹn Yarn
+.yarn-integrity
+
+# Tài liệu dự án
+/Tai_Lieu_Chinh_Thuc/
+Tai_Lieu_Chinh_Thuc/

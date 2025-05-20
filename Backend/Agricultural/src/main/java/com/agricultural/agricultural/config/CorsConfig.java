@@ -23,6 +23,7 @@ public class CorsConfig {
         
         // Cho phép các origins cụ thể
         config.addAllowedOrigin("http://localhost:5173"); // Frontend URL
+        config.addAllowedOrigin("http://localhost:5174"); // Frontend URL
         config.addAllowedOrigin("http://127.0.0.1:5173");
         config.addAllowedOrigin("http://localhost:3000"); // Frontend URL cũ
         config.addAllowedOrigin("http://127.0.0.1:3000");

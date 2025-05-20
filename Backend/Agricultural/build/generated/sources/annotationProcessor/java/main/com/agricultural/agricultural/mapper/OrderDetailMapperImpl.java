@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-05-08T02:40:56+0700",
+    date = "2025-05-20T02:18:06+0700",
     comments = "version: 1.5.5.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-8.12.1.jar, environment: Java 23.0.2 (Oracle Corporation)"
 )
 @Component
@@ -37,6 +37,7 @@ public class OrderDetailMapperImpl implements OrderDetailMapper {
         orderDetailDTO.price( orderDetail.getPrice() );
         orderDetailDTO.originalPrice( orderDetail.getOriginalPrice() );
         orderDetailDTO.discountAmount( orderDetail.getDiscountAmount() );
+        orderDetailDTO.totalPrice( orderDetail.getTotalPrice() );
         orderDetailDTO.status( orderDetail.getStatus() );
         orderDetailDTO.reviewStatus( orderDetail.getReviewStatus() );
 
@@ -76,6 +77,7 @@ public class OrderDetailMapperImpl implements OrderDetailMapper {
         orderDetail.price( orderDetailDTO.getPrice() );
         orderDetail.discountAmount( orderDetailDTO.getDiscountAmount() );
         orderDetail.quantity( orderDetailDTO.getQuantity() );
+        orderDetail.totalPrice( orderDetailDTO.getTotalPrice() );
         orderDetail.status( orderDetailDTO.getStatus() );
         orderDetail.reviewStatus( orderDetailDTO.getReviewStatus() );
 
@@ -99,6 +101,7 @@ public class OrderDetailMapperImpl implements OrderDetailMapper {
         entity.setPrice( dto.getPrice() );
         entity.setDiscountAmount( dto.getDiscountAmount() );
         entity.setQuantity( dto.getQuantity() );
+        entity.setTotalPrice( dto.getTotalPrice() );
         entity.setStatus( dto.getStatus() );
         entity.setReviewStatus( dto.getReviewStatus() );
     }

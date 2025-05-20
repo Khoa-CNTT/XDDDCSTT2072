@@ -17,7 +17,7 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-05-08T02:40:56+0700",
+    date = "2025-05-20T02:18:07+0700",
     comments = "version: 1.5.5.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-8.12.1.jar, environment: Java 23.0.2 (Oracle Corporation)"
 )
 public class ForumPostMapperImpl implements ForumPostMapper {
@@ -33,6 +33,8 @@ public class ForumPostMapperImpl implements ForumPostMapper {
         ForumPostDTO.ForumPostDTOBuilder<?, ?> forumPostDTO = ForumPostDTO.builder();
 
         forumPostDTO.userId( forumPostUserId( forumPost ) );
+        forumPostDTO.userName( forumPostUserUsername( forumPost ) );
+        forumPostDTO.userAvatar( forumPostUserImageUrl( forumPost ) );
         forumPostDTO.images( forumPostImageMapper.toDTOList( forumPost.getImages() ) );
         forumPostDTO.id( forumPost.getId() );
         forumPostDTO.title( forumPost.getTitle() );
@@ -102,6 +104,36 @@ public class ForumPostMapperImpl implements ForumPostMapper {
         }
         int id = user.getId();
         return id;
+    }
+
+    private String forumPostUserUsername(ForumPost forumPost) {
+        if ( forumPost == null ) {
+            return null;
+        }
+        User user = forumPost.getUser();
+        if ( user == null ) {
+            return null;
+        }
+        String username = user.getUsername();
+        if ( username == null ) {
+            return null;
+        }
+        return username;
+    }
+
+    private String forumPostUserImageUrl(ForumPost forumPost) {
+        if ( forumPost == null ) {
+            return null;
+        }
+        User user = forumPost.getUser();
+        if ( user == null ) {
+            return null;
+        }
+        String imageUrl = user.getImageUrl();
+        if ( imageUrl == null ) {
+            return null;
+        }
+        return imageUrl;
     }
 
     protected HashtagDTO hashtagToHashtagDTO(Hashtag hashtag) {
