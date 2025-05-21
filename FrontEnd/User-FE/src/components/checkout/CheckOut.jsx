@@ -883,8 +883,7 @@ const Checkout = () => {
                   <input
                     type="radio"
                     name="payment"
-                    checked={paymentMethod === "MOMO"}
-                    onChange={() => setPaymentMethod("MOMO")}
+                    disabled={true}
                     className="w-4 h-4 accent-blue-600"
                   />
                   <div className="flex items-center gap-2">

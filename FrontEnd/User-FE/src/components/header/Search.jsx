@@ -13,7 +13,7 @@ const Search = ({ setIsSearchActive, isSearchActive }) => {
   };
 
   return (
-    <div className="relative w-[200px] md:w-[300px] hidden md:block">
+    <div className="relative w-[200px] md:w-[250px] hidden md:block">
       <input
         type="text"
         placeholder="Search"

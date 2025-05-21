@@ -642,7 +642,7 @@ const Cart = () => {
 
           {renderTotalSection()}
 
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-end my-4">
             <Button
               className="bg-blue-600 hover:bg-blue-800 text-white px-6 py-2 rounded-lg"
               onClick={handleCheckout}

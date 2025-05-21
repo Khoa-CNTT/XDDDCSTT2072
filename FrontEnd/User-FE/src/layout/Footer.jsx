@@ -1,16 +1,24 @@
-import { useState, useEffect } from 'react';
-import { FaTwitter, FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from 'react-icons/fa';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import {
+  FaTwitter,
+  FaFacebookF,
+  FaInstagram,
+  FaTiktok,
+  FaYoutube,
+} from "react-icons/fa";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import axios from "axios";
+import logoImage from "@/assets/images/logo.jpg";
 
 // Fix for default marker icon in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
 function Footer() {
@@ -22,11 +30,11 @@ function Footer() {
     const fetchCoordinates = async () => {
       try {
         const response = await axios.get(
-          'https://nominatim.openstreetmap.org/search',
+          "https://nominatim.openstreetmap.org/search",
           {
             params: {
               q: address,
-              format: 'json',
+              format: "json",
               limit: 1,
             },
           }
@@ -40,7 +48,7 @@ function Footer() {
           setPosition([16.0544, 108.2022]);
         }
       } catch (error) {
-        console.error('Error fetching coordinates:', error);
+        console.error("Error fetching coordinates:", error);
         // Nếu có lỗi, sử dụng tọa độ mặc định (Đà Nẵng)
         setPosition([16.0544, 108.2022]);
       }
@@ -54,12 +62,20 @@ function Footer() {
       <div className="w-full max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Logo and Address */}
         <div className="text-left">
-          <div className="border border-white text-center py-2 w-24 mb-4">Logo</div>
+          <div className=" text-center w-24 mb-4">
+            <img
+              src={logoImage}
+              alt="logo"
+              className="w-full h-full object-cover rounded-full"
+            />
+          </div>
           <p className="text-sm leading-relaxed">
             Address: 03 Quang Trung, Thành phố Đà Nẵng, Việt Nam
           </p>
           <p className="text-sm leading-relaxed">Phone: 0236 3827 111</p>
-          <p className="text-sm leading-relaxed">Email: truongkhoahocmaytinh.com</p>
+          <p className="text-sm leading-relaxed">
+            Email: truongkhoahocmaytinh.com
+          </p>
         </div>
 
         {/* Our Links */}
@@ -134,7 +150,7 @@ function Footer() {
             <MapContainer
               center={position}
               zoom={13}
-              style={{ height: '80px', width: '120px' }}
+              style={{ height: "80px", width: "120px" }}
               className="rounded-lg mx-auto md:mx-0"
             >
               <TileLayer
