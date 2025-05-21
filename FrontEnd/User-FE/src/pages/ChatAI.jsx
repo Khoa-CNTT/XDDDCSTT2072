@@ -522,52 +522,150 @@ function ChatAI() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden bg-gradient-to-b from-emerald-50 to-teal-50">
+    <div className="overflow-hidden">
       <Header />
-      <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden">
-        {/* Sidebar */}
-        {showSidebar && (
-          <div className="w-80 bg-emerald-800 text-white flex flex-col h-full">
-            <div className="p-4 flex justify-between items-center border-b border-emerald-700">
-              <h2 className="font-semibold text-lg">Lịch sử trò chuyện</h2>
-              <div className="flex items-center space-x-2">
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onHoverStart={() => setShowTooltip(true)}
-                  onHoverEnd={() => setShowTooltip(false)}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearChatHistory}
-                    className="text-emerald-300 hover:text-white hover:bg-emerald-700 p-1 h-8 w-8 rounded-full relative"
-                    title="Cuộc trò chuyện mới"
+      <div className="mt-22 flex flex-col w-full overflow-hidden bg-gradient-to-b from-emerald-50 to-teal-50">
+        <div className="flex h-[calc(100vh-90px)] w-full overflow-hidden">
+          {/* Sidebar */}
+          {showSidebar && (
+            <div className="w-80 bg-emerald-800 text-white flex flex-col h-full">
+              <div className="p-4 flex justify-between items-center border-b border-emerald-700">
+                <h2 className="font-semibold text-lg">Lịch sử trò chuyện</h2>
+                <div className="flex items-center space-x-2">
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onHoverStart={() => setShowTooltip(true)}
+                    onHoverEnd={() => setShowTooltip(false)}
                   >
-                    <PlusIcon size={16} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearChatHistory}
+                      className="text-emerald-300 hover:text-white hover:bg-emerald-700 p-1 h-8 w-8 rounded-full relative"
+                      title="Cuộc trò chuyện mới"
+                    >
+                      <PlusIcon size={16} />
+                      <AnimatePresence>
+                        {showTooltip && (
+                          <motion.div
+                            className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-emerald-700 text-white text-xs rounded whitespace-nowrap"
+                            variants={tooltipVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="hidden"
+                          >
+                            Tạo cuộc trò chuyện mới
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Button>
+                  </motion.div>
+                </div>
+              </div>
+
+              <div className="overflow-auto flex-1 px-2 py-3">
+                {loadingSessions ? (
+                  <div className="flex justify-center items-center py-8">
+                    <motion.div
+                      className="rounded-full h-6 w-6 border-b-2 border-emerald-300"
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    ></motion.div>
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <motion.div
+                    className="text-center py-6 px-4 text-emerald-200"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <div className="mb-2">
+                      <HistoryIcon className="inline-block h-10 w-10 opacity-50 mb-2" />
+                    </div>
+                    <p>Không có lịch sử trò chuyện</p>
+                    <p className="text-xs mt-2">
+                      Trò chuyện mới sẽ xuất hiện ở đây
+                    </p>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-2">
                     <AnimatePresence>
-                      {showTooltip && (
+                      {sessions.map((session, index) => (
                         <motion.div
-                          className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-emerald-700 text-white text-xs rounded whitespace-nowrap"
-                          variants={tooltipVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="hidden"
+                          key={session.sessionId}
+                          className={`px-3 py-3 hover:bg-emerald-700 rounded-lg cursor-pointer transition-colors ${
+                            session.sessionId === sessionId
+                              ? "bg-emerald-700 border-l-4 border-emerald-400"
+                              : ""
+                          }`}
+                          onClick={() => handleSelectSession(session.sessionId)}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05, duration: 0.3 }}
+                          whileHover={{ x: 5 }}
                         >
-                          Tạo cuộc trò chuyện mới
+                          <div className="flex items-center">
+                            <HistoryIcon
+                              size={14}
+                              className="text-emerald-300 mr-2 flex-shrink-0"
+                            />
+                            <span className="text-sm truncate font-medium">
+                              {session.title || "Cuộc trò chuyện mới"}
+                            </span>
+                          </div>
+                          <div className="text-xs text-emerald-300 mt-1 pl-6 flex items-center">
+                            <ClockIcon size={12} className="mr-1" />
+                            {formatDate(session.createdAt)}
+                          </div>
                         </motion.div>
-                      )}
+                      ))}
                     </AnimatePresence>
-                  </Button>
-                </motion.div>
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            <div className="overflow-auto flex-1 px-2 py-3">
-              {loadingSessions ? (
-                <div className="flex justify-center items-center py-8">
+          {/* Main content */}
+          <div className="flex-1 flex flex-col h-full relative bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100">
+            {/* Mobile menu button */}
+            <motion.div
+              className="md:hidden absolute top-4 left-4 z-10"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="bg-emerald-100 border shadow-sm rounded-full p-2 h-10 w-10"
+              >
+                <MenuIcon size={20} className="text-emerald-600" />
+              </Button>
+            </motion.div>
+
+            {/* Messages container */}
+            <div
+              ref={messageContainerRef}
+              className="flex-1 overflow-y-auto py-4 px-2"
+              style={{ height: "calc(100% - 84px)" }}
+            >
+              {renderMessages()}
+
+              {loading && (
+                <motion.div
+                  className="flex justify-center items-center py-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
                   <motion.div
-                    className="rounded-full h-6 w-6 border-b-2 border-emerald-300"
+                    className="rounded-full h-8 w-8 border-b-2 border-emerald-500"
                     animate={{ rotate: 360 }}
                     transition={{
                       duration: 1,
@@ -575,172 +673,80 @@ function ChatAI() {
                       ease: "linear",
                     }}
                   ></motion.div>
-                </div>
-              ) : sessions.length === 0 ? (
+                </motion.div>
+              )}
+
+              {error && !loading && (
                 <motion.div
-                  className="text-center py-6 px-4 text-emerald-200"
-                  initial={{ opacity: 0, y: 10 }}
+                  className="max-w-3xl mx-auto px-6 mt-4"
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <div className="mb-2">
-                    <HistoryIcon className="inline-block h-10 w-10 opacity-50 mb-2" />
-                  </div>
-                  <p>Không có lịch sử trò chuyện</p>
-                  <p className="text-xs mt-2">
-                    Trò chuyện mới sẽ xuất hiện ở đây
-                  </p>
-                </motion.div>
-              ) : (
-                <div className="space-y-2">
-                  <AnimatePresence>
-                    {sessions.map((session, index) => (
-                      <motion.div
-                        key={session.sessionId}
-                        className={`px-3 py-3 hover:bg-emerald-700 rounded-lg cursor-pointer transition-colors ${
-                          session.sessionId === sessionId
-                            ? "bg-emerald-700 border-l-4 border-emerald-400"
-                            : ""
-                        }`}
-                        onClick={() => handleSelectSession(session.sessionId)}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05, duration: 0.3 }}
-                        whileHover={{ x: 5 }}
-                      >
-                        <div className="flex items-center">
-                          <HistoryIcon
-                            size={14}
-                            className="text-emerald-300 mr-2 flex-shrink-0"
+                  <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-red-500"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clipRule="evenodd"
                           />
-                          <span className="text-sm truncate font-medium">
-                            {session.title || "Cuộc trò chuyện mới"}
-                          </span>
-                        </div>
-                        <div className="text-xs text-emerald-300 mt-1 pl-6 flex items-center">
-                          <ClockIcon size={12} className="mr-1" />
-                          {formatDate(session.createdAt)}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-red-700">{error}</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               )}
             </div>
-          </div>
-        )}
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col h-full relative bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100">
-          {/* Mobile menu button */}
-          <motion.div
-            className="md:hidden absolute top-4 left-4 z-10"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSidebar(!showSidebar)}
-              className="bg-emerald-100 border shadow-sm rounded-full p-2 h-10 w-10"
-            >
-              <MenuIcon size={20} className="text-emerald-600" />
-            </Button>
-          </motion.div>
-
-          {/* Messages container */}
-          <div
-            ref={messageContainerRef}
-            className="flex-1 overflow-y-auto py-4 px-2"
-            style={{ height: "calc(100% - 84px)" }}
-          >
-            {renderMessages()}
-
-            {loading && (
-              <motion.div
-                className="flex justify-center items-center py-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <motion.div
-                  className="rounded-full h-8 w-8 border-b-2 border-emerald-500"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                ></motion.div>
-              </motion.div>
-            )}
-
-            {error && !loading && (
-              <motion.div
-                className="max-w-3xl mx-auto px-6 mt-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg
-                        className="h-5 w-5 text-red-500"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-red-700">{error}</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Input container */}
-          <div className="bg-gradient-to-r from-emerald-100 to-teal-100 p-4 shadow-md w-full h-[84px]">
-            <div className="max-w-3xl mx-auto">
-              <form onSubmit={handleSendMessage}>
-                <div className="relative">
-                  <Textarea
-                    ref={inputRef}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Hỏi về nông nghiệp, kỹ thuật trồng trọt, chăn nuôi..."
-                    className="min-h-[60px] pr-16 py-3 px-4 resize-none border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm bg-white"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage(e);
-                      }
-                    }}
-                  />
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Button
-                      type="submit"
-                      disabled={loading || !message.trim()}
-                      className="absolute right-2 bottom-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white h-10 w-10 rounded-lg p-0 flex items-center justify-center shadow-sm transition-colors"
+            {/* Input container */}
+            <div className="bg-gradient-to-r from-emerald-100 to-teal-100 p-4 shadow-md w-full h-[84px]">
+              <div className="max-w-3xl mx-auto">
+                <form onSubmit={handleSendMessage}>
+                  <div className="relative">
+                    <Textarea
+                      ref={inputRef}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Hỏi về nông nghiệp, kỹ thuật trồng trọt, chăn nuôi..."
+                      className="min-h-[60px] pr-16 py-3 px-4 resize-none border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm bg-white"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage(e);
+                        }
+                      }}
+                    />
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                     >
-                      {loading ? (
-                        <RotateCwIcon size={18} className="animate-spin" />
-                      ) : (
-                        <SendIcon size={18} />
-                      )}
-                    </Button>
-                  </motion.div>
-                </div>
-                <p className="text-xs text-emerald-700 mt-2 text-center">
-                  Nhấn Enter để gửi, Shift+Enter để xuống dòng
-                </p>
-              </form>
+                      <Button
+                        type="submit"
+                        disabled={loading || !message.trim()}
+                        className="absolute right-2 bottom-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white h-10 w-10 rounded-lg p-0 flex items-center justify-center shadow-sm transition-colors"
+                      >
+                        {loading ? (
+                          <RotateCwIcon size={18} className="animate-spin" />
+                        ) : (
+                          <SendIcon size={18} />
+                        )}
+                      </Button>
+                    </motion.div>
+                  </div>
+                  <p className="text-xs text-emerald-700 mt-2 text-center">
+                    Nhấn Enter để gửi, Shift+Enter để xuống dòng
+                  </p>
+                </form>
+              </div>
             </div>
           </div>
         </div>
