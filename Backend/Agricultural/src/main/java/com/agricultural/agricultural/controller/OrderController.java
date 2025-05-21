@@ -119,6 +119,13 @@ public class OrderController {
         return ResponseEntity.ok(ResponseDTO.success(history));
     }
 
+    @GetMapping("/recent")
+    @PreAuthorize("hasAnyAuthority('Admin')")
+    public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getRecentOrders(Pageable pageable) {
+        Page<OrderDTO> recentOrders = orderService.getRecentOrders(pageable);
+        return ResponseEntity.ok(ResponseDTO.success(recentOrders));
+    }
+
     @PostMapping("/{id}/payment")
     @PreAuthorize("hasAnyAuthority('User', 'Admin')")
     public ResponseEntity<ResponseDTO<PaymentResponse>> processPayment(

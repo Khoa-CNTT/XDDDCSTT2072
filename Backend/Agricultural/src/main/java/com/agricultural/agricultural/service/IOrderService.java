@@ -28,6 +28,9 @@ public interface IOrderService {
     Map<OrderStatus, List<OrderDTO>> getBuyerOrderHistory();
     Map<OrderStatus, List<OrderDTO>> getSellerOrderHistory();
     
+    // Phương thức lấy đơn hàng gần đây (cho Admin)
+    Page<OrderDTO> getRecentOrders(Pageable pageable);
+    
     // Phương thức xử lý thanh toán
     PaymentResponse processPayment(Integer orderId, PaymentRequest paymentRequest);
 } 
