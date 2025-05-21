@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import useAuth from "../hooks/useAuth";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { loginWithGoogle } from "../services/userService";
+import logoImage from "@/assets/images/logo.jpg";
 
 const login = async ({ email, password }) => {
   try {
@@ -247,7 +248,7 @@ const Login = () => {
         </div>
         <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col items-center">
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg mb-4">
-            LOGO
+            <img className="rounded-full" src={logoImage} alt="" />
           </div>
           <h2 className="text-2xl font-bold text-center mb-6 text-black">
             Đăng Nhập

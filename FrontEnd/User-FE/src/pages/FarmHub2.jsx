@@ -44,7 +44,7 @@ const slides = [
       "Phân bón tự nhiên, thân thiện với môi trường, tốt cho cây trồng và đất",
   },
   {
-    image: "/banner3.jpg",
+    image: "/banner4.jpg",
     title: "Hạt giống chất lượng cao",
     description:
       "Đa dạng các loại hạt giống với tỷ lệ nảy mầm cao, phù hợp với mọi vùng đất",
@@ -447,7 +447,6 @@ const FarmHub2 = () => {
           )}
         </main>
       </div>
-      <Footer />
     </div>
   );
 };

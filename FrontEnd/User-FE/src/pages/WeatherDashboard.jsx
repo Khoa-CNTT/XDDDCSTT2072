@@ -2734,7 +2734,6 @@ const WeatherDashboard = () => {
           </Tabs>
         </div>
       </div>
-      <Footer />
 
       <style>
         {`
