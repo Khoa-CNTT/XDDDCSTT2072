@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { useState } from "react";
+import logoImage from "@/assets/images/logo.jpg";
 
 const formSchema = z
   .object({
@@ -114,7 +115,7 @@ const Register = () => {
         <div className="w-full md:w-1/2 bg-white p-8 flex flex-col justify-center">
           <div className="flex justify-center mb-6">
             <div className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center text-white font-bold border border-gray-300">
-              Logo
+              <img src={logoImage} className="rounded-full" alt="" />
             </div>
           </div>
           <h2 className="text-2xl font-bold text-center mb-6">Sign Up</h2>
