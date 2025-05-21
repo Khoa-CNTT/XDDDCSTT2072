@@ -63,9 +63,12 @@ function App() {
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
         </Route>
+        <Route path="chat-ai" element={<ChatAI />} />
+        {/* <Route index element=/> */}
         <Route path="/" element={<Main />}>
+          {/* <Route path="chat-ai" element={<ChatAI />} /> */}
           <Route index element={<Home2 />} />
-          <Route path="home" element={<Home2/>}/>
+          <Route path="home" element={<Home2 />} />
           <Route path="home" element={<Home />} />
           <Route path="about" element={<AboutUs />} />
           <Route path="news" element={<News />} />
@@ -101,7 +104,7 @@ function App() {
             </Route>
             <Route path="farmhub2/product/:id" element={<ProductDetail />} />
             <Route path="farmhub" element={<FarmHub />} />
-            <Route path="chat-ai" element={<ChatAI />} />
+
             <Route path="coupons" element={<Coupons />} />
             <Route path="cart" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
