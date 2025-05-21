@@ -276,7 +276,7 @@ const FarmHub2 = () => {
                           "https://placehold.co/1200x400?text=Banner+Image";
                       }}
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center px-16">
+                    <div className="absolute inset-0 bg-opacity-40 flex flex-col justify-center px-16">
                       <h2 className="text-white text-4xl font-bold mb-4">
                         {slide.title}
                       </h2>

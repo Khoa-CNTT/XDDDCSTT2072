@@ -781,4 +781,9 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
+    @Override
+    public Page<OrderDTO> getRecentOrders(Pageable pageable) {
+        Page<Order> recentOrders = orderRepository.findAll(pageable);
+        return recentOrders.map(orderMapper::toDTO);
+    }
 }

@@ -55,7 +55,6 @@ const SubscriptionPlansPage = () => {
     description: "",
     price: 0,
     durationMonths: 1,
-    maxLocations: 1,
     isActive: true,
     isFree: false,
   });
@@ -92,7 +91,6 @@ const SubscriptionPlansPage = () => {
         description: plan.description || "",
         price: plan.price,
         durationMonths: plan.durationMonths,
-        maxLocations: plan.maxLocations,
         isActive: plan.isActive,
         isFree: plan.isFree,
       });
@@ -103,7 +101,6 @@ const SubscriptionPlansPage = () => {
         description: "",
         price: 0,
         durationMonths: 1,
-        maxLocations: 1,
         isActive: true,
         isFree: false,
       });
@@ -148,10 +145,6 @@ const SubscriptionPlansPage = () => {
 
     if (formData.durationMonths < 1) {
       errors.durationMonths = "Thời hạn gói đăng ký phải lớn hơn 0";
-    }
-
-    if (formData.maxLocations < 1) {
-      errors.maxLocations = "Số lượng địa điểm tối đa phải lớn hơn 0";
     }
 
     setFormErrors(errors);
@@ -330,7 +323,6 @@ const SubscriptionPlansPage = () => {
                   <TableCell>Mô tả</TableCell>
                   <TableCell align="right">Giá</TableCell>
                   <TableCell align="center">Thời hạn (tháng)</TableCell>
-                  <TableCell align="center">Số địa điểm tối đa</TableCell>
                   <TableCell align="center">Trạng thái</TableCell>
                   <TableCell align="center">Loại gói</TableCell>
                   <TableCell align="center">Thao tác</TableCell>
@@ -355,7 +347,6 @@ const SubscriptionPlansPage = () => {
                       <TableCell align="center">
                         {plan.durationMonths}
                       </TableCell>
-                      <TableCell align="center">{plan.maxLocations}</TableCell>
                       <TableCell align="center">
                         <Chip
                           icon={plan.isActive ? <CheckIcon /> : <CloseIcon />}
@@ -392,7 +383,7 @@ const SubscriptionPlansPage = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} align="center">
+                    <TableCell colSpan={8} align="center">
                       Không tìm thấy gói đăng ký nào
                     </TableCell>
                   </TableRow>
@@ -466,7 +457,7 @@ const SubscriptionPlansPage = () => {
                 rows={3}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Giá (VND)"
@@ -483,7 +474,7 @@ const SubscriptionPlansPage = () => {
                 }}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Thời hạn (tháng)</InputLabel>
                 <Select
@@ -499,18 +490,6 @@ const SubscriptionPlansPage = () => {
                   <MenuItem value={12}>12 tháng</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Số địa điểm tối đa"
-                name="maxLocations"
-                type="number"
-                value={formData.maxLocations}
-                onChange={handleFormChange}
-                error={!!formErrors.maxLocations}
-                helperText={formErrors.maxLocations}
-              />
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControlLabel

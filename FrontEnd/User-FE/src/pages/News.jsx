@@ -237,13 +237,13 @@ function News() {
                   <p className="text-gray-200 text-sm mt-1">
                     {truncateText(latestNews[0].summary, 120)}
                   </p>
-                  <p className="text-gray-300 text-xs mt-2">
+                  {/* <p className="text-gray-300 text-xs mt-2">
                     {formatDateWithFallback(
                       latestNews[0].publishedDate,
                       "Không rõ ngày đăng"
                     )}{" "}
                     | {latestNews[0].sourceName}
-                  </p>
+                  </p> */}
                 </div>
               </div>
 
@@ -270,12 +270,12 @@ function News() {
                       <h3 className="text-white font-semibold text-sm mt-1">
                         {item.title}
                       </h3>
-                      <p className="text-gray-300 text-xs mt-1">
+                      {/* <p className="text-gray-300 text-xs mt-1">
                         {formatDateWithFallback(
                           item.publishedDate,
                           "Không rõ ngày đăng"
                         )}
-                      </p>
+                      </p> */}
                     </div>
                   </div>
                 ))}
@@ -411,12 +411,12 @@ function News() {
                         <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                           {item.category || "Tin tức"}
                         </span>
-                        <span className="text-gray-500 text-xs">
+                        {/* <span className="text-gray-500 text-xs">
                           {formatDateWithFallback(
                             item.publishedDate,
                             "Không rõ ngày đăng"
                           )}
-                        </span>
+                        </span> */}
                       </div>
                       <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
                         {item.title}

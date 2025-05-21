@@ -168,12 +168,12 @@ function NewsDetail() {
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <FaCalendarAlt />
-                    <span>
+                    {/* <span>
                       {formatDateWithFallback(
                         news.publishedDate,
                         "Không rõ ngày đăng"
                       )}
-                    </span>
+                    </span> */}
                   </div>
 
                   {news.sourceName && (
@@ -240,14 +240,14 @@ function NewsDetail() {
                           {item.title}
                         </h3>
                         <div className="flex justify-between items-center text-xs text-gray-500">
-                          <span>
+                          {/* <span>
                             {
                               formatDateWithFallback(
                                 item.publishedDate,
                                 "Không rõ ngày đăng"
                               ).split(", ")[0]
                             }
-                          </span>
+                          </span> */}
                           <span>{item.category}</span>
                         </div>
                       </div>
