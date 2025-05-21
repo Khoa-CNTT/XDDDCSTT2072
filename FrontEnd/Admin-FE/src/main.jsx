@@ -15,7 +15,6 @@ import WeatherLocationsPage from "./pages/WeatherLocationsPage.jsx";
 import WeatherDataPage from "./pages/WeatherDataPage.jsx";
 import WeatherSubscriptionsPage from "./pages/WeatherSubscriptionsPage.jsx";
 import SubscriptionPlansPage from "./pages/SubscriptionPlansPage.jsx";
-import UserSubscriptionsPage from "./pages/UserSubscriptionsPage.jsx";
 import WeatherRecommendationPage from "./pages/WeatherRecommendationPage.jsx";
 import CropWeatherRecommendationPage from "./pages/CropWeatherRecommendationPage.jsx";
 import ExtremeWeatherPage from "./pages/ExtremeWeatherPage.jsx";
@@ -84,10 +83,6 @@ createRoot(document.getElementById("root")).render(
             <Route
               path="/subscription-plans"
               element={<SubscriptionPlansPage />}
-            />
-            <Route
-              path="/user-subscriptions"
-              element={<UserSubscriptionsPage />}
             />
             <Route
               path="/seller-registrations"

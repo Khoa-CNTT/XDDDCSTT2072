@@ -3,26 +3,14 @@ import { useLocation } from "react-router-dom";
 import {
   Box,
   Button,
-  Typography,
   Card,
   CardContent,
   TextField,
   InputAdornment,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  TablePagination,
-  Chip,
-  Tooltip,
   Snackbar,
   Alert,
   CircularProgress,
@@ -34,32 +22,18 @@ import {
   MenuItem,
   Grid,
   Collapse,
-  Divider,
-  Menu,
-  ListItemIcon,
-  ListItemText,
 } from "@mui/material";
 import {
-  Refresh as RefreshIcon,
   Add as AddIcon,
   Search as SearchIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
   CloudDownload as CloudDownloadIcon,
   OpenInNew as OpenInNewIcon,
   BarChart as BarChartIcon,
-  ViewList as ViewListIcon,
   FilterAlt as FilterAltIcon,
-  Category as CategoryIcon,
-  PlaylistAddCheck as PlaylistAddCheckIcon,
-  CalendarToday as CalendarTodayIcon,
   Source as SourceIcon,
-  CloudSync as CloudSyncIcon,
-  FileDownload as FileDownloadIcon,
   FilterList as FilterListIcon,
   ClearAll as ClearAllIcon,
-  MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
 import PageHeader from "../components/PageHeader";
 import {
@@ -147,10 +121,6 @@ const NewsPage = () => {
   // State cho danh sách nguồn tin
   const [newsSources, setNewsSources] = useState([]);
 
-  // State cho menu more
-  const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
-
   // Ref cho chức năng xem trước
   const previewIframeRef = useRef(null);
 
@@ -184,75 +154,67 @@ const NewsPage = () => {
   const loadNews = async () => {
     setLoading(true);
     try {
+      let response;
+
       // Nếu có filter category được áp dụng
       if (filters.category) {
-        const response = await fetchNewsByCategory(
+        response = await fetchNewsByCategory(
           filters.category,
           page,
           rowsPerPage
         );
-        setNews(response.data.content);
-        setTotalElements(response.data.totalElements);
       } else if (searchTerm) {
         // Nếu đang tìm kiếm
-        const response = await searchNews(searchTerm, page, rowsPerPage);
-        setNews(response.data.content);
-        setTotalElements(response.data.totalElements);
+        response = await searchNews(searchTerm, page, rowsPerPage);
       } else {
-        // Lấy tất cả tin tức (có thể có filter khác)
-        const response = await fetchAllNews(page, rowsPerPage);
-
-        // Áp dụng filters ở client side nếu có (ngoại trừ category đã xử lý ở trên)
-        let filteredNews = response.data.content;
-
-        if (filters.sourceName) {
-          filteredNews = filteredNews.filter(
-            (item) => item.sourceName === filters.sourceName
-          );
-        }
-
-        if (filters.status === "active") {
-          filteredNews = filteredNews.filter((item) => item.active);
-        } else if (filters.status === "inactive") {
-          filteredNews = filteredNews.filter((item) => !item.active);
-        }
-
-        if (filters.fromDate) {
-          filteredNews = filteredNews.filter((item) => {
-            const publishDate = new Date(item.publishedDate);
-            const fromDate = new Date(filters.fromDate);
-            return publishDate >= fromDate;
-          });
-        }
-
-        if (filters.toDate) {
-          filteredNews = filteredNews.filter((item) => {
-            const publishDate = new Date(item.publishedDate);
-            const toDate = new Date(filters.toDate);
-            toDate.setHours(23, 59, 59, 999); // Đặt thời gian là cuối ngày
-            return publishDate <= toDate;
-          });
-        }
-
-        setNews(filteredNews);
-        setTotalElements(response.data.totalElements);
+        // Lấy tất cả tin tức
+        response = await fetchAllNews(page, rowsPerPage);
       }
+
+      // Lọc client-side nếu cần thiết cho các filter khác
+      let filteredNews = response.data.content || [];
+
+      if (filters.sourceName) {
+        filteredNews = filteredNews.filter(
+          (item) => item.sourceName === filters.sourceName
+        );
+      }
+
+      if (filters.status === "active") {
+        filteredNews = filteredNews.filter((item) => item.active);
+      } else if (filters.status === "inactive") {
+        filteredNews = filteredNews.filter((item) => !item.active);
+      }
+
+      if (filters.fromDate) {
+        filteredNews = filteredNews.filter((item) => {
+          const publishDate = new Date(item.publishedDate);
+          const fromDate = new Date(filters.fromDate);
+          return publishDate >= fromDate;
+        });
+      }
+
+      if (filters.toDate) {
+        filteredNews = filteredNews.filter((item) => {
+          const publishDate = new Date(item.publishedDate);
+          const toDate = new Date(filters.toDate);
+          toDate.setHours(23, 59, 59, 999); // Đặt thời gian là cuối ngày
+          return publishDate <= toDate;
+        });
+      }
+
+      console.log("Tin tức đã được tải:", filteredNews);
+      setNews(filteredNews);
+      setTotalElements(response.data.totalElements || filteredNews.length);
     } catch (error) {
       console.error("Error loading news:", error);
       showSnackbar("Không thể tải tin tức. Vui lòng thử lại sau.", "error");
+      // Dùng dữ liệu mẫu nếu API lỗi
+      setNews([]);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Xử lý mở menu More
-  const handleOpenMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  // Đóng menu
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
   };
 
   // Handle search
@@ -299,7 +261,6 @@ const NewsPage = () => {
   const handleExportCSV = () => {
     exportToCSV(news, `tin-tuc-${new Date().toISOString().slice(0, 10)}.csv`);
     showSnackbar("Đã xuất dữ liệu tin tức thành công", "success");
-    handleCloseMenu();
   };
 
   // Handle page change
@@ -354,7 +315,6 @@ const NewsPage = () => {
       setTimeout(() => {
         loadNews();
       }, 5000); // Reload after 5 seconds to give time for fetching
-      handleCloseMenu();
     } catch (error) {
       console.error("Error fetching news from sources:", error);
       showSnackbar(
@@ -378,7 +338,6 @@ const NewsPage = () => {
       setTimeout(() => {
         loadNews();
       }, 5000);
-      handleCloseMenu();
     } catch (error) {
       console.error("Error fetching news from source:", error);
       showSnackbar(
@@ -422,13 +381,12 @@ const NewsPage = () => {
   // Handle tab change
   const handleTabChange = (event, newValue) => {
     if (newValue === 0) {
-      setTabValue(0); // List view
+      // Stats view
+      setTabValue(0);
       setOpenSourcesTab(false);
     } else if (newValue === 1) {
-      setTabValue(1); // Stats view
-      setOpenSourcesTab(false);
-    } else if (newValue === 2) {
-      setOpenSourcesTab(true); // Sources view
+      // Sources view
+      setOpenSourcesTab(true);
     }
   };
 
@@ -705,15 +663,10 @@ const NewsPage = () => {
       <Box sx={{ width: "100%", mb: 3 }}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <Tabs
-            value={openSourcesTab ? 2 : tabValue}
+            value={openSourcesTab ? 1 : 0}
             onChange={handleTabChange}
             aria-label="news management tabs"
           >
-            <Tab
-              icon={<ViewListIcon />}
-              iconPosition="start"
-              label="Danh sách tin tức"
-            />
             <Tab
               icon={<BarChartIcon />}
               iconPosition="start"
@@ -732,152 +685,7 @@ const NewsPage = () => {
       {openSourcesTab && <NewsSourcesPage />}
 
       {/* News Statistics Tab */}
-      {!openSourcesTab && tabValue === 1 && <NewsStats news={news} />}
-
-      {/* News List Tab */}
-      {!openSourcesTab && tabValue === 0 && (
-        <>
-          {/* News List */}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Tiêu đề</TableCell>
-                  <TableCell>Danh mục</TableCell>
-                  <TableCell>Nguồn</TableCell>
-                  <TableCell>Ngày đăng</TableCell>
-                  <TableCell>Trạng thái</TableCell>
-                  <TableCell align="right">Hành động</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      <CircularProgress size={30} sx={{ my: 2 }} />
-                    </TableCell>
-                  </TableRow>
-                ) : news.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      <Typography variant="body2" sx={{ py: 2 }}>
-                        Không có dữ liệu tin tức
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        startIcon={<CloudDownloadIcon />}
-                        onClick={handleFetchNews}
-                        disabled={fetchingNews}
-                      >
-                        {fetchingNews ? "Đang tải..." : "Tải tin tức mới"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  news.map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>
-                        <Box sx={{ maxWidth: 300 }}>
-                          <Typography
-                            variant="body2"
-                            noWrap
-                            title={item.title}
-                            sx={{ fontWeight: "bold" }}
-                          >
-                            {item.title}
-                          </Typography>
-                          {item.summary && (
-                            <Typography
-                              variant="caption"
-                              color="textSecondary"
-                              sx={{
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {item.summary}
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={item.category || "Chưa phân loại"}
-                          color="primary"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>{item.sourceName || "N/A"}</TableCell>
-                      <TableCell>{formatDate(item.publishedDate)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={item.active ? "Hiển thị" : "Ẩn"}
-                          color={item.active ? "success" : "default"}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="Xem chi tiết">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenDetailDialog(item.id)}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Xem trước">
-                          <IconButton
-                            size="small"
-                            onClick={() => handlePreviewArticle(item)}
-                          >
-                            <OpenInNewIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Chỉnh sửa">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenNewsDialog(item)}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Xóa">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteNews(item.id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              component="div"
-              count={totalElements}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              labelRowsPerPage="Số hàng mỗi trang:"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}-${to} của ${count !== -1 ? count : `hơn ${to}`}`
-              }
-            />
-          </TableContainer>
-        </>
-      )}
+      {!openSourcesTab && <NewsStats news={news} />}
 
       {/* News Form Dialog */}
       <Dialog

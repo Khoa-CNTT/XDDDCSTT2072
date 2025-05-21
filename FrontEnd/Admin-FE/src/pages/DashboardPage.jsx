@@ -4,46 +4,34 @@ import {
   Box,
   Typography,
   Paper,
-  Card,
   CardContent,
   Button,
   Divider,
   Avatar,
-  Tabs,
-  Tab,
   ListItem,
   ListItemText,
   ListItemAvatar,
   List,
   Chip,
-  LinearProgress,
   IconButton,
-  Stack,
   Alert,
-  Tooltip,
 } from "@mui/material";
 import {
   AttachMoney as AttachMoneyIcon,
   ShoppingCart as ShoppingCartIcon,
   Person as PersonIcon,
   Inventory as InventoryIcon,
-  TrendingUp as TrendingUpIcon,
   Refresh as RefreshIcon,
   MoreVert as MoreVertIcon,
   CalendarToday as CalendarIcon,
   FilterList as FilterListIcon,
   ArrowForward as ArrowForwardIcon,
-  Speed as SpeedIcon,
-  Notifications as NotificationsIcon,
   Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Public as PublicIcon,
 } from "@mui/icons-material";
 import StatCard from "../components/ui/StatCard";
 import ChartCard from "../components/ui/ChartCard";
 import DataTable from "../components/ui/DataTable";
-import userService from "../services/userService";
-import orderService from "../services/orderService";
+import dashboardService from "../services/dashboardService";
 import { styled } from "@mui/material/styles";
 
 // Styled components
@@ -54,14 +42,14 @@ const DashboardContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
-const SectionTitle = styled(Box)(({ theme }) => ({
+const SectionTitle = styled(Box)(() => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  marginBottom: theme.spacing(3),
+  marginBottom: "24px",
 }));
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(Paper)(() => ({
   borderRadius: 12,
   boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
   overflow: "hidden",
@@ -94,7 +82,7 @@ const ProgressBar = styled(Box)(({ theme, value, color = "primary" }) => ({
   },
 }));
 
-const StyledAvatar = styled(Avatar)(({ theme, bgcolor = "primary.main" }) => ({
+const StyledAvatar = styled(Avatar)(({ bgcolor = "primary.main" }) => ({
   backgroundColor: bgcolor,
   color: "#fff",
   width: 40,
@@ -114,197 +102,238 @@ const DashboardPage = () => {
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [tabValue, setTabValue] = useState(0);
   const [activities, setActivities] = useState([]);
   const [productPerformance, setProductPerformance] = useState([]);
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setIsLoading(true);
-      try {
-        // Thống kê tổng quan
-        setStatistics({
-          totalSales: 45141,
-          totalOrders: 423,
-          totalUsers: 7929,
-          totalProducts: 289,
-        });
-
-        // Dữ liệu biểu đồ doanh thu
-        const months = [
-          "T1",
-          "T2",
-          "T3",
-          "T4",
-          "T5",
-          "T6",
-          "T7",
-          "T8",
-          "T9",
-          "T10",
-          "T11",
-          "T12",
-        ];
-
-        setSalesData({
-          labels: months,
-          datasets: [
-            {
-              label: "Doanh thu năm 2024",
-              data: [53, 42, 51, 54, 53, 58, 54, 60, 58, 62, 50, 58],
-              borderColor: "rgba(25, 118, 210, 1)",
-              backgroundColor: "rgba(25, 118, 210, 0.2)",
-              tension: 0.4,
-            },
-            {
-              label: "Lượt truy cập",
-              data: [88, 74, 82, 98, 95, 83, 102, 87, 110, 92, 65, 69],
-              borderColor: "rgba(255, 159, 64, 1)",
-              backgroundColor: "rgba(255, 159, 64, 0.2)",
-              tension: 0.4,
-            },
-          ],
-        });
-
-        // Dữ liệu biểu đồ tròn thị phần danh mục
-        setCategoryData({
-          labels: [
-            "Cây trồng",
-            "Phân bón",
-            "Thuốc BVTV",
-            "Công cụ",
-            "Hạt giống",
-          ],
-          datasets: [
-            {
-              data: [35, 25, 20, 10, 10],
-              backgroundColor: [
-                "rgba(25, 118, 210, 0.8)",
-                "rgba(156, 39, 176, 0.8)",
-                "rgba(76, 175, 80, 0.8)",
-                "rgba(255, 152, 0, 0.8)",
-                "rgba(244, 67, 54, 0.8)",
-              ],
-              borderWidth: 1,
-            },
-          ],
-        });
-
-        // Lấy các đơn hàng gần đây
-        const ordersResponse = await orderService.getRecentOrders(5);
-        setRecentOrders(ordersResponse || sampleOrders);
-
-        // Hoạt động gần đây
-        setActivities([
-          {
-            id: 1,
-            user: "Nguyễn Văn A",
-            action: "đã đặt đơn hàng mới",
-            target: "#1234",
-            time: "5 phút trước",
-            avatar: "/avatar1.png",
-            type: "order",
-          },
-          {
-            id: 2,
-            user: "Admin",
-            action: "đã thêm sản phẩm mới",
-            target: "Phân bón NPK",
-            time: "25 phút trước",
-            avatar: "/avatar2.png",
-            type: "product",
-          },
-          {
-            id: 3,
-            user: "Hệ thống",
-            action: "phát hiện thời tiết xấu tại",
-            target: "Đồng Tháp",
-            time: "1 giờ trước",
-            avatar: "",
-            type: "weather",
-          },
-          {
-            id: 4,
-            user: "Trần Thị B",
-            action: "đã đăng ký mới",
-            target: "",
-            time: "3 giờ trước",
-            avatar: "/avatar3.png",
-            type: "user",
-          },
-          {
-            id: 5,
-            user: "Lê Văn C",
-            action: "đã thanh toán đơn hàng",
-            target: "#1230",
-            time: "5 giờ trước",
-            avatar: "/avatar4.png",
-            type: "payment",
-          },
-        ]);
-
-        // Hiệu suất sản phẩm bán chạy
-        setProductPerformance([
-          {
-            id: 1,
-            name: "Phân bón NPK",
-            sales: 120,
-            rating: 4.8,
-            stock: 70,
-            progress: 70,
-          },
-          {
-            id: 2,
-            name: "Hạt giống lúa lai",
-            sales: 98,
-            rating: 4.5,
-            stock: 32,
-            progress: 32,
-          },
-          {
-            id: 3,
-            name: "Thuốc trừ sâu sinh học",
-            sales: 85,
-            rating: 4.2,
-            stock: 55,
-            progress: 55,
-          },
-          {
-            id: 4,
-            name: "Dụng cụ làm vườn",
-            sales: 72,
-            rating: 4.0,
-            stock: 60,
-            progress: 60,
-          },
-          {
-            id: 5,
-            name: "Máy bơm nước mini",
-            sales: 63,
-            rating: 4.7,
-            stock: 25,
-            progress: 25,
-          },
-        ]);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  // Dữ liệu biểu đồ tròn thị phần danh mục
   const [categoryData, setCategoryData] = useState({
     labels: [],
     datasets: [],
   });
+  const [kpiData, setKPIData] = useState([
+    {
+      title: "Tỷ lệ chuyển đổi",
+      value: "5.64%",
+      trend: "+0.8%",
+      color: "primary",
+    },
+    {
+      title: "Giá trị đơn hàng TB",
+      value: "2.568.000đ",
+      trend: "+12%",
+      color: "success",
+    },
+    { title: "Tỷ lệ hủy đơn", value: "0.8%", trend: "-0.2%", color: "success" },
+    { title: "Khách hàng quay lại", value: "45%", trend: "+5%", color: "info" },
+  ]);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // 1. Lấy thống kê tổng quan
+      try {
+        const statisticsData = await dashboardService.getStatistics();
+        setStatistics({
+          totalSales: statisticsData.totalSales || 0,
+          totalOrders: statisticsData.totalOrders || 0,
+          totalUsers: statisticsData.totalUsers || 0,
+          totalProducts: statisticsData.totalProducts || 0,
+        });
+      } catch (error) {
+        console.error("Error fetching statistics data:", error);
+        // Dữ liệu mẫu nếu API lỗi
+        setStatistics({
+          totalSales: 45141000,
+          totalOrders: 128,
+          totalUsers: 867,
+          totalProducts: 256,
+        });
+      }
+
+      // 2. Lấy dữ liệu biểu đồ doanh thu
+      try {
+        const salesChartData = await dashboardService.getSalesChart();
+        setSalesData(salesChartData);
+      } catch (error) {
+        console.error("Error fetching sales chart data:", error);
+        // Dữ liệu mẫu nếu API lỗi
+        setSalesData({
+          labels: [
+            "T1",
+            "T2",
+            "T3",
+            "T4",
+            "T5",
+            "T6",
+            "T7",
+            "T8",
+            "T9",
+            "T10",
+            "T11",
+            "T12",
+          ],
+          datasets: [
+            {
+              label: "Doanh thu",
+              data: [
+                2500000, 3200000, 2800000, 5100000, 4300000, 6200000, 5800000,
+                4900000, 6800000, 7100000, 7500000, 8200000,
+              ],
+              borderColor: "#4782DA",
+              backgroundColor: "rgba(71, 130, 218, 0.1)",
+              fill: true,
+            },
+          ],
+        });
+      }
+
+      // 3. Lấy dữ liệu phân bố danh mục sản phẩm
+      try {
+        const categoryData = await dashboardService.getCategoryDistribution();
+        setCategoryData(categoryData);
+      } catch (error) {
+        console.error("Error fetching category data:", error);
+        // Dữ liệu mẫu nếu API lỗi
+        setCategoryData({
+          labels: ["Hạt giống", "Phân bón", "Thuốc BVTV", "Công cụ", "Máy móc"],
+          datasets: [
+            {
+              data: [35, 25, 15, 15, 10],
+              backgroundColor: [
+                "#4782DA",
+                "#FF6B6B",
+                "#56CA00",
+                "#FFB020",
+                "#9C27B0",
+              ],
+            },
+          ],
+        });
+      }
+
+      // 4. Lấy danh sách đơn hàng gần đây
+      try {
+        const recentOrdersData = await dashboardService.getRecentOrders();
+        setRecentOrders(recentOrdersData);
+      } catch (error) {
+        console.error("Error fetching recent orders:", error);
+        // Dữ liệu mẫu nếu API lỗi
+        setRecentOrders(sampleOrders);
+      }
+
+      // 5. Lấy danh sách hoạt động gần đây
+      try {
+        const activitiesData = await dashboardService.getRecentActivities();
+        setActivities(activitiesData);
+      } catch (error) {
+        console.error("Error fetching activities:", error);
+        // Dữ liệu mẫu nếu API lỗi
+        setActivities([
+          {
+            id: "activity-1",
+            type: "order",
+            user: "Nguyễn Văn A",
+            action: "đã đặt một đơn hàng",
+            target: "#1001",
+            time: "2024-06-05 10:23:45",
+          },
+          {
+            id: "activity-2",
+            type: "weather",
+            user: "Hệ thống",
+            action: "phát hiện cảnh báo mưa lớn tại",
+            target: "Hà Nội",
+            time: "2024-06-05 09:15:30",
+          },
+          {
+            id: "activity-3",
+            type: "product",
+            user: "Trần Thị B",
+            action: "đã thêm sản phẩm mới",
+            target: "Hạt giống lúa ST25",
+            time: "2024-06-05 08:45:12",
+          },
+          {
+            id: "activity-4",
+            type: "user",
+            user: "Lê Văn C",
+            action: "đã đăng ký tài khoản",
+            target: "",
+            time: "2024-06-04 17:30:00",
+          },
+          {
+            id: "activity-5",
+            type: "order",
+            user: "Phạm Thị D",
+            action: "đã hủy đơn hàng",
+            target: "#985",
+            time: "2024-06-04 16:15:22",
+          },
+        ]);
+      }
+
+      // 6. Lấy dữ liệu sản phẩm bán chạy
+      try {
+        const topProductsData = await dashboardService.getTopProducts();
+        setProductPerformance(topProductsData);
+      } catch (error) {
+        console.error("Error fetching top products:", error);
+        // Dữ liệu mẫu nếu API lỗi
+        setProductPerformance([
+          {
+            id: 1,
+            name: "Hạt giống lúa ST25",
+            sales: 124,
+            stock: 85,
+            progress: 75,
+          },
+          {
+            id: 2,
+            name: "Phân bón hữu cơ vi sinh",
+            sales: 98,
+            stock: 70,
+            progress: 65,
+          },
+          {
+            id: 3,
+            name: "Thuốc phòng trừ sâu hại",
+            sales: 85,
+            stock: 55,
+            progress: 58,
+          },
+          {
+            id: 4,
+            name: "Máy phun thuốc tự động",
+            sales: 72,
+            stock: 48,
+            progress: 45,
+          },
+          {
+            id: 5,
+            name: "Bộ dụng cụ làm vườn",
+            sales: 65,
+            stock: 92,
+            progress: 40,
+          },
+        ]);
+      }
+
+      // 7. Lấy dữ liệu KPI
+      try {
+        const kpiData = await dashboardService.getKPIData();
+        setKPIData(kpiData);
+      } catch (error) {
+        console.error("Error fetching KPI data:", error);
+        // Giữ nguyên dữ liệu mẫu nếu API lỗi (đã được khởi tạo trong state)
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   // Cấu hình bảng đơn hàng gần đây
   const orderColumns = [
@@ -325,6 +354,14 @@ const DashboardPage = () => {
           CANCELLED: "error.main",
         };
 
+        const statusText = {
+          PENDING: "Chờ xử lý",
+          PROCESSING: "Đang xử lý",
+          SHIPPED: "Đang giao hàng",
+          DELIVERED: "Đã giao hàng",
+          CANCELLED: "Đã huỷ",
+        };
+
         return (
           <Typography
             component="span"
@@ -333,11 +370,7 @@ const DashboardPage = () => {
               fontWeight: "medium",
             }}
           >
-            {value === "PENDING" && "Chờ xử lý"}
-            {value === "PROCESSING" && "Đang xử lý"}
-            {value === "SHIPPED" && "Đang giao hàng"}
-            {value === "DELIVERED" && "Đã giao hàng"}
-            {value === "CANCELLED" && "Đã huỷ"}
+            {statusText[value] || value}
           </Typography>
         );
       },
@@ -389,24 +422,6 @@ const DashboardPage = () => {
       status: "CANCELLED",
       total: 950000,
     },
-  ];
-
-  // Chỉ số hiệu suất chính
-  const kpiData = [
-    {
-      title: "Tỷ lệ chuyển đổi",
-      value: "5.64%",
-      trend: "+0.8%",
-      color: "primary",
-    },
-    {
-      title: "Giá trị đơn hàng TB",
-      value: "2.568.000đ",
-      trend: "+12%",
-      color: "success",
-    },
-    { title: "Tỷ lệ hủy đơn", value: "0.8%", trend: "-0.2%", color: "success" },
-    { title: "Khách hàng quay lại", value: "45%", trend: "+5%", color: "info" },
   ];
 
   return (
@@ -513,19 +528,19 @@ const DashboardPage = () => {
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "baseline", mb: 1 }}>
                   <Typography variant="h5" component="div" fontWeight="bold">
-                    {kpi.value}
+                    {kpi.value || "0đ"}
                   </Typography>
                   <Typography
                     variant="caption"
                     sx={{
                       ml: 1,
-                      color: kpi.trend.startsWith("+")
+                      color: kpi.trend?.startsWith("+")
                         ? "success.main"
                         : "error.main",
                       fontWeight: "bold",
                     }}
                   >
-                    {kpi.trend}
+                    {kpi.trend || "+0%"}
                   </Typography>
                 </Box>
                 <ProgressBar value={65 + index * 5} color={kpi.color} />
@@ -702,18 +717,26 @@ const DashboardPage = () => {
                 justifyContent: "center",
               }}
             >
-              <ChartCard
-                chartType="doughnut"
-                data={categoryData}
-                options={{
-                  plugins: {
-                    legend: {
-                      position: "bottom",
+              {categoryData &&
+              categoryData.labels &&
+              categoryData.labels.length > 0 ? (
+                <ChartCard
+                  chartType="doughnut"
+                  data={categoryData}
+                  options={{
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
                     },
-                  },
-                  cutout: "70%",
-                }}
-              />
+                    cutout: "70%",
+                  }}
+                />
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Đang tải dữ liệu danh mục...
+                </Typography>
+              )}
             </Box>
           </StyledPaper>
         </Grid>
@@ -728,38 +751,48 @@ const DashboardPage = () => {
             <Divider />
             <Box sx={{ p: 2 }}>
               <Grid container spacing={2}>
-                {productPerformance.map((product) => (
-                  <Grid item xs={12} key={product.id}>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <Box sx={{ flexGrow: 1, mr: 2 }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            mb: 0.5,
-                          }}
-                        >
-                          <Typography variant="body2" fontWeight="medium">
-                            {product.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {product.sales} đã bán
-                          </Typography>
+                {productPerformance && productPerformance.length > 0 ? (
+                  productPerformance.map((product) => (
+                    <Grid item xs={12} key={product.id}>
+                      <Box display="flex" alignItems="center" mb={1}>
+                        <Box flexGrow={1} mr={2}>
+                          <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            mb={0.5}
+                          >
+                            <Typography variant="body2" fontWeight="medium">
+                              {product.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {product.sales} đã bán
+                            </Typography>
+                          </Box>
+                          <ProgressBar
+                            value={product.progress}
+                            color={product.progress < 30 ? "error" : "primary"}
+                          />
                         </Box>
-                        <ProgressBar
-                          value={product.progress}
-                          color={product.progress < 30 ? "error" : "primary"}
+                        <Chip
+                          label={`${product.stock}%`}
+                          size="small"
+                          color={product.stock < 30 ? "error" : "primary"}
+                          variant={product.stock < 30 ? "filled" : "outlined"}
                         />
                       </Box>
-                      <Chip
-                        label={`${product.stock}%`}
-                        size="small"
-                        color={product.stock < 30 ? "error" : "primary"}
-                        variant={product.stock < 30 ? "filled" : "outlined"}
-                      />
-                    </Box>
+                    </Grid>
+                  ))
+                ) : (
+                  <Grid item xs={12}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      align="center"
+                    >
+                      Đang tải dữ liệu sản phẩm...
+                    </Typography>
                   </Grid>
-                ))}
+                )}
               </Grid>
             </Box>
             <Box sx={{ p: 2, borderTop: "1px solid #f0f0f0" }}>
@@ -787,7 +820,11 @@ const DashboardPage = () => {
             <Divider />
             <DataTable
               columns={orderColumns}
-              data={recentOrders.length ? recentOrders : sampleOrders}
+              data={
+                recentOrders && recentOrders.length > 0
+                  ? recentOrders
+                  : sampleOrders
+              }
               loading={isLoading}
               pagination={true}
               selectable={false}

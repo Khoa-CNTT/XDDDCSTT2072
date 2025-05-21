@@ -15,29 +15,28 @@ import {
 import {
   Dashboard as DashboardIcon,
   ShoppingCart as ShoppingCartIcon,
-  People as PeopleIcon,
   Category as CategoryIcon,
+  Newspaper as NewspaperIcon,
+  Cloud as CloudIcon,
+  People as PeopleIcon,
+  Home as HomeIcon,
   Settings as SettingsIcon,
   LocalOffer as LocalOfferIcon,
-  Forum as ForumIcon,
-  ExpandLess,
-  ExpandMore,
-  MonetizationOn as MonetizationOnIcon,
   Notifications as NotificationsIcon,
-  Home as HomeIcon,
-  Cloud as CloudIcon,
+  Payment as PaymentIcon,
+  ForumOutlined as ForumIcon,
   LocationOn as LocationOnIcon,
   WbSunny as SunnyIcon,
   Spa as SpaIcon,
-  Assessment as AssessmentIcon,
   Warning as WarningIcon,
-  Newspaper as NewspaperIcon,
+  Assessment as AssessmentIcon,
   Business as BusinessIcon,
+  Recommend as RecommendIcon,
+  Subscriptions as SubscriptionIcon,
+  MonetizationOn as MonetizationOnIcon,
+  ExpandLess,
+  ExpandMore,
 } from "@mui/icons-material";
-import SubscriptionIcon from "@mui/icons-material/Subscriptions";
-import PaymentIcon from "@mui/icons-material/Payment";
-import PersonIcon from "@mui/icons-material/Person";
-import RecommendIcon from "@mui/icons-material/Recommend";
 
 // Styled components
 const SidebarContainer = styled(Box)(({ theme }) => ({
@@ -237,11 +236,6 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           text: "Gói Đăng Ký",
           path: "/subscription-plans",
           icon: <PaymentIcon fontSize="small" />,
-        },
-        {
-          text: "Đăng Ký Người Dùng",
-          path: "/user-subscriptions",
-          icon: <PersonIcon fontSize="small" />,
         },
         {
           text: "Đơn Đăng Ký Bán Hàng",

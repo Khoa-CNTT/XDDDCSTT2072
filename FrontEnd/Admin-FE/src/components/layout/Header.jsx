@@ -32,6 +32,7 @@ import {
   Home as HomeIcon,
 } from "@mui/icons-material";
 import authService from "../../services/authService";
+import logoImage from "../../assets/logo.jpg";
 
 // Styled components
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
@@ -236,7 +237,7 @@ const Header = ({ handleDrawerToggle }) => {
           {/* Logo và tiêu đề */}
           <LogoContainer>
             <Avatar
-              src="/admin-logo.png"
+              src={logoImage}
               alt="Admin Logo"
               sx={{
                 width: 40,
