@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import {
   Dialog,
@@ -29,6 +29,22 @@ import flashSaleService from "../services/flashSaleService";
 import productService from "../services/productService";
 import { formatCurrency } from "../utils/formatters";
 
+// SafeRender component to catch rendering errors
+const SafeRender = ({ children, fallback = null }) => {
+  try {
+    return children();
+  } catch (error) {
+    console.error("Render error caught:", error);
+    return (
+      fallback || (
+        <Typography color="error">
+          Lỗi hiển thị: {error.message || "Lỗi không xác định"}
+        </Typography>
+      )
+    );
+  }
+};
+
 const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
@@ -44,34 +60,111 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
   const [errors, setErrors] = useState({});
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [productLoading, setProductLoading] = useState(false);
+  const [operationInProgress, setOperationInProgress] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
+  // Reset state completely when dialog is closed
   useEffect(() => {
-    if (open && flashSale) {
-      fetchFlashSaleDetails();
+    if (!open) {
+      // Reset all state values to prevent stale data issues
+      setPage(0);
+      setFlashSaleItems([]);
+      setSelectedProduct(null);
+      setErrors({});
+      setFormData({
+        productId: null,
+        stockQuantity: 10,
+        discountPrice: 0,
+        originalPrice: 0,
+        discountPercentage: null,
+      });
+      setProducts([]);
     }
-  }, [open, flashSale]);
+  }, [open]);
 
-  // Thêm useEffect để debug products
-  useEffect(() => {
-    if (products.length > 0) {
-      console.log("Products trong state:", products);
-      console.log("Mẫu sản phẩm đầu tiên:", products[0]);
-    } else {
-      console.log("Không có sản phẩm trong state");
+  // Use memoized fetch function to avoid dependencies issues
+  const fetchFlashSaleDetails = useCallback(async () => {
+    if (!flashSale || !flashSale.id) {
+      console.error("Invalid Flash Sale object", flashSale);
+      enqueueSnackbar("Không thể tải thông tin Flash Sale", {
+        variant: "error",
+      });
+      setLoading(false);
+      return;
     }
-  }, [products]);
 
-  const fetchFlashSaleDetails = async () => {
-    setLoading(true);
     try {
+      console.log("Fetching Flash Sale details for ID:", flashSale.id);
+      setLoading(true);
       const response = await flashSaleService.getFlashSaleById(flashSale.id);
-      if (response.success) {
-        setFlashSaleItems(response.data.items || []);
-        await fetchProducts(response.data.items || []);
+      console.log("Flash Sale API response:", response);
+
+      if (response && response.success) {
+        const safeItems = [];
+
+        if (
+          response.data &&
+          response.data.items &&
+          Array.isArray(response.data.items)
+        ) {
+          // Process each item to ensure no undefined values
+          response.data.items.forEach((item, index) => {
+            if (!item) return; // Skip null or undefined items
+
+            // Create a safe item with default values for all required properties
+            const safeItem = {
+              id: item.id || `temp-${index}`,
+              productId: item.productId || null,
+              originalPrice: item.originalPrice || 0,
+              discountPrice: item.discountPrice || 0,
+              discountPercentage: item.discountPercentage || 0,
+              stockQuantity: item.stockQuantity || 0,
+              soldQuantity: item.soldQuantity || 0,
+            };
+
+            // Handle product object safely
+            if (item.product) {
+              safeItem.product = {
+                id: item.product.id || item.productId || null,
+                name:
+                  item.product.name ||
+                  `Sản phẩm ID: ${item.productId || index}`,
+              };
+            } else if (item.productId) {
+              safeItem.product = {
+                id: item.productId,
+                name: `Sản phẩm ID: ${item.productId}`,
+              };
+            } else {
+              safeItem.product = {
+                id: null,
+                name: "Sản phẩm không xác định",
+              };
+            }
+
+            safeItems.push(safeItem);
+          });
+        }
+
+        console.log("Safe items:", safeItems);
+        setFlashSaleItems(safeItems);
+
+        try {
+          setProductLoading(true);
+          await fetchProducts(safeItems);
+        } catch (error) {
+          console.error("Error fetching products:", error);
+          enqueueSnackbar("Đã xảy ra lỗi khi tải danh sách sản phẩm", {
+            variant: "warning",
+          });
+        } finally {
+          setProductLoading(false);
+        }
       } else {
+        console.error("Failed to fetch Flash Sale details:", response);
         enqueueSnackbar(
-          response.message || "Không thể tải chi tiết Flash Sale",
+          response?.message || "Không thể tải chi tiết Flash Sale",
           { variant: "error" }
         );
       }
@@ -83,79 +176,60 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [flashSale, enqueueSnackbar]);
+
+  // Fetch Flash Sale details when the dialog opens
+  useEffect(() => {
+    if (open && flashSale && flashSale.id) {
+      // Use a short timeout to ensure UI renders first
+      setTimeout(() => {
+        fetchFlashSaleDetails();
+      }, 100);
+    }
+  }, [open, flashSale, fetchFlashSaleDetails]);
 
   const fetchProducts = async (currentItems = []) => {
     try {
-      console.log("Đang tải danh sách sản phẩm...");
-      setLoading(true);
-
-      // Thử lấy sản phẩm từ API
+      console.log("Fetching available products...");
       const response = await productService.getAllProducts(0, 1000);
-      console.log("Dữ liệu trả về từ API:", response);
 
-      // Tạo mảng để lưu các sản phẩm sau khi xử lý
       let productsList = [];
 
-      // Kiểm tra API response thành công
-      if (response && response.success) {
-        // Tìm dữ liệu sản phẩm từ response với nhiều cấu trúc khác nhau
-
-        // Trường hợp 1: data.content[] (Spring Data Page)
-        if (
-          response.data &&
+      if (response && response.success && response.data) {
+        // Handle different API response formats
+        if (Array.isArray(response.data)) {
+          productsList = response.data;
+        } else if (
           response.data.content &&
           Array.isArray(response.data.content)
         ) {
-          console.log("Tìm thấy dữ liệu cấu trúc: response.data.content[]");
           productsList = response.data.content;
-        }
-        // Trường hợp 2: data[] (Array trực tiếp)
-        else if (response.data && Array.isArray(response.data)) {
-          console.log("Tìm thấy dữ liệu cấu trúc: response.data[]");
-          productsList = response.data;
-        }
-        // Trường hợp 3: data.data[] (Nested data)
-        else if (
-          response.data &&
-          response.data.data &&
-          Array.isArray(response.data.data)
-        ) {
-          console.log("Tìm thấy dữ liệu cấu trúc: response.data.data[]");
-          productsList = response.data.data;
-        }
-        // Trường hợp 4: data.data.content[] (Nested Spring Data Page)
-        else if (
-          response.data &&
-          response.data.data &&
-          response.data.data.content &&
-          Array.isArray(response.data.data.content)
-        ) {
-          console.log(
-            "Tìm thấy dữ liệu cấu trúc: response.data.data.content[]"
-          );
-          productsList = response.data.data.content;
-        } else {
-          console.error(
-            "Không thể xác định cấu trúc dữ liệu sản phẩm:",
-            response.data
-          );
-          // Cấu trúc không xác định, kiểm tra xem có trường nào chứa mảng sản phẩm
-          for (const key in response.data) {
-            if (Array.isArray(response.data[key])) {
-              console.log(`Tìm thấy mảng trong response.data.${key}`);
-              productsList = response.data[key];
-              break;
-            }
+        } else if (response.data.data) {
+          if (Array.isArray(response.data.data)) {
+            productsList = response.data.data;
+          } else if (
+            response.data.data.content &&
+            Array.isArray(response.data.data.content)
+          ) {
+            productsList = response.data.data.content;
           }
         }
       }
 
-      // Kiểm tra nếu không lấy được dữ liệu từ API, sử dụng dữ liệu mẫu
-      if (productsList.length === 0) {
-        console.warn(
-          "Không nhận được dữ liệu sản phẩm từ API, sử dụng dữ liệu mẫu"
-        );
+      // Ensure all products have valid properties
+      productsList = productsList
+        .filter((product) => product && product.id)
+        .map((product) => ({
+          id: product.id,
+          name: product.name || `Sản phẩm ID: ${product.id}`,
+          price: product.price || 0,
+          quantity: product.quantity || 0,
+          status: product.status || "UNKNOWN",
+        }));
+
+      // Use fallback data if no products found
+      if (!productsList || productsList.length === 0) {
+        console.warn("No products found, using sample data");
         productsList = [
           {
             id: 1001,
@@ -170,131 +244,42 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
             name: "Hạt giống rau muống đỏ (gói 50g)",
             price: 35000,
             quantity: 50,
-            description:
-              "Hạt giống rau muống đỏ chất lượng cao, tỷ lệ nảy mầm cao",
-            status: "ACTIVE",
-          },
-          {
-            id: 1003,
-            name: "Thuốc trừ sâu sinh học (chai 500ml)",
-            price: 120000,
-            quantity: 30,
-            description: "Thuốc trừ sâu sinh học an toàn cho rau sạch",
-            status: "ACTIVE",
-          },
-          {
-            id: 1004,
-            name: "Chậu nhựa trồng rau thông minh (bộ 5 chậu)",
-            price: 85000,
-            quantity: 20,
-            description: "Chậu nhựa cao cấp với hệ thống thoát nước thông minh",
-            status: "ACTIVE",
-          },
-          {
-            id: 1005,
-            name: "Kéo cắt tỉa cây cảnh",
-            price: 150000,
-            quantity: 15,
-            description: "Kéo cắt tỉa sắc bén, chất liệu inox chống gỉ",
+            description: "Hạt giống rau muống đỏ chất lượng cao",
             status: "ACTIVE",
           },
         ];
-
-        enqueueSnackbar(
-          "Không thể lấy dữ liệu sản phẩm từ API, đang sử dụng dữ liệu mẫu",
-          { variant: "warning" }
-        );
       }
 
-      console.log(
-        "Danh sách sản phẩm (trước khi lọc):",
-        productsList.length,
-        "sản phẩm"
-      );
-      console.log("Danh sách sản phẩm đầu tiên:", productsList[0]);
-      console.log(
-        "Danh sách sản phẩm đã có trong Flash Sale:",
-        currentItems.length,
-        "sản phẩm"
-      );
+      // Filter out products already in the flash sale
+      const availableProducts = productsList.filter((product) => {
+        if (!product || !product.id) return false;
 
-      // Lọc ra các sản phẩm chưa có trong Flash Sale
-      let availableProducts = [];
-      if (currentItems && currentItems.length > 0) {
-        availableProducts = productsList.filter((product) => {
-          // Kiểm tra xem sản phẩm đã tồn tại trong currentItems chưa
-          const exists = currentItems.some(
-            (item) =>
-              (item.product &&
-                item.product.id &&
-                item.product.id === product.id) ||
-              (item.productId && item.productId === product.id)
-          );
-          return !exists;
+        return !currentItems.some((item) => {
+          if (!item) return false;
+          const productId = item.product?.id || item.productId;
+          return productId === product.id;
         });
-      } else {
-        availableProducts = productsList;
-      }
+      });
 
-      console.log(
-        "Danh sách sản phẩm có sẵn (sau khi lọc):",
-        availableProducts.length,
-        "sản phẩm"
-      );
-
-      // Cập nhật state
+      console.log(`Found ${availableProducts.length} available products`);
       setProducts(availableProducts);
+      return availableProducts;
     } catch (error) {
       console.error("Error fetching products:", error);
-
-      // Log chi tiết lỗi
-      if (error.response) {
-        console.error("Status:", error.response.status);
-        console.error("Data:", error.response.data);
-      }
-
-      // Sử dụng dữ liệu mẫu khi có lỗi
-      const sampleProducts = [
-        {
-          id: 3001,
-          name: "Bình xịt thuốc cầm tay (2L)",
-          price: 95000,
-          quantity: 20,
-          description: "Bình xịt thuốc cầm tay tiện dụng",
-          status: "ACTIVE",
-        },
-        {
-          id: 3002,
-          name: "Cuốc làm vườn mini",
-          price: 65000,
-          quantity: 25,
-          description: "Cuốc làm vườn cỡ nhỏ cho chậu cảnh",
-          status: "ACTIVE",
-        },
-        {
-          id: 3003,
-          name: "Hạt giống cà chua bi (gói 5g)",
-          price: 30000,
-          quantity: 40,
-          description: "Hạt giống cà chua bi chất lượng cao",
-          status: "ACTIVE",
-        },
-      ];
-
-      setProducts(sampleProducts);
-      enqueueSnackbar(
-        "Đã xảy ra lỗi khi tải danh sách sản phẩm, đang sử dụng dữ liệu mẫu",
-        {
-          variant: "error",
-        }
-      );
-    } finally {
-      setLoading(false);
+      enqueueSnackbar("Không thể tải danh sách sản phẩm", { variant: "error" });
+      setProducts([]);
+      throw error;
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === undefined || value === undefined) {
+      console.warn("Invalid event in handleChange", e);
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -307,9 +292,10 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
       }));
     }
 
+    // Update related fields based on changes
     if (name === "discountPrice" && selectedProduct) {
-      const originalPrice = selectedProduct.price;
-      const discountPrice = parseFloat(value);
+      const originalPrice = selectedProduct.price || 0;
+      const discountPrice = parseFloat(value) || 0;
       if (originalPrice > 0 && discountPrice > 0) {
         const discountPercentage = Math.round(
           ((originalPrice - discountPrice) / originalPrice) * 100
@@ -320,8 +306,8 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
         }));
       }
     } else if (name === "discountPercentage" && selectedProduct) {
-      const originalPrice = selectedProduct.price;
-      const discountPercentage = parseFloat(value);
+      const originalPrice = selectedProduct.price || 0;
+      const discountPercentage = parseFloat(value) || 0;
       if (
         originalPrice > 0 &&
         discountPercentage >= 0 &&
@@ -339,53 +325,91 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
   };
 
   const handleProductChange = (event, newValue) => {
-    setSelectedProduct(newValue);
-    if (newValue) {
-      const originalPrice = newValue.price;
-      const discountPercentage = flashSale.discountPercentage || 10;
-      const discountPrice = Math.round(
-        originalPrice - (originalPrice * discountPercentage) / 100
-      );
+    try {
+      // Validate product
+      if (!newValue) {
+        setSelectedProduct(null);
+        setFormData((prev) => ({
+          ...prev,
+          productId: null,
+          originalPrice: 0,
+          discountPrice: 0,
+        }));
+        return;
+      }
 
-      setFormData({
-        productId: newValue.id,
-        stockQuantity: 10,
+      // Ensure the product has valid properties
+      const safeProduct = {
+        id: newValue.id,
+        name: newValue.name || `Sản phẩm ID: ${newValue.id}`,
+        price: newValue.price || 0,
+      };
+
+      setSelectedProduct(safeProduct);
+
+      // Update form data with product details
+      const originalPrice = safeProduct.price;
+      let discountPrice = originalPrice;
+      let discountPercentage =
+        formData.discountPercentage || flashSale?.discountPercentage || 10;
+
+      // Calculate discount price if we have a percentage
+      if (discountPercentage > 0 && discountPercentage <= 100) {
+        discountPrice = Math.round(
+          originalPrice - (originalPrice * discountPercentage) / 100
+        );
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        productId: safeProduct.id,
+        originalPrice: originalPrice,
         discountPrice: discountPrice > 0 ? discountPrice : 0,
-        originalPrice,
-        discountPercentage,
-      });
-    } else {
-      setFormData({
-        productId: null,
-        stockQuantity: 10,
-        discountPrice: 0,
-        originalPrice: 0,
-        discountPercentage: flashSale.discountPercentage || 10,
-      });
+        discountPercentage: discountPercentage,
+      }));
+
+      // Clear product error if it exists
+      if (errors.productId) {
+        setErrors((prev) => ({
+          ...prev,
+          productId: null,
+        }));
+      }
+    } catch (error) {
+      console.error("Error in handleProductChange:", error);
+      enqueueSnackbar(
+        `Lỗi khi chọn sản phẩm: ${error.message || "Lỗi không xác định"}`,
+        {
+          variant: "error",
+        }
+      );
     }
-    setErrors({});
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.productId) {
-      newErrors.productId = "Sản phẩm không được để trống";
+    if (!formData.productId && !selectedProduct) {
+      newErrors.productId = "Vui lòng chọn sản phẩm";
     }
 
-    if (!formData.stockQuantity || formData.stockQuantity < 1) {
-      newErrors.stockQuantity = "Số lượng tồn phải lớn hơn 0";
+    if (!formData.stockQuantity || formData.stockQuantity <= 0) {
+      newErrors.stockQuantity = "Vui lòng nhập số lượng tồn hợp lệ";
     }
 
-    if (!formData.discountPrice || formData.discountPrice < 0) {
-      newErrors.discountPrice = "Giá sau giảm không được âm";
-    }
-
-    if (formData.originalPrice <= 0) {
+    if (!formData.originalPrice || formData.originalPrice <= 0) {
       newErrors.originalPrice = "Giá gốc phải lớn hơn 0";
     }
 
-    if (formData.discountPrice >= formData.originalPrice) {
+    if (!formData.discountPrice || formData.discountPrice <= 0) {
+      newErrors.discountPrice = "Giá sau giảm phải lớn hơn 0";
+    }
+
+    if (formData.discountPercentage < 0 || formData.discountPercentage > 100) {
+      newErrors.discountPercentage = "Phần trăm giảm giá phải từ 0 đến 100";
+    }
+
+    if (Number(formData.discountPrice) >= Number(formData.originalPrice)) {
       newErrors.discountPrice = "Giá sau giảm phải nhỏ hơn giá gốc";
     }
 
@@ -394,35 +418,61 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
 
     if (!validateForm()) {
       enqueueSnackbar("Vui lòng kiểm tra lại thông tin", { variant: "error" });
       return;
     }
 
+    // Extra validation for product safety
+    if (!formData.productId && selectedProduct) {
+      setFormData((prev) => ({
+        ...prev,
+        productId: selectedProduct.id,
+      }));
+    }
+
+    if (!formData.productId) {
+      enqueueSnackbar("Vui lòng chọn sản phẩm", { variant: "error" });
+      return;
+    }
+
     setLoading(true);
+    setOperationInProgress(true);
     try {
+      const safeFormData = {
+        productId: formData.productId,
+        stockQuantity: parseInt(formData.stockQuantity) || 10,
+        discountPrice: parseInt(formData.discountPrice) || 0,
+        originalPrice: parseInt(formData.originalPrice) || 0,
+        discountPercentage: parseInt(formData.discountPercentage) || 0,
+      };
+
+      console.log("Sending data to API:", safeFormData);
       const response = await flashSaleService.addProductToFlashSale(
         flashSale.id,
-        formData
+        safeFormData
       );
-      if (response.success) {
+      console.log("API response:", response);
+
+      if (response && response.success) {
         enqueueSnackbar("Thêm sản phẩm vào Flash Sale thành công", {
           variant: "success",
         });
-        fetchFlashSaleDetails();
+        await fetchFlashSaleDetails();
         setFormData({
           productId: null,
           stockQuantity: 10,
           discountPrice: 0,
           originalPrice: 0,
-          discountPercentage: flashSale.discountPercentage || 10,
+          discountPercentage: flashSale?.discountPercentage || 10,
         });
         setSelectedProduct(null);
-        onUpdate();
+        onUpdate && onUpdate();
       } else {
-        enqueueSnackbar(response.message || "Không thể thêm sản phẩm", {
+        console.error("Failed to add product to flash sale:", response);
+        enqueueSnackbar(response?.message || "Không thể thêm sản phẩm", {
           variant: "error",
         });
       }
@@ -431,36 +481,81 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
       enqueueSnackbar("Đã xảy ra lỗi khi thêm sản phẩm", { variant: "error" });
     } finally {
       setLoading(false);
+      setOperationInProgress(false);
     }
   };
 
   const handleRemoveProduct = async (productId) => {
+    if (!productId) {
+      enqueueSnackbar("Không thể xác định ID sản phẩm cần xóa", {
+        variant: "error",
+      });
+      return;
+    }
+
     if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi Flash Sale?")) {
       return;
     }
 
     setLoading(true);
+    setOperationInProgress(true);
     try {
+      console.log(
+        `Removing product ID ${productId} from Flash Sale ID ${flashSale.id}`
+      );
       const response = await flashSaleService.removeProductFromFlashSale(
         flashSale.id,
         productId
       );
-      if (response.success) {
-        enqueueSnackbar("Xóa sản phẩm khỏi Flash Sale thành công", {
-          variant: "success",
+
+      console.log("Remove product response:", response);
+
+      if (response && response.success) {
+        enqueueSnackbar("Xóa sản phẩm thành công", { variant: "success" });
+
+        // Update local state to avoid full reload
+        setFlashSaleItems((prevItems) =>
+          prevItems.filter((item) => {
+            const itemProductId = item.product?.id || item.productId;
+            return itemProductId !== productId;
+          })
+        );
+
+        // Add removed product back to available products
+        const removedItem = flashSaleItems.find((item) => {
+          const itemProductId = item.product?.id || item.productId;
+          return itemProductId === productId;
         });
-        fetchFlashSaleDetails();
-        onUpdate();
+
+        if (removedItem && removedItem.product) {
+          const productToAdd = {
+            id: removedItem.product.id,
+            name: removedItem.product.name,
+            price: removedItem.originalPrice,
+            quantity: removedItem.stockQuantity,
+            status: "ACTIVE",
+          };
+
+          setProducts((prev) => [...prev, productToAdd]);
+        }
+
+        // Refresh data from server after a short delay
+        setTimeout(() => {
+          fetchFlashSaleDetails();
+          onUpdate && onUpdate();
+        }, 500);
       } else {
-        enqueueSnackbar(response.message || "Không thể xóa sản phẩm", {
+        console.error("Failed to remove product:", response);
+        enqueueSnackbar(response?.message || "Không thể xóa sản phẩm", {
           variant: "error",
         });
       }
     } catch (error) {
-      console.error("Error removing product from flash sale:", error);
+      console.error("Error removing product:", error);
       enqueueSnackbar("Đã xảy ra lỗi khi xóa sản phẩm", { variant: "error" });
     } finally {
       setLoading(false);
+      setOperationInProgress(false);
     }
   };
 
@@ -473,290 +568,402 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
     setPage(0);
   };
 
+  // Render helper functions
+  const renderProductList = () => {
+    try {
+      if (!flashSaleItems || flashSaleItems.length === 0) {
+        return (
+          <TableRow>
+            <TableCell colSpan={8} align="center">
+              Chưa có sản phẩm nào trong Flash Sale
+            </TableCell>
+          </TableRow>
+        );
+      }
+
+      const startIndex = page * rowsPerPage;
+      const endIndex = Math.min(
+        startIndex + rowsPerPage,
+        flashSaleItems.length
+      );
+      const currentPageItems = flashSaleItems.slice(startIndex, endIndex);
+
+      return currentPageItems.map((item, index) => {
+        // Safety check
+        if (!item) {
+          return (
+            <TableRow key={`empty-${index}`}>
+              <TableCell colSpan={8} align="center">
+                Dữ liệu không hợp lệ
+              </TableCell>
+            </TableRow>
+          );
+        }
+
+        // Make sure we have a valid name with fallback
+        const productName =
+          item.product?.name ||
+          (item.productId
+            ? `Sản phẩm ID: ${item.productId}`
+            : `Sản phẩm không xác định ${index}`);
+
+        return (
+          <TableRow key={item.id || `item-${index}`}>
+            <TableCell>{productName}</TableCell>
+            <TableCell align="right">
+              {formatCurrency(item.originalPrice || 0)}
+            </TableCell>
+            <TableCell align="right">
+              {formatCurrency(item.discountPrice || 0)}
+            </TableCell>
+            <TableCell align="center">
+              {item.discountPercentage || 0}%
+            </TableCell>
+            <TableCell align="center">{item.stockQuantity || 0}</TableCell>
+            <TableCell align="center">{item.soldQuantity || 0}</TableCell>
+            <TableCell align="center">
+              {(item.stockQuantity || 0) - (item.soldQuantity || 0)}
+            </TableCell>
+            <TableCell align="center">
+              <IconButton
+                color="error"
+                onClick={() => {
+                  const idToRemove = item.product?.id || item.productId;
+                  if (idToRemove) {
+                    handleRemoveProduct(idToRemove);
+                  } else {
+                    enqueueSnackbar("Không thể xác định ID sản phẩm", {
+                      variant: "error",
+                    });
+                  }
+                }}
+                disabled={loading || operationInProgress}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </TableCell>
+          </TableRow>
+        );
+      });
+    } catch (error) {
+      console.error("Error rendering product list:", error);
+      return (
+        <TableRow>
+          <TableCell colSpan={8} align="center">
+            <Typography color="error">
+              Lỗi hiển thị danh sách: {error.message || "Lỗi không xác định"}
+            </Typography>
+          </TableCell>
+        </TableRow>
+      );
+    }
+  };
+
+  // Main render
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>Quản lý sản phẩm Flash Sale: {flashSale?.name}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      aria-labelledby="flash-sale-products-dialog"
+    >
+      <DialogTitle id="flash-sale-products-dialog">
+        {flashSale
+          ? `Quản lý sản phẩm Flash Sale: ${flashSale.name || ""}`
+          : "Quản lý sản phẩm Flash Sale"}
+        {operationInProgress && (
+          <CircularProgress
+            size={24}
+            sx={{
+              position: "absolute",
+              top: "50%",
+              right: 16,
+              marginTop: "-12px",
+            }}
+          />
+        )}
+      </DialogTitle>
+
       <DialogContent>
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Thêm sản phẩm mới vào Flash Sale
-          </Typography>
+        {!flashSale ? (
+          <Box sx={{ p: 3, textAlign: "center" }}>
+            <Typography color="error">
+              Không tìm thấy thông tin Flash Sale. Vui lòng đóng và thử lại.
+            </Typography>
+            <Button variant="contained" onClick={onClose} sx={{ mt: 2 }}>
+              Đóng
+            </Button>
+          </Box>
+        ) : (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Thêm sản phẩm mới vào Flash Sale
+            </Typography>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Autocomplete
-                options={products}
-                getOptionLabel={(option) => {
-                  console.log("Option trong getOptionLabel:", option);
-                  // Đảm bảo option.name tồn tại, nếu không dùng id hoặc empty string
-                  return (
-                    option?.name ||
-                    option?.productName ||
-                    `ID: ${option?.id || "Unknown"}` ||
-                    ""
-                  );
-                }}
-                value={selectedProduct}
-                onChange={handleProductChange}
-                filterOptions={(options, state) => {
-                  // In ra full info của tất cả options
-                  console.log("Tất cả products trong filterOptions:", options);
-
-                  // Hàm chuyển đổi chuỗi sang Unicode NFD để so sánh không phân biệt dấu
-                  const normalizeText = (text) => {
-                    if (!text) return "";
-                    return text
-                      .normalize("NFD")
-                      .replace(/[\u0300-\u036f]/g, "")
-                      .toLowerCase();
-                  };
-
-                  // Lọc sản phẩm theo tên, không phân biệt hoa thường và dấu
-                  const inputValue = normalizeText(state.inputValue);
-
-                  // Lọc các options theo input
-                  const filtered = options.filter((option) => {
-                    const name = normalizeText(
-                      option?.name || option?.productName || ""
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Autocomplete
+                  options={products || []}
+                  getOptionLabel={(option) => {
+                    if (!option) return "";
+                    return (
+                      option.name ||
+                      option.productName ||
+                      `ID: ${option.id || "Unknown"}` ||
+                      ""
                     );
-                    return name.includes(inputValue);
-                  });
+                  }}
+                  value={selectedProduct}
+                  onChange={handleProductChange}
+                  renderOption={(props, option) => {
+                    if (!option) return null;
+                    return (
+                      <li {...props}>
+                        <strong>
+                          {option.name || option.productName || "Unknown"}
+                        </strong>{" "}
+                        -
+                        {option.price ? ` ${formatCurrency(option.price)}` : ""}{" "}
+                        - ID: {option.id || "N/A"}
+                      </li>
+                    );
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Chọn sản phẩm"
+                      required
+                      error={!!errors.productId}
+                      helperText={
+                        errors.productId ||
+                        (!products || products.length === 0
+                          ? "Không có sản phẩm để chọn"
+                          : "")
+                      }
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {productLoading && (
+                              <CircularProgress color="inherit" size={20} />
+                            )}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  noOptionsText="Không tìm thấy sản phẩm phù hợp"
+                  loading={productLoading}
+                  loadingText="Đang tải..."
+                />
+              </Grid>
 
-                  console.log("Kết quả lọc:", filtered);
-                  return filtered;
-                }}
-                renderOption={(props, option) => (
-                  <li {...props}>
-                    <strong>{option?.name || option?.productName}</strong> -
-                    {option?.price ? ` ${formatCurrency(option.price)}` : ""} -
-                    ID: {option?.id || "N/A"}
-                  </li>
-                )}
-                renderInput={(params) => (
+              <Grid item xs={12} sm={6}>
+                <Box display="flex" flexDirection="column" height="100%">
                   <TextField
-                    {...params}
-                    label="Chọn sản phẩm"
+                    name="stockQuantity"
+                    label="Số lượng tồn"
+                    type="number"
+                    fullWidth
                     required
-                    error={!!errors.productId}
-                    helperText={
-                      errors.productId ||
-                      (products.length === 0 ? "Không có sản phẩm để chọn" : "")
-                    }
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loading && (
-                            <CircularProgress color="inherit" size={20} />
-                          )}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
+                    value={formData.stockQuantity}
+                    onChange={handleChange}
+                    inputProps={{ min: 1 }}
+                    error={!!errors.stockQuantity}
+                    helperText={errors.stockQuantity}
                   />
-                )}
-                noOptionsText="Không tìm thấy sản phẩm phù hợp"
-                loading={loading}
-                loadingText="Đang tải..."
-              />
-            </Grid>
+                  <Box mt={1}>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => {
+                        setProductLoading(true);
+                        // Add small delay to ensure loading state is visible
+                        setTimeout(() => {
+                          fetchProducts(flashSaleItems)
+                            .then(() => {
+                              enqueueSnackbar(
+                                "Danh sách sản phẩm đã được làm mới",
+                                {
+                                  variant: "success",
+                                }
+                              );
+                            })
+                            .catch(() => {})
+                            .finally(() => {
+                              setProductLoading(false);
+                            });
+                        }, 300);
+                      }}
+                      disabled={productLoading || operationInProgress}
+                      fullWidth
+                      startIcon={
+                        productLoading ? <CircularProgress size={18} /> : null
+                      }
+                    >
+                      {productLoading
+                        ? "Đang làm mới..."
+                        : "Làm mới danh sách sản phẩm"}
+                    </Button>
+                  </Box>
+                </Box>
+              </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <Box display="flex" flexDirection="column" height="100%">
+              <Grid item xs={12} sm={4}>
                 <TextField
-                  name="stockQuantity"
-                  label="Số lượng tồn"
+                  name="originalPrice"
+                  label="Giá gốc"
                   type="number"
                   fullWidth
                   required
-                  value={formData.stockQuantity}
+                  value={formData.originalPrice}
                   onChange={handleChange}
-                  inputProps={{ min: 1 }}
-                  error={!!errors.stockQuantity}
-                  helperText={errors.stockQuantity}
+                  InputProps={{
+                    readOnly: !!selectedProduct,
+                    endAdornment: (
+                      <InputAdornment position="end">VNĐ</InputAdornment>
+                    ),
+                  }}
+                  error={!!errors.originalPrice}
+                  helperText={errors.originalPrice}
                 />
-                <Box mt={1}>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => fetchProducts(flashSaleItems)}
-                    disabled={loading}
-                    fullWidth
-                  >
-                    {loading ? "Đang tải..." : "Làm mới danh sách sản phẩm"}
-                  </Button>
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="discountPercentage"
+                  label="Phần trăm giảm giá"
+                  type="number"
+                  fullWidth
+                  required
+                  value={formData.discountPercentage || ""}
+                  onChange={handleChange}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">%</InputAdornment>
+                    ),
+                  }}
+                  inputProps={{ min: 0, max: 100 }}
+                  error={!!errors.discountPercentage}
+                  helperText={errors.discountPercentage}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  name="discountPrice"
+                  label="Giá sau giảm"
+                  type="number"
+                  fullWidth
+                  required
+                  value={formData.discountPrice}
+                  onChange={handleChange}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">VNĐ</InputAdornment>
+                    ),
+                  }}
+                  error={!!errors.discountPrice}
+                  helperText={errors.discountPrice}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<AddIcon />}
+                  onClick={handleSubmit}
+                  disabled={loading || operationInProgress || !selectedProduct}
+                >
+                  {operationInProgress ? "Đang thêm..." : "Thêm sản phẩm"}
+                </Button>
+              </Grid>
+            </Grid>
+
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                Danh sách sản phẩm trong Flash Sale
+              </Typography>
+
+              {loading ? (
+                <Box display="flex" justifyContent="center" my={3}>
+                  <CircularProgress />
                 </Box>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <TextField
-                name="originalPrice"
-                label="Giá gốc"
-                type="number"
-                fullWidth
-                required
-                value={formData.originalPrice}
-                onChange={handleChange}
-                InputProps={{
-                  readOnly: !!selectedProduct,
-                  endAdornment: (
-                    <InputAdornment position="end">VNĐ</InputAdornment>
-                  ),
-                }}
-                error={!!errors.originalPrice}
-                helperText={errors.originalPrice}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <TextField
-                name="discountPercentage"
-                label="Phần trăm giảm giá"
-                type="number"
-                fullWidth
-                required
-                value={formData.discountPercentage || ""}
-                onChange={handleChange}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">%</InputAdornment>
-                  ),
-                }}
-                inputProps={{ min: 0, max: 100 }}
-                error={!!errors.discountPercentage}
-                helperText={errors.discountPercentage}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <TextField
-                name="discountPrice"
-                label="Giá sau giảm"
-                type="number"
-                fullWidth
-                required
-                value={formData.discountPrice}
-                onChange={handleChange}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">VNĐ</InputAdornment>
-                  ),
-                }}
-                error={!!errors.discountPrice}
-                helperText={errors.discountPrice}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={handleSubmit}
-                disabled={loading || !selectedProduct}
-              >
-                Thêm sản phẩm
-              </Button>
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Danh sách sản phẩm trong Flash Sale
-            </Typography>
-
-            {loading ? (
-              <Box display="flex" justifyContent="center" my={3}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Tên sản phẩm</TableCell>
-                      <TableCell align="right">Giá gốc (VNĐ)</TableCell>
-                      <TableCell align="right">Giá khuyến mãi (VNĐ)</TableCell>
-                      <TableCell align="center">Giảm giá (%)</TableCell>
-                      <TableCell align="center">Số lượng tồn</TableCell>
-                      <TableCell align="center">Đã bán</TableCell>
-                      <TableCell align="center">Còn lại</TableCell>
-                      <TableCell align="center">Thao tác</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {flashSaleItems.length > 0 ? (
-                      flashSaleItems
-                        .slice(
-                          page * rowsPerPage,
-                          page * rowsPerPage + rowsPerPage
-                        )
-                        .map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell>{item.product.name}</TableCell>
-                            <TableCell align="right">
-                              {formatCurrency(item.originalPrice)}
-                            </TableCell>
-                            <TableCell align="right">
-                              {formatCurrency(item.discountPrice)}
-                            </TableCell>
-                            <TableCell align="center">
-                              {item.discountPercentage}%
-                            </TableCell>
-                            <TableCell align="center">
-                              {item.stockQuantity}
-                            </TableCell>
-                            <TableCell align="center">
-                              {item.soldQuantity}
-                            </TableCell>
-                            <TableCell align="center">
-                              {item.stockQuantity - item.soldQuantity}
-                            </TableCell>
-                            <TableCell align="center">
-                              <IconButton
-                                color="error"
-                                onClick={() =>
-                                  handleRemoveProduct(item.product.id)
-                                }
-                                disabled={loading}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
+              ) : (
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Tên sản phẩm</TableCell>
+                        <TableCell align="right">Giá gốc (VNĐ)</TableCell>
+                        <TableCell align="right">
+                          Giá khuyến mãi (VNĐ)
+                        </TableCell>
+                        <TableCell align="center">Giảm giá (%)</TableCell>
+                        <TableCell align="center">Số lượng tồn</TableCell>
+                        <TableCell align="center">Đã bán</TableCell>
+                        <TableCell align="center">Còn lại</TableCell>
+                        <TableCell align="center">Thao tác</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <SafeRender
+                        fallback={
+                          <TableRow>
+                            <TableCell colSpan={8} align="center">
+                              <Typography color="error">
+                                Có lỗi khi hiển thị danh sách sản phẩm
+                              </Typography>
                             </TableCell>
                           </TableRow>
-                        ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={8} align="center">
-                          Chưa có sản phẩm nào trong Flash Sale
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                {flashSaleItems.length > 0 && (
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={flashSaleItems.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    labelRowsPerPage="Số dòng mỗi trang:"
-                    labelDisplayedRows={({ from, to, count }) =>
-                      `${from}-${to} trên ${count}`
-                    }
-                  />
-                )}
-              </TableContainer>
-            )}
+                        }
+                      >
+                        {() => renderProductList()}
+                      </SafeRender>
+                    </TableBody>
+                  </Table>
+                  {flashSaleItems && flashSaleItems.length > 0 && (
+                    <TablePagination
+                      rowsPerPageOptions={[5, 10, 25]}
+                      component="div"
+                      count={flashSaleItems.length}
+                      rowsPerPage={rowsPerPage}
+                      page={page}
+                      onPageChange={handleChangePage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                      labelRowsPerPage="Số dòng mỗi trang:"
+                      labelDisplayedRows={({ from, to, count }) =>
+                        `${from}-${to} trên ${count}`
+                      }
+                    />
+                  )}
+                </TableContainer>
+              )}
+            </Box>
           </Box>
-        </Box>
+        )}
       </DialogContent>
+
       <DialogActions>
-        <Button onClick={onClose}>Đóng</Button>
+        <Button
+          onClick={onClose}
+          color="primary"
+          disabled={operationInProgress}
+        >
+          Đóng
+        </Button>
+        <Button
+          onClick={() => fetchFlashSaleDetails()}
+          color="secondary"
+          disabled={loading || operationInProgress}
+        >
+          Làm mới
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -765,7 +972,7 @@ const FlashSaleProductsDialog = ({ open, onClose, flashSale, onUpdate }) => {
 FlashSaleProductsDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  flashSale: PropTypes.object.isRequired,
+  flashSale: PropTypes.object,
   onUpdate: PropTypes.func.isRequired,
 };
 

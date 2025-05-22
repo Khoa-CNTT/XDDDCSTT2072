@@ -1,11 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getSuggestedConnections } from "@/services/userService";
+import {
+  getSuggestedConnections,
+  sendConnectionRequest,
+  acceptConnectionRequest,
+  rejectConnectionRequest,
+} from "@/services/userService";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
 import { Users, Badge } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { Button } from "../ui/button";
-import { sendConnectionRequest } from "@/services/userService";
 import UserConnectionItem from "@/components/user/UserConnectionItem";
+import { toast } from "react-toastify";
 
 const ConnectSuggestion = () => {
   const auth = useAuth();
@@ -35,20 +40,78 @@ const ConnectSuggestion = () => {
   };
 
   const handleConnect = (userId) => {
+    // Optimistic update - cập nhật UI ngay lập tức
+    const currentData = queryClient.getQueryData(["suggestedUsers"]);
+    if (currentData) {
+      const updatedUsers = currentData.map((user) => {
+        if (user.id === userId) {
+          return {
+            ...user,
+            connectionStatus: "PENDING_SENT",
+          };
+        }
+        return user;
+      });
+      queryClient.setQueryData(["suggestedUsers"], updatedUsers);
+    }
+
     // Gọi API gửi yêu cầu kết nối
     sendConnectionRequest(axiosPrivate, userId)
       .then(() => {
         // Hiển thị thông báo thành công
-        alert("Đã gửi lời mời kết nối thành công!");
+        toast.success("Đã gửi lời mời kết bạn thành công!");
+        // Làm mới danh sách gợi ý kết nối
+        queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
+      })
+      .catch((error) => {
+        // Nếu lỗi, khôi phục lại UI
+        if (currentData) {
+          queryClient.setQueryData(["suggestedUsers"], currentData);
+        }
+        console.error(
+          `Lỗi khi gửi lời mời kết nối đến user ID: ${userId}`,
+          error
+        );
+        toast.error(
+          "Có lỗi xảy ra khi gửi lời mời kết nối. Vui lòng thử lại sau."
+        );
+      });
+  };
+
+  const handleAcceptConnection = (userId) => {
+    acceptConnectionRequest(axiosPrivate, userId)
+      .then(() => {
+        toast.success("Đã chấp nhận lời mời kết bạn!");
+        // Làm mới danh sách gợi ý và kết nối
+        queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
+        queryClient.invalidateQueries({ queryKey: ["connections"] });
+      })
+      .catch((error) => {
+        console.error(
+          `Lỗi khi chấp nhận lời mời kết nối từ user ID: ${userId}`,
+          error
+        );
+        toast.error(
+          "Có lỗi xảy ra khi chấp nhận lời mời kết nối. Vui lòng thử lại sau."
+        );
+      });
+  };
+
+  const handleDeclineConnection = (userId) => {
+    rejectConnectionRequest(axiosPrivate, userId)
+      .then(() => {
+        toast.success("Đã từ chối lời mời kết bạn");
         // Làm mới danh sách gợi ý kết nối
         queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
       })
       .catch((error) => {
         console.error(
-          `Lỗi khi gửi lời mời kết nối đến user ID: ${userId}`,
+          `Lỗi khi từ chối lời mời kết nối từ user ID: ${userId}`,
           error
         );
-        alert("Có lỗi xảy ra khi gửi lời mời kết nối. Vui lòng thử lại sau.");
+        toast.error(
+          "Có lỗi xảy ra khi từ chối lời mời kết nối. Vui lòng thử lại sau."
+        );
       });
   };
 
@@ -88,6 +151,11 @@ const ConnectSuggestion = () => {
                       role: user.role ? getRoleLabel(user.role) : "Người dùng",
                     }}
                     onConnect={handleConnect}
+                    onAccept={handleAcceptConnection}
+                    onDecline={handleDeclineConnection}
+                    isConnected={user.connectionStatus === "ACCEPTED"}
+                    isPending={user.connectionStatus === "PENDING_SENT"}
+                    isReceived={user.connectionStatus === "PENDING_RECEIVED"}
                   />
                   {user.mutualConnections > 0 && (
                     <p className="text-xs text-gray-500 mt-2 ml-12">

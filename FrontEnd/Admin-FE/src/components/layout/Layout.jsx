@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Box, CssBaseline, createTheme, ThemeProvider } from "@mui/material";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
@@ -21,6 +21,48 @@ const theme = createTheme({
 
 const Layout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Kiểm tra xem người dùng đã đăng nhập và có vai trò Admin không
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+    const userRole = localStorage.getItem("userRole");
+
+    console.log("LAYOUT CHECK - Token exists:", !!token);
+    console.log("LAYOUT CHECK - UserStr:", userStr);
+    console.log("LAYOUT CHECK - UserRole:", userRole);
+
+    let user = null;
+    try {
+      user = userStr ? JSON.parse(userStr) : null;
+      console.log("LAYOUT CHECK - Parsed user:", user);
+    } catch (e) {
+      console.error("Failed to parse user JSON:", e);
+    }
+
+    // Kiểm tra linh hoạt hơn: chấp nhận cả roleName
+    const isAdmin =
+      (user &&
+        (user.role === 1 ||
+          user.role === "1" ||
+          user.role === "Admin" ||
+          user.role === "ADMIN" ||
+          user.roleName === "Admin" ||
+          user.roleName === "ADMIN")) ||
+      userRole === "1" ||
+      userRole === 1 ||
+      userRole === "Admin" ||
+      userRole === "ADMIN";
+
+    console.log("LAYOUT CHECK - Is admin:", isAdmin);
+
+    if (!token || !isAdmin) {
+      // Nếu không phải Admin, chuyển hướng về trang đăng nhập
+      console.log("LAYOUT CHECK - Redirecting to login");
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);

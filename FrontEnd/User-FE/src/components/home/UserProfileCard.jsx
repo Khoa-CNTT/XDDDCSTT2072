@@ -1,12 +1,43 @@
 import useAuth from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Badge } from "../ui/badge";
-import { Bookmark, Users } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import { BarChart3 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import useAxiosPrivate from "@/hooks/useAxiosPrivate";
+import { getUserPosts } from "@/services/forumService";
 
 const UserProfileCard = () => {
   const { auth } = useAuth();
-  console.log(auth);
+  const axiosPrivate = useAxiosPrivate();
+
+  // Query để lấy số lượng bài viết của người dùng
+  const {
+    data: userPosts = [],
+    isLoading: isLoadingPosts,
+    isError: isPostError,
+  } = useQuery({
+    queryKey: ["userPosts", auth?.user?.id],
+    queryFn: () => getUserPosts(axiosPrivate, auth?.user?.id),
+    enabled: !!auth?.user?.id,
+    staleTime: 10 * 60 * 1000, // 10 phút
+    onSuccess: (data) => {
+      console.log("Dữ liệu bài viết đã đăng:", data);
+      const postCount = data?.content?.length || 0;
+      console.log(`Đã tìm thấy ${postCount} bài viết`);
+    },
+    onError: (error) => {
+      console.error("Lỗi khi tải bài viết:", error);
+    },
+  });
+
+  // Lấy số lượng từ dữ liệu
+  const postCount =
+    userPosts?.content?.length ||
+    userPosts?.totalElements ||
+    (Array.isArray(userPosts) ? userPosts.length : 0);
+
   return (
     <div className="card-3d overflow-hidden bg-gradient-to-br from-white to-gray-50 border border-gray-100">
       <div className="relative">
@@ -42,35 +73,33 @@ const UserProfileCard = () => {
       </div>
       <div className="border-t border-b border-gray-100 px-4 py-3 bg-gray-50">
         <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer">
-            Xem hồ sơ của bạn
-          </span>
-          <Badge
-            variant="outline"
-            className="bg-blue-50 text-blue-600 font-normal"
+          <Link
+            to={`/profile/${auth?.user?.id}`}
+            className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
           >
-            100 lượt xem
-          </Badge>
+            Xem hồ sơ của bạn
+          </Link>
         </div>
       </div>
       <div className="px-4 py-3">
-        <div className="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
+        <Link
+          to={`/profile/${auth?.user?.id}/posts`}
+          className="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors"
+        >
           <Bookmark size={18} className="text-teal-500" />
-          <span>Bài viết đã lưu</span>
+          <span>Bài viết đã đăng</span>
           <Badge className="ml-auto bg-green-100 text-green-700 font-normal">
-            4
+            {postCount}
+            {isLoadingPosts && <span className="ml-1 animate-spin">⟳</span>}
+            {isPostError && <span className="ml-1 text-red-500">!</span>}
           </Badge>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
-          <Users size={18} className="text-blue-500" />
-          <span>Kết nối của tôi</span>
-          <Badge className="ml-auto bg-blue-100 text-blue-700 font-normal">
-            12
-          </Badge>
-        </div>
+        </Link>
         <div className="flex items-center gap-3 text-sm text-gray-700 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
           <BarChart3 size={18} className="text-purple-500" />
           <span>Hoạt động</span>
+          {auth?.user?.isOnline && (
+            <span className="w-2.5 h-2.5 bg-green-500 rounded-full ml-1.5 flex-shrink-0 animate-pulse"></span>
+          )}
         </div>
       </div>
     </div>

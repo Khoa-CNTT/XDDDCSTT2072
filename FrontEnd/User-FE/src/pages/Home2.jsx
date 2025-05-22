@@ -129,13 +129,6 @@ const Home2 = () => {
                     <HomeIcon size={18} className="mr-2" />
                     Trang chủ
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="ketnoicuatoi"
-                    className="py-4 px-6 social-tab"
-                  >
-                    <Users size={18} className="mr-2" />
-                    Kết nối của tôi
-                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="trangchu" className="m-0 p-0">

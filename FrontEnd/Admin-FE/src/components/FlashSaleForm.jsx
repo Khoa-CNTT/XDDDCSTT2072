@@ -47,11 +47,12 @@ const FlashSaleForm = ({ open, onClose, flashSale, onSubmit }) => {
 
   useEffect(() => {
     if (flashSale) {
+      console.log("Loading Flash Sale data into form:", flashSale);
       setFormData({
         name: flashSale.name || "",
         description: flashSale.description || "",
-        startDate: dayjs(flashSale.startDate).toDate(),
-        endDate: dayjs(flashSale.endDate).toDate(),
+        startDate: dayjs(flashSale.startTime || flashSale.startDate).toDate(),
+        endDate: dayjs(flashSale.endTime || flashSale.endDate).toDate(),
         status: flashSale.status || "UPCOMING",
         discountPercentage: flashSale.discountPercentage || 10,
         maxDiscountAmount: flashSale.maxDiscountAmount || 100000,
@@ -140,16 +141,53 @@ const FlashSaleForm = ({ open, onClose, flashSale, onSubmit }) => {
       return;
     }
 
-    // Chuẩn bị dữ liệu để gửi lên server
-    const submissionData = {
-      ...formData,
-      startTime: dayjs(formData.startDate).format("YYYY-MM-DD HH:mm:ss"),
-      endTime: dayjs(formData.endDate).format("YYYY-MM-DD HH:mm:ss"),
-      discountPercentage: parseInt(formData.discountPercentage, 10),
-      maxDiscountAmount: parseFloat(formData.maxDiscountAmount),
-    };
+    console.log("🔎 FormData trước khi xử lý:", formData);
+    console.log("🔎 Date values:", {
+      startDate: formData.startDate,
+      startDateType: typeof formData.startDate,
+      startDateIsDate: formData.startDate instanceof Date,
+      startDateFormatted: dayjs(formData.startDate).format(
+        "YYYY-MM-DD HH:mm:ss"
+      ),
+      endDate: formData.endDate,
+      endDateType: typeof formData.endDate,
+      endDateIsDate: formData.endDate instanceof Date,
+      endDateFormatted: dayjs(formData.endDate).format("YYYY-MM-DD HH:mm:ss"),
+    });
 
-    onSubmit(submissionData);
+    try {
+      // Chuẩn bị dữ liệu để gửi lên server - chỉ giữ các trường backend cần
+      const submissionData = {
+        name: formData.name,
+        description: formData.description,
+        startTime: dayjs(formData.startDate).format("YYYY-MM-DD HH:mm:ss"),
+        endTime: dayjs(formData.endDate).format("YYYY-MM-DD HH:mm:ss"),
+        status: formData.status,
+        discountPercentage: parseInt(formData.discountPercentage, 10),
+        maxDiscountAmount: parseFloat(formData.maxDiscountAmount),
+      };
+
+      // Kiểm tra và ghi log các trường không cần thiết
+      if ("startDate" in submissionData || "endDate" in submissionData) {
+        console.error(
+          "❌ Dữ liệu vẫn còn trường startDate/endDate:",
+          JSON.stringify(submissionData)
+        );
+      }
+
+      console.log("📦 Dữ liệu gửi đi từ form:", JSON.stringify(submissionData));
+
+      // Kiểm tra thêm lần nữa để đảm bảo không có trường không cần thiết
+      const safeData = { ...submissionData };
+      delete safeData.startDate;
+      delete safeData.endDate;
+
+      // Gọi onSubmit với dữ liệu đã kiểm tra
+      onSubmit(safeData);
+    } catch (error) {
+      console.error("❌ Lỗi khi xử lý dữ liệu form:", error);
+      enqueueSnackbar("Đã xảy ra lỗi khi xử lý dữ liệu", { variant: "error" });
+    }
   };
 
   return (

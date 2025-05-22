@@ -6,6 +6,42 @@ const authService = {
     try {
       // Thử gọi API đăng nhập thực tế
       const response = await api.post('/users/login', { email, password });
+      
+      // Log toàn bộ dữ liệu trả về để debug
+      console.log('=== DỮ LIỆU ĐĂNG NHẬP ===');
+      console.log('response.data:', response.data);
+      console.log('user:', response.data.user);
+      console.log('roleName:', response.data.user?.roleName);
+      console.log('==========================');
+      
+      // Kiểm tra role của người dùng      
+      const userRole = response.data.user?.role;
+      const userRoleName = response.data.user?.roleName;
+      const userRoleInResponse = response.data.role;
+      
+      // Log các giá trị role có thể có
+      console.log('User role in user object:', userRole);
+      console.log('User roleName in user object:', userRoleName);
+      console.log('User role in response root:', userRoleInResponse);
+      
+      // Kiểm tra role linh hoạt hơn: chấp nhận cả roleName
+      const isAdmin = 
+        userRole === 1 || 
+        userRole === '1' || 
+        userRole === 'Admin' || 
+        userRole === 'ADMIN' ||
+        userRoleName === 'Admin' || 
+        userRoleName === 'ADMIN' ||
+        userRoleInResponse === 1 || 
+        userRoleInResponse === '1' || 
+        userRoleInResponse === 'Admin' || 
+        userRoleInResponse === 'ADMIN';
+      
+      if (response.data.user && !isAdmin) {
+        console.log('Từ chối đăng nhập: Không phải Admin');
+        throw new Error('Bạn không có quyền truy cập vào trang Admin');
+      }
+      
       const { token, refreshToken } = response.data;
       
       // Lưu token vào localStorage
@@ -13,8 +49,13 @@ const authService = {
       localStorage.setItem('refreshToken', refreshToken);
       
       // Lưu role vào userRole để đồng bộ với auth.js
-      if (response.data.role || response.data.user?.role) {
-        localStorage.setItem('userRole', response.data.role || response.data.user?.role);
+      if (response.data.role || response.data.user?.role || response.data.user?.roleName) {
+        localStorage.setItem('userRole', response.data.role || response.data.user?.role || response.data.user?.roleName);
+      }
+      
+      // Lưu user object vào localStorage 
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
       }
       
       return response.data;
@@ -34,7 +75,8 @@ const authService = {
           id: 1,
           name: 'Admin User',
           email: 'admin@example.com',
-          role: 'Admin'
+          role: 1, // Đảm bảo role là số 1 chứ không phải chuỗi 'Admin'
+          roleId: 1
         }));
         
         // Thêm lưu userRole để đồng bộ với auth.js
@@ -48,7 +90,8 @@ const authService = {
             id: 1,
             name: 'Admin User',
             email: 'admin@example.com',
-            role: 'Admin'
+            role: 1, // Đảm bảo role là số 1 chứ không phải chuỗi 'Admin'
+            roleId: 1
           }
         };
       }
@@ -107,23 +150,46 @@ const authService = {
   
   hasAdminRole() {
     const user = this.getCurrentUser();
-    console.log('Current user data:', user);
+    console.log('hasAdminRole - Current user data:', user);
     
-    // Kiểm tra nhiều trường hợp có thể xảy ra
-    if (user && user.roles && Array.isArray(user.roles)) {
-      return user.roles.includes('Admin');
+    if (!user) return false;
+    
+    // Kiểm tra trường roles (mảng)
+    if (user.roles && Array.isArray(user.roles)) {
+      return user.roles.includes('Admin') || user.roles.includes('ADMIN') || 
+             user.roles.includes(1) || user.roles.includes('1');
     }
     
-    if (user && user.role) {
-      return user.role === 'Admin';
+    // Kiểm tra trường role và roleName
+    const role = user.role;
+    const roleName = user.roleName;
+    
+    if (role !== undefined) {
+      console.log('hasAdminRole - Role type:', typeof role, 'value:', role);
+      if (role === 'Admin' || role === 'ADMIN' || role === 1 || role === '1') {
+        return true;
+      }
     }
     
-    if (user && user.authorities && Array.isArray(user.authorities)) {
-      return user.authorities.some(auth => 
-        auth.authority === 'Admin' || 
-        auth === 'Admin' ||
-        auth.role === 'Admin'
-      );
+    if (roleName !== undefined) {
+      console.log('hasAdminRole - RoleName type:', typeof roleName, 'value:', roleName);
+      if (roleName === 'Admin' || roleName === 'ADMIN') {
+        return true;
+      }
+    }
+    
+    // Kiểm tra authorities
+    if (user.authorities && Array.isArray(user.authorities)) {
+      return user.authorities.some(auth => {
+        if (typeof auth === 'string') {
+          return auth === 'Admin' || auth === 'ADMIN' || auth === '1';
+        }
+        return auth.authority === 'Admin' || auth.authority === 'ADMIN' || 
+               auth.role === 'Admin' || auth.role === 'ADMIN' ||
+               auth.roleName === 'Admin' || auth.roleName === 'ADMIN' ||
+               auth.authority === 1 || auth.authority === '1' ||
+               auth.role === 1 || auth.role === '1';
+      });
     }
     
     return false;
@@ -133,12 +199,19 @@ const authService = {
   isAdmin() {
     const role = localStorage.getItem('userRole');
     const hasAdmin = this.hasAdminRole();
-    console.log('DEBUG isAdmin():', { 
-      directRoleCheck: role === 'Admin', 
-      userRoleFromStorage: role,
-      hasAdminRoleCheck: hasAdmin 
-    });
-    return role === 'Admin' || hasAdmin;
+    
+    console.log('isAdmin - userRole from storage:', role);
+    console.log('isAdmin - hasAdmin from role check:', hasAdmin);
+    
+    // Kiểm tra linh hoạt hơn
+    const roleIsAdmin = 
+      role === 'Admin' || 
+      role === 'ADMIN' || 
+      role === '1' || 
+      role === 1;
+    
+    console.log('isAdmin - final result:', roleIsAdmin || hasAdmin);
+    return roleIsAdmin || hasAdmin;
   },
   
   hasUserRole() {

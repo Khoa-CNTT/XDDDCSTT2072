@@ -17,6 +17,7 @@ import {
   Award,
   Search,
   Edit,
+  UserX,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useAuth from "@/hooks/useAuth";
@@ -26,6 +27,7 @@ import {
   checkConnectionStatus,
   sendConnectionRequest,
   acceptConnectionRequest,
+  rejectConnectionRequest,
 } from "@/services/userService";
 import { getUserPosts } from "@/services/forumService";
 import { toast } from "react-toastify";
@@ -88,13 +90,51 @@ const UserProfile = () => {
             userId
           );
           console.log("Trạng thái kết nối:", connectionData);
-
-          // Cập nhật trạng thái kết nối từ dữ liệu trả về
-          setConnectionStatus({
-            isConnected: connectionData.isConnected || false,
-            isPending: connectionData.isPendingSent || false,
-            isReceived: connectionData.isPendingReceived || false,
+          // Thêm log chi tiết để debug
+          console.log("DEBUG - Chi tiết trạng thái kết nối:", {
+            status: connectionData.status,
+            isConnected: connectionData.isConnected,
+            isPendingSent: connectionData.isPendingSent,
+            isPendingReceived: connectionData.isPendingReceived,
+            isBlocked: connectionData.isBlocked,
+            raw: connectionData,
           });
+
+          // Fix: Kiểm tra rõ ràng trạng thái connection từ backend
+          // Và đảm bảo cập nhật đúng trạng thái trong UI
+          let updatedConnectionStatus = {
+            isConnected: false,
+            isPending: false,
+            isReceived: false,
+          };
+
+          if (
+            connectionData.status === "CONNECTED" ||
+            connectionData.isConnected
+          ) {
+            updatedConnectionStatus.isConnected = true;
+          } else if (
+            connectionData.status === "PENDING_SENT" ||
+            connectionData.isPendingSent
+          ) {
+            updatedConnectionStatus.isPending = true;
+          } else if (
+            connectionData.status === "PENDING_RECEIVED" ||
+            connectionData.isPendingReceived
+          ) {
+            updatedConnectionStatus.isReceived = true;
+            console.log(
+              "DEBUG - Đây là trạng thái yêu cầu kết nối đã nhận: Nên hiển thị nút ĐỒNG Ý"
+            );
+          }
+
+          console.log(
+            "DEBUG - Trạng thái kết nối đã cập nhật:",
+            updatedConnectionStatus
+          );
+
+          // Cập nhật trạng thái kết nối từ dữ liệu trả về với trạng thái đã xử lý
+          setConnectionStatus(updatedConnectionStatus);
         }
       } catch (error) {
         console.error("Lỗi khi lấy thông tin người dùng:", error);
@@ -298,34 +338,80 @@ const UserProfile = () => {
     fetchUserPosts();
   }, [userId, postsPage, axiosPrivate]);
 
-  // Hàm xử lý gửi yêu cầu kết nối
+  // Xử lý kết nối với người dùng
   const handleConnect = async () => {
     try {
-      await sendConnectionRequest(axiosPrivate, userId);
+      // Cập nhật UI ngay lập tức
       setConnectionStatus({
         ...connectionStatus,
         isPending: true,
       });
-      toast.success("Đã gửi lời mời kết nối thành công!");
+
+      // Gọi API
+      await sendConnectionRequest(axiosPrivate, userId);
+      toast.success("Đã gửi lời mời kết bạn thành công!");
     } catch (error) {
+      // Khôi phục trạng thái nếu có lỗi
+      setConnectionStatus({
+        ...connectionStatus,
+        isPending: false,
+      });
       console.error("Lỗi khi gửi yêu cầu kết nối:", error);
       toast.error("Không thể gửi yêu cầu kết nối. Vui lòng thử lại sau.");
     }
   };
 
-  // Hàm xử lý chấp nhận yêu cầu kết nối
+  // Xử lý chấp nhận kết nối
   const handleAcceptConnection = async () => {
     try {
       await acceptConnectionRequest(axiosPrivate, userId);
+      toast.success("Đã chấp nhận lời mời kết bạn!");
+      // Cập nhật trạng thái kết nối
       setConnectionStatus({
         isConnected: true,
         isPending: false,
         isReceived: false,
       });
-      toast.success("Đã chấp nhận lời mời kết nối!");
+      // Tải lại danh sách kết nối bằng cách trigger useEffect
+      const fetchNewConnections = async () => {
+        try {
+          // Sử dụng endpoint /connections/all để lấy kết nối từ cả hai hướng
+          const response = await axiosPrivate.get("/connections/all", {
+            params: {
+              status: "ACCEPTED",
+            },
+          });
+
+          // Xử lý response tương tự như trong useEffect
+          if (response.data && response.data.data) {
+            setConnections(response.data.data);
+          }
+        } catch (error) {
+          console.error("Lỗi khi tải lại danh sách kết nối:", error);
+        }
+      };
+
+      fetchNewConnections();
     } catch (error) {
       console.error("Lỗi khi chấp nhận yêu cầu kết nối:", error);
       toast.error("Không thể chấp nhận yêu cầu kết nối. Vui lòng thử lại sau.");
+    }
+  };
+
+  // Xử lý từ chối kết nối
+  const handleRejectConnection = async () => {
+    try {
+      await rejectConnectionRequest(axiosPrivate, userId);
+      toast.success("Đã từ chối lời mời kết bạn");
+      // Cập nhật trạng thái kết nối
+      setConnectionStatus({
+        isConnected: false,
+        isPending: false,
+        isReceived: false,
+      });
+    } catch (error) {
+      console.error("Lỗi khi từ chối yêu cầu kết nối:", error);
+      toast.error("Không thể từ chối yêu cầu kết nối. Vui lòng thử lại sau.");
     }
   };
 
@@ -380,6 +466,12 @@ const UserProfile = () => {
 
   // Nút kết nối/trạng thái kết nối
   const renderConnectionButton = () => {
+    // Log current connection status for debugging
+    console.log(
+      "DEBUG - Rendering connection button with status:",
+      connectionStatus
+    );
+
     if (isOwnProfile) {
       return (
         <Button
@@ -393,6 +485,7 @@ const UserProfile = () => {
     }
 
     if (connectionStatus.isConnected) {
+      console.log("DEBUG - Showing CONNECTED button");
       return (
         <Button
           className="flex items-center gap-1 bg-green-50 text-green-600 hover:bg-green-100 border border-green-200"
@@ -400,12 +493,13 @@ const UserProfile = () => {
           disabled
         >
           <UserCheck size={16} />
-          <span>Đã kết nối</span>
+          <span>Bạn bè</span>
         </Button>
       );
     }
 
     if (connectionStatus.isPending) {
+      console.log("DEBUG - Showing PENDING button");
       return (
         <Button
           className="flex items-center gap-1 bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
@@ -419,6 +513,9 @@ const UserProfile = () => {
     }
 
     if (connectionStatus.isReceived) {
+      console.log(
+        "DEBUG - Showing RECEIVED button with accept/decline options"
+      );
       return (
         <div className="flex gap-2">
           <Button
@@ -427,18 +524,21 @@ const UserProfile = () => {
             onClick={handleAcceptConnection}
           >
             <UserCheck size={16} />
-            <span>Chấp nhận</span>
+            <span>Đồng ý</span>
           </Button>
           <Button
             className="flex items-center gap-1 bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
             size="sm"
+            onClick={handleRejectConnection}
           >
+            <UserX size={16} />
             <span>Từ chối</span>
           </Button>
         </div>
       );
     }
 
+    console.log("DEBUG - Showing default CONNECT button");
     return (
       <Button
         className="flex items-center gap-1"

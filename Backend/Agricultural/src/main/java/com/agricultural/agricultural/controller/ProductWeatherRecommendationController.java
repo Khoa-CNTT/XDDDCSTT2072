@@ -378,7 +378,7 @@ public class ProductWeatherRecommendationController {
         result.put("preparationAdvice", preparationAdvice);
         
         return ResponseEntity.ok(new ApiResponse<>(true, 
-                "Lấy gợi ý chuẩn bị cho thời tiết khắc nghiệt thành công", result));
+                "Đã cập nhật dữ liệu", result));
     }
     
     /**

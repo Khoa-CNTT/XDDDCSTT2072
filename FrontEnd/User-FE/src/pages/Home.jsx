@@ -31,6 +31,9 @@ import {
 import {
   getSuggestedConnections,
   sendConnectionRequest,
+  acceptConnectionRequest,
+  rejectConnectionRequest,
+  checkConnectionStatus,
 } from "@/services/userService";
 import {
   Calendar,
@@ -54,6 +57,10 @@ import {
   SunMedium,
   BarChart3,
   Shield,
+  MessageCircle,
+  Plus,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -104,12 +111,24 @@ const Home = () => {
     },
     isLoading: isLoadingConnectionPosts,
     error: connectionPostsError,
+    refetch: refetchConnectionPosts,
   } = useQuery({
     queryKey: ["connectionPosts"],
-    queryFn: () => getConnectionPosts(axiosPrivate, 0, 10),
-    staleTime: 5 * 60 * 1000, // 5 phút
-    refetchOnWindowFocus: false,
+    queryFn: () => getConnectionPosts(axiosPrivate, 0, 20),
+    staleTime: 3 * 60 * 1000, // 3 phút
+    refetchOnWindowFocus: true,
     refetchOnMount: true, // Luôn refetch khi component được mount
+    onSuccess: (data) => {
+      console.log("Dữ liệu bài viết kết nối:", data);
+      if (data && data.content && data.content.length > 0) {
+        console.log(`Đã tải ${data.content.length} bài viết từ kết nối`);
+      } else {
+        console.log("Không có bài viết nào từ kết nối hoặc dữ liệu trống");
+      }
+    },
+    onError: (error) => {
+      console.error("Lỗi khi tải bài viết kết nối:", error);
+    },
   });
 
   // Fetch suggested connections (users)
@@ -573,28 +592,159 @@ const Home = () => {
 
   // Handle connecting with user
   const handleConnect = (userId) => {
-    // Gọi API gửi yêu cầu kết nối
+    // Optimistic update - cập nhật UI ngay lập tức
+    const currentData = queryClient.getQueryData(["suggestedUsers"]);
+    if (currentData) {
+      const updatedUsers = currentData.map((user) => {
+        if (user.id === userId) {
+          return {
+            ...user,
+            connectionStatus: "PENDING_SENT",
+          };
+        }
+        return user;
+      });
+      queryClient.setQueryData(["suggestedUsers"], updatedUsers);
+    }
+
+    // Gọi API
     sendConnectionRequest(axiosPrivate, userId)
       .then(() => {
-        // Hiển thị thông báo thành công
-        alert("Đã gửi lời mời kết nối thành công!");
-        // Làm mới danh sách gợi ý kết nối
+        toast.success("Đã gửi lời mời kết bạn thành công!");
+
+        // Đảm bảo cache suggestedUsers được cập nhật đúng
+        const fetchSuggestedUsers = async () => {
+          try {
+            const updatedUsers = await getSuggestedConnections(axiosPrivate);
+            if (updatedUsers) {
+              // Lọc bỏ người dùng đã kết nối
+              const filteredUsers = updatedUsers.filter((user) => {
+                return (
+                  user.id !== userId &&
+                  (!user.connectionStatus ||
+                    user.connectionStatus !== "ACCEPTED")
+                );
+              });
+              queryClient.setQueryData(["suggestedUsers"], filteredUsers);
+            }
+          } catch (error) {
+            console.error("Lỗi khi tải lại danh sách gợi ý kết nối:", error);
+          }
+        };
+
+        fetchSuggestedUsers();
         queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
+        queryClient.invalidateQueries({ queryKey: ["connectionPosts"] });
       })
       .catch((error) => {
+        // Nếu lỗi, khôi phục lại UI
+        if (currentData) {
+          queryClient.setQueryData(["suggestedUsers"], currentData);
+        }
         console.error(
           `Lỗi khi gửi lời mời kết nối đến user ID: ${userId}`,
           error
         );
-        alert("Có lỗi xảy ra khi gửi lời mời kết nối. Vui lòng thử lại sau.");
+        toast.error(
+          "Có lỗi xảy ra khi gửi lời mời kết nối. Vui lòng thử lại sau."
+        );
       });
   };
 
-  // Mock news và events
-  const latestNews = [
-    { id: 1, title: "Hội nghị Nông nghiệp xanh 2023", date: "24/11/2023" },
-    { id: 2, title: "Triển lãm công nghệ nông nghiệp", date: "15/12/2023" },
-    { id: 3, title: "Cập nhật kỹ thuật nuôi trồng mới", date: "10/01/2024" },
+  const handleAcceptConnection = (userId) => {
+    // Optimistic update - cập nhật UI ngay lập tức
+    const currentData = queryClient.getQueryData(["suggestedUsers"]);
+    if (currentData) {
+      const updatedUsers = currentData.map((user) => {
+        if (user.id === userId) {
+          return {
+            ...user,
+            connectionStatus: "ACCEPTED",
+          };
+        }
+        return user;
+      });
+      queryClient.setQueryData(["suggestedUsers"], updatedUsers);
+    }
+
+    acceptConnectionRequest(axiosPrivate, userId)
+      .then(() => {
+        toast.success("Đã chấp nhận lời mời kết bạn!");
+
+        // Đảm bảo cache suggestedUsers được cập nhật đúng - lọc người đã kết nối
+        const fetchSuggestedUsers = async () => {
+          try {
+            const updatedUsers = await getSuggestedConnections(axiosPrivate);
+            if (updatedUsers) {
+              // Lọc bỏ người dùng đã kết nối
+              const filteredUsers = updatedUsers.filter((user) => {
+                return (
+                  user.id !== userId &&
+                  (!user.connectionStatus ||
+                    user.connectionStatus !== "ACCEPTED")
+                );
+              });
+              queryClient.setQueryData(["suggestedUsers"], filteredUsers);
+            }
+          } catch (error) {
+            console.error("Lỗi khi tải lại danh sách gợi ý kết nối:", error);
+          }
+        };
+
+        fetchSuggestedUsers();
+        queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
+        queryClient.invalidateQueries({ queryKey: ["connections"] });
+        queryClient.invalidateQueries({ queryKey: ["connectionPosts"] });
+      })
+      .catch((error) => {
+        // Khôi phục trạng thái nếu có lỗi
+        if (currentData) {
+          queryClient.setQueryData(["suggestedUsers"], currentData);
+        }
+        console.error(
+          `Lỗi khi chấp nhận lời mời kết nối từ user ID: ${userId}`,
+          error
+        );
+        toast.error(
+          "Có lỗi xảy ra khi chấp nhận lời mời kết nối. Vui lòng thử lại sau."
+        );
+      });
+  };
+
+  const handleDeclineConnection = (userId) => {
+    rejectConnectionRequest(axiosPrivate, userId)
+      .then(() => {
+        toast.success("Đã từ chối lời mời kết bạn");
+        queryClient.invalidateQueries({ queryKey: ["suggestedUsers"] });
+      })
+      .catch((error) => {
+        console.error(
+          `Lỗi khi từ chối lời mời kết nối từ user ID: ${userId}`,
+          error
+        );
+        toast.error(
+          "Có lỗi xảy ra khi từ chối lời mời kết nối. Vui lòng thử lại sau."
+        );
+      });
+  };
+
+  // Dữ liệu tin tức
+  const newsData = [
+    {
+      id: 1,
+      title: "Hội nghị nông nghiệp thông minh 2023 diễn ra tại Hà Nội",
+      date: "20/06/2023",
+    },
+    {
+      id: 2,
+      title: "5 phương pháp canh tác bền vững cho nông dân",
+      date: "15/06/2023",
+    },
+    {
+      id: 3,
+      title: "Kỹ thuật mới trong phòng trừ sâu bệnh cho cây trồng",
+      date: "10/06/2023",
+    },
   ];
 
   // Format user role label
@@ -702,6 +852,63 @@ const Home = () => {
   const handleFilterChange = (filter) => {
     setActiveFilter(filter);
   };
+
+  // Kiểm tra và cập nhật trạng thái kết nối
+  useEffect(() => {
+    if (
+      Array.isArray(suggestedUsers) &&
+      suggestedUsers.length > 0 &&
+      auth?.user?.id
+    ) {
+      // Với mỗi người dùng gợi ý, kiểm tra trạng thái kết nối
+      Promise.all(
+        suggestedUsers
+          .filter((user) => user.id !== auth.user.id)
+          .map(async (user) => {
+            try {
+              // Chỉ gọi API cho người dùng chưa có trạng thái kết nối
+              if (!user.connectionStatus) {
+                const status = await checkConnectionStatus(
+                  axiosPrivate,
+                  user.id
+                );
+                return {
+                  ...user,
+                  connectionStatus: status.isPendingSent
+                    ? "PENDING_SENT"
+                    : status.isPendingReceived
+                    ? "PENDING_RECEIVED"
+                    : status.isConnected
+                    ? "ACCEPTED"
+                    : null,
+                };
+              }
+              return user;
+            } catch (err) {
+              console.error(
+                `Không thể kiểm tra trạng thái kết nối với ${user.id}:`,
+                err
+              );
+              return user;
+            }
+          })
+      ).then((updatedUsers) => {
+        // Lọc bỏ người dùng đã kết nối
+        const filteredUsers = updatedUsers.filter(
+          (user) =>
+            !user.connectionStatus || user.connectionStatus !== "ACCEPTED"
+        );
+        console.log(
+          "Đã lọc bỏ người dùng đã kết nối:",
+          updatedUsers.length - filteredUsers.length,
+          "người dùng"
+        );
+
+        // Cập nhật trạng thái kết nối
+        queryClient.setQueryData(["suggestedUsers"], filteredUsers);
+      });
+    }
+  }, [suggestedUsers, auth?.user?.id, axiosPrivate, queryClient]);
 
   // Hiển thị màn hình loading khi đang tải
   if (isLoadingPage) {
@@ -1457,9 +1664,7 @@ const Home = () => {
                           variant="outline"
                           className="bg-gradient-to-r from-red-50 to-red-100 text-red-600 hover:from-red-100 hover:to-red-200 border-red-200 shadow-sm"
                           onClick={() => {
-                            queryClient.invalidateQueries({
-                              queryKey: ["connectionPosts"],
-                            });
+                            refetchConnectionPosts();
                           }}
                         >
                           Thử lại
@@ -1468,11 +1673,41 @@ const Home = () => {
                     </div>
                   ) : (
                     <div className="space-y-5 p-5">
+                      <div className="flex justify-between items-center px-2 mb-3">
+                        <h3 className="font-semibold text-gray-800">
+                          Bài viết từ kết nối của bạn
+                        </h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => refetchConnectionPosts()}
+                          className="text-xs flex items-center gap-1"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="animate-spin"
+                          >
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                          </svg>
+                          Làm mới
+                        </Button>
+                      </div>
+
                       {connectionPostsData &&
                         Array.isArray(connectionPostsData.content) &&
                         connectionPostsData.content
-                          // Lọc chỉ hiển thị bài viết từ người khác, không phải của người dùng hiện tại
-                          .filter((post) => post.userId !== auth?.user?.id)
+                          // Chỉ hiển thị bài viết từ người đã kết nối, không phải của người dùng hiện tại
+                          .filter(
+                            (post) => post && post.userId !== auth?.user?.id
+                          )
                           .map((post) => {
                             // Xác định chủ đề bài viết dựa vào hashtags
                             let postTopic = "";
@@ -1598,59 +1833,77 @@ const Home = () => {
                               </div>
 
                               {/* Gợi ý người kết nối */}
-                              {Array.isArray(suggestedUsers) &&
-                                suggestedUsers.length > 0 && (
-                                  <div className="mt-8 w-full">
-                                    <h4 className="text-gray-700 font-medium mb-4 text-left">
-                                      Gợi ý kết nối
-                                    </h4>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                      {suggestedUsers
-                                        .filter(
-                                          (user) => user.id !== auth?.user?.id
-                                        )
-                                        .slice(0, 4)
-                                        .map((user) => (
-                                          <div
-                                            key={user.id}
-                                            className="connection-card flex items-center gap-2 p-3 border border-gray-100 hover:border-blue-100 hover:shadow-md"
-                                          >
-                                            <Avatar className="h-10 w-10">
-                                              <AvatarImage
-                                                src={
-                                                  user.imageUrl ||
-                                                  user.avatarUrl
-                                                }
-                                                alt={user.userName || "User"}
-                                              />
-                                              <AvatarFallback className="bg-gradient-to-br from-blue-400 to-indigo-400 text-white">
-                                                {user.userName?.charAt(0) ||
-                                                  "U"}
-                                              </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 truncate">
-                                              <p className="font-medium text-sm">
-                                                {user.userName || user.name}
-                                              </p>
-                                              <p className="text-xs text-gray-500">
-                                                {getRoleLabel(user.role)}
-                                              </p>
-                                            </div>
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() =>
-                                                handleConnect(user.id)
-                                              }
-                                              className="h-8 px-2 text-xs border-blue-200 text-blue-600 hover:bg-blue-50"
-                                            >
-                                              Kết nối
-                                            </Button>
-                                          </div>
-                                        ))}
+                              {suggestedUsers
+                                .filter((user) => user.id !== auth?.user?.id) // Exclude current user
+                                .filter(
+                                  (user) =>
+                                    !user.connectionStatus ||
+                                    user.connectionStatus !== "ACCEPTED"
+                                ) // Exclude connected users
+                                .slice(0, 5) // Limit to 5 users
+                                .map((user) => {
+                                  const userClassName = user.role
+                                    ? getRoleLabel(user.role).toLowerCase()
+                                    : "user";
+
+                                  return (
+                                    <div
+                                      key={user.id}
+                                      className="connection-card"
+                                    >
+                                      <UserConnectionItem
+                                        user={{
+                                          ...user,
+                                          role: user.role
+                                            ? getRoleLabel(user.role)
+                                            : "Người dùng",
+                                        }}
+                                        onConnect={handleConnect}
+                                        onAccept={handleAcceptConnection}
+                                        onDecline={handleDeclineConnection}
+                                        isConnected={
+                                          user.connectionStatus === "ACCEPTED"
+                                        }
+                                        isPending={
+                                          user.connectionStatus ===
+                                          "PENDING_SENT"
+                                        }
+                                        isReceived={
+                                          user.connectionStatus ===
+                                          "PENDING_RECEIVED"
+                                        }
+                                      />
+                                      {user.mutualConnections > 0 && (
+                                        <p className="text-xs text-gray-500 mt-2 ml-12">
+                                          <span className="font-medium text-blue-600">
+                                            {user.mutualConnections}
+                                          </span>{" "}
+                                          kết nối chung
+                                        </p>
+                                      )}
+                                      {user.bio && (
+                                        <p className="text-xs text-gray-600 mt-2 ml-12 line-clamp-2">
+                                          {user.bio}
+                                        </p>
+                                      )}
+                                      {user.specialty && (
+                                        <Badge
+                                          variant="outline"
+                                          className="ml-12 mt-2 text-xs bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 border-blue-200"
+                                        >
+                                          {user.specialty}
+                                        </Badge>
+                                      )}
+                                      <span
+                                        className={`connection-role-badge ${userClassName} absolute top-2 right-2`}
+                                      >
+                                        {user.role
+                                          ? getRoleLabel(user.role)
+                                          : "Người dùng"}
+                                      </span>
                                     </div>
-                                  </div>
-                                )}
+                                  );
+                                })}
                             </div>
                           </div>
                         )}
@@ -1700,9 +1953,14 @@ const Home = () => {
                 Array.isArray(suggestedUsers) && suggestedUsers.length > 0 ? (
                   suggestedUsers
                     .filter((user) => user.id !== auth?.user?.id) // Exclude current user
+                    .filter(
+                      (user) =>
+                        !user.connectionStatus ||
+                        user.connectionStatus !== "ACCEPTED"
+                    ) // Exclude connected users
                     .slice(0, 5) // Limit to 5 users
                     .map((user) => {
-                      const userRole = user.role
+                      const userClassName = user.role
                         ? getRoleLabel(user.role).toLowerCase()
                         : "user";
 
@@ -1716,6 +1974,13 @@ const Home = () => {
                                 : "Người dùng",
                             }}
                             onConnect={handleConnect}
+                            onAccept={handleAcceptConnection}
+                            onDecline={handleDeclineConnection}
+                            isConnected={user.connectionStatus === "ACCEPTED"}
+                            isPending={user.connectionStatus === "PENDING_SENT"}
+                            isReceived={
+                              user.connectionStatus === "PENDING_RECEIVED"
+                            }
                           />
                           {user.mutualConnections > 0 && (
                             <p className="text-xs text-gray-500 mt-2 ml-12">
@@ -1739,7 +2004,7 @@ const Home = () => {
                             </Badge>
                           )}
                           <span
-                            className={`connection-role-badge ${userRole} absolute top-2 right-2`}
+                            className={`connection-role-badge ${userClassName} absolute top-2 right-2`}
                           >
                             {user.role ? getRoleLabel(user.role) : "Người dùng"}
                           </span>
@@ -1773,7 +2038,7 @@ const Home = () => {
               </h3>
 
               <div className="space-y-3">
-                {latestNews.map((news) => (
+                {newsData.map((news) => (
                   <div
                     key={news.id}
                     className="hover:bg-gray-50 p-3 rounded-lg cursor-pointer border border-gray-50 hover:border-amber-100 hover:shadow-md transition-all duration-200"
@@ -1875,24 +2140,5 @@ const Home = () => {
     </>
   );
 };
-
-// Dữ liệu tin tức mẫu
-const latestNews = [
-  {
-    id: 1,
-    title: "Hội nghị nông nghiệp thông minh 2023 diễn ra tại Hà Nội",
-    date: "20/06/2023",
-  },
-  {
-    id: 2,
-    title: "5 phương pháp canh tác bền vững cho nông dân",
-    date: "15/06/2023",
-  },
-  {
-    id: 3,
-    title: "Kỹ thuật mới trong phòng trừ sâu bệnh cho cây trồng",
-    date: "10/06/2023",
-  },
-];
 
 export default Home;

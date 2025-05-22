@@ -214,7 +214,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           icon: <SpaIcon fontSize="small" />,
         },
         {
-          text: "Chuẩn Bị Thời Tiết Xấu",
+          text: "Chuẩn Bị Thời Tiết",
           path: "/weather-recommendations/extreme-weather",
           icon: <WarningIcon fontSize="small" />,
         },

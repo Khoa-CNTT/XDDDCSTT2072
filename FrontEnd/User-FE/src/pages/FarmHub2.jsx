@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import Footer from "@/layout/Footer";
 import Header from "@/layout/Header";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -87,14 +86,124 @@ const FarmHub2 = () => {
           }
         );
 
-        // Lấy sản phẩm đang giảm giá
-        const saleRes = await axiosPrivate.get("/marketplace/on-sale", {
-          params: { page: 0, size: 8 },
-        });
+        // Lấy sản phẩm đang Flash Sale thay vì sản phẩm đang giảm giá thông thường
+        try {
+          // Gọi API lấy Flash Sale đang hoạt động (status=active)
+          const flashSaleRes = await axiosPrivate.get(
+            "/flash-sales/status/active"
+          );
+          console.log("Flash Sale API response:", flashSaleRes.data);
+          console.log(
+            "Response data content:",
+            JSON.stringify(flashSaleRes.data)
+          );
+          console.log("Flash Sale data array:", flashSaleRes.data.data);
+
+          // Đảm bảo data được kiểm tra đúng
+          if (flashSaleRes.data && Array.isArray(flashSaleRes.data.data)) {
+            const activeFlashSales = flashSaleRes.data.data;
+            console.log(
+              `Tìm thấy ${activeFlashSales.length} Flash Sale đang hoạt động`
+            );
+            console.log(
+              "Chi tiết Flash Sale:",
+              JSON.stringify(activeFlashSales)
+            );
+
+            // Thu thập tất cả sản phẩm từ tất cả Flash Sale
+            let allFlashSaleProducts = [];
+
+            for (const flashSale of activeFlashSales) {
+              console.log(
+                `Đang xử lý Flash Sale: ${
+                  flashSale.name || "Chưa đặt tên"
+                } (ID: ${flashSale.id})`
+              );
+              console.log(
+                "Thông tin đầy đủ Flash Sale:",
+                JSON.stringify(flashSale)
+              );
+              console.log("Các thuộc tính Flash Sale:", Object.keys(flashSale));
+
+              if (flashSale.items && Array.isArray(flashSale.items)) {
+                const items = flashSale.items;
+                console.log(
+                  `Flash Sale ${flashSale.id} có ${items.length} sản phẩm`
+                );
+                console.log("Chi tiết items:", JSON.stringify(items));
+
+                // Xử lý từng sản phẩm trong Flash Sale
+                items.forEach((item) => {
+                  console.log("Đang xử lý item:", JSON.stringify(item));
+
+                  // Thay đổi cách kiểm tra - sử dụng trực tiếp các thuộc tính của item
+                  if (item && (item.productId || item.id)) {
+                    console.log(
+                      "Sản phẩm hợp lệ:",
+                      item.productName || "Không có tên"
+                    );
+                    const product = {
+                      id: item.productId || item.id,
+                      productName: item.productName || "Sản phẩm Flash Sale",
+                      price: item.originalPrice || 0,
+                      salePrice: item.discountPrice || 0,
+                      onSale: true,
+                      flashSale: true,
+                      discountPercentage: item.discountPercentage || 0,
+                      imageUrl: item.productImage || null,
+                      stockQuantity: item.stockQuantity || 0,
+                      soldQuantity: item.soldQuantity || 0,
+                      flashSaleId: flashSale.id,
+                    };
+                    console.log("Đã tạo sản phẩm Flash Sale:", product);
+                    allFlashSaleProducts.push(product);
+                  } else {
+                    console.error(
+                      "Item không hợp lệ hoặc không có thông tin sản phẩm:",
+                      item
+                    );
+                  }
+                });
+              } else {
+                console.error(
+                  "Flash Sale không có items hợp lệ:",
+                  flashSale.items
+                );
+              }
+            }
+
+            console.log(
+              `Tổng số sản phẩm Flash Sale: ${allFlashSaleProducts.length}`
+            );
+
+            // Luôn sử dụng sản phẩm Flash Sale, không fallback
+            setSaleProducts(allFlashSaleProducts);
+          } else {
+            // Kiểm tra cấu trúc response
+            console.error("Cấu trúc response không đúng:", flashSaleRes.data);
+            console.error(
+              "flashSaleRes.data.data:",
+              flashSaleRes.data ? flashSaleRes.data.data : "undefined"
+            );
+            console.error(
+              "Kiểu dữ liệu của data:",
+              flashSaleRes.data ? typeof flashSaleRes.data.data : "undefined"
+            );
+
+            // Nếu không có Flash Sale, hiển thị mảng rỗng, KHÔNG gọi on-sale
+            console.log("Không tìm thấy Flash Sale đang hoạt động");
+            setSaleProducts([]);
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy sản phẩm Flash Sale:", error);
+
+          // Khi có lỗi cũng hiển thị mảng rỗng
+          console.log("Xảy ra lỗi khi lấy Flash Sale, hiển thị mảng rỗng");
+          setSaleProducts([]);
+        }
 
         setFeaturedProducts(popularRes.data.content || []);
         setNewProducts(recentRes.data.content || []);
-        setSaleProducts(saleRes.data.content || []);
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
       } finally {
@@ -181,7 +290,7 @@ const FarmHub2 = () => {
               {product.onSale ? (
                 <div>
                   <span className="text-gray-500 line-through text-sm">
-                    {product.price.toLocaleString()}đ
+                    {product.price.toLocaleString()}
                   </span>
                   <p className="text-red-500 font-bold">
                     {product.salePrice.toLocaleString()}đ
@@ -351,7 +460,8 @@ const FarmHub2 = () => {
                             <FaBolt className="ml-2 text-yellow-300" />
                           </h2>
                           <p className="text-white font-medium">
-                            Ưu đãi đặc biệt - Số lượng có hạn
+                            Ưu đãi đặc biệt - Số lượng có hạn (
+                            {saleProducts.length} sản phẩm)
                           </p>
                         </div>
                       </div>
@@ -383,7 +493,10 @@ const FarmHub2 = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                      {saleProducts.slice(0, 4).map((product) => (
+                      {console.log(
+                        `Rendering ${saleProducts.length} Flash Sale products`
+                      )}
+                      {saleProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                       ))}
                     </div>

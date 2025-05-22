@@ -160,13 +160,25 @@ const WeatherDataPage = () => {
       try {
         // Lấy dữ liệu thời tiết hiện tại từ API
         console.log("Gọi API getCurrentWeather với:", city, country);
-        weatherData = await weatherService.getCurrentWeather(city, country);
-        console.log("Kết quả API getCurrentWeather:", weatherData);
+        const response = await weatherService.getCurrentWeather(city, country);
+        console.log("Kết quả API getCurrentWeather:", response);
+
+        // Kiểm tra định dạng dữ liệu và chuyển đổi
+        weatherData = transformWeatherData(response);
 
         // Lấy lịch sử dữ liệu thời tiết 7 ngày qua
         console.log("Gọi API getWeatherHistory với:", city, country);
-        historyData = await weatherService.getWeatherHistory(city, country, 7);
-        console.log("Kết quả API getWeatherHistory:", historyData);
+        const historyResponse = await weatherService.getWeatherHistory(
+          city,
+          country,
+          7
+        );
+        console.log("Kết quả API getWeatherHistory:", historyResponse);
+
+        // Chuyển đổi dữ liệu lịch sử
+        historyData = Array.isArray(historyResponse)
+          ? historyResponse.map(transformWeatherData)
+          : [];
       } catch (apiError) {
         console.error("Lỗi chi tiết khi gọi API thời tiết:", apiError);
         console.error("API Error Message:", apiError.message);
@@ -213,27 +225,32 @@ const WeatherDataPage = () => {
 
         // Dữ liệu lịch sử thời tiết mẫu
         historyData = Array.from({ length: 7 }, (_, index) => {
+          // Tạo ngày từ hiện tại trừ đi theo index
           const date = new Date();
           date.setDate(date.getDate() - index - 1);
 
+          // Đảm bảo timestamp hợp lệ
+          const timestamp = Math.floor(date.getTime() / 1000);
+
+          // Random weather data
+          const weatherTypes = ["Clear", "Clouds", "Rain"];
+          const weatherDescriptions = ["Trời nắng", "Mây rải rác", "Mưa nhẹ"];
+          const randomIndex = Math.floor(Math.random() * 3);
+
           return {
-            dt: date.getTime() / 1000,
+            dt: timestamp,
             main: {
-              temp: Math.random() * 5 + 25, // 25-30 độ C
-              humidity: Math.random() * 20 + 60, // 60-80%
+              temp: (Math.random() * 5 + 25).toFixed(1), // 25-30 độ C
+              humidity: Math.floor(Math.random() * 20 + 60), // 60-80%
             },
             weather: [
               {
-                main: ["Clear", "Clouds", "Rain"][
-                  Math.floor(Math.random() * 3)
-                ],
-                description: ["Trời nắng", "Mây rải rác", "Mưa nhẹ"][
-                  Math.floor(Math.random() * 3)
-                ],
+                main: weatherTypes[randomIndex],
+                description: weatherDescriptions[randomIndex],
               },
             ],
             wind: {
-              speed: Math.random() * 3 + 1, // 1-4 m/s
+              speed: (Math.random() * 3 + 1).toFixed(1), // 1-4 m/s
             },
             rain:
               Math.random() > 0.7 ? { "1h": Math.random() * 10 } : undefined,
@@ -242,7 +259,7 @@ const WeatherDataPage = () => {
       }
 
       // Cập nhật state với dữ liệu từ API hoặc dữ liệu mẫu
-      console.log("Đang cập nhật state với dữ liệu thời tiết");
+      console.log("Đang cập nhật state với dữ liệu thời tiết", weatherData);
       setCurrentWeather(weatherData);
       setWeatherHistory(historyData);
       console.log("Đã cập nhật state thành công");
@@ -262,6 +279,63 @@ const WeatherDataPage = () => {
     }
   };
 
+  // Hàm chuyển đổi dữ liệu thời tiết từ API sang định dạng phù hợp
+  const transformWeatherData = (apiData) => {
+    // Kiểm tra nếu dữ liệu đã có định dạng phù hợp
+    if (apiData?.main && apiData?.weather) {
+      return apiData;
+    }
+
+    // Kiểm tra dữ liệu có là mảng không
+    if (Array.isArray(apiData) && apiData.length > 0) {
+      apiData = apiData[0];
+    }
+
+    // Xử lý trường hợp dữ liệu có định dạng khác
+    // Tạo đối tượng với cấu trúc tương thích
+    return {
+      id: apiData?.id,
+      city: apiData?.city,
+      country: apiData?.country,
+      dt: apiData?.createdAt
+        ? new Date(apiData.createdAt).getTime() / 1000
+        : new Date().getTime() / 1000,
+      main: {
+        temp: apiData?.temperature || apiData?.temp || 27,
+        feels_like: apiData?.feelsLike || apiData?.temperature || 28,
+        temp_min: apiData?.tempMin || apiData?.temperature - 2 || 25,
+        temp_max: apiData?.tempMax || apiData?.temperature + 2 || 30,
+        humidity: apiData?.humidity || 70,
+        pressure: apiData?.pressure || 1010,
+      },
+      weather: [
+        {
+          main:
+            apiData?.weatherMain ||
+            apiData?.description?.split(" ")[0] ||
+            "Mây",
+          description:
+            apiData?.weatherDescription ||
+            apiData?.description ||
+            "Mây rải rác",
+          icon: apiData?.icon || "04d",
+        },
+      ],
+      wind: {
+        speed: apiData?.windSpeed || 2,
+        deg: apiData?.windDeg || 120,
+      },
+      clouds: {
+        all: apiData?.cloudiness || 40,
+      },
+      rain: apiData?.rainfall ? { "1h": apiData.rainfall } : null,
+      sys: {
+        sunrise: apiData?.sunrise || new Date().setHours(6, 0, 0, 0) / 1000,
+        sunset: apiData?.sunset || new Date().setHours(18, 0, 0, 0) / 1000,
+      },
+    };
+  };
+
   // Hàm lấy lời khuyên nông nghiệp
   const fetchAgriculturalAdvice = async () => {
     if (!city) return;
@@ -272,14 +346,27 @@ const WeatherDataPage = () => {
       let adviceHistoryData;
 
       try {
-        adviceData = await weatherService.getLatestAgriculturalAdvice(
-          city,
-          country
+        const currentAdviceResponse =
+          await weatherService.getLatestAgriculturalAdvice(city, country);
+        console.log(
+          "Kết quả API getLatestAgriculturalAdvice:",
+          currentAdviceResponse
         );
-        adviceHistoryData = await weatherService.getAgriculturalAdviceHistory(
-          city,
-          country
+
+        // Chuyển đổi dữ liệu lời khuyên
+        adviceData = transformAdviceData(currentAdviceResponse);
+
+        const historyResponse =
+          await weatherService.getAgriculturalAdviceHistory(city, country);
+        console.log(
+          "Kết quả API getAgriculturalAdviceHistory:",
+          historyResponse
         );
+
+        // Chuyển đổi dữ liệu lịch sử lời khuyên
+        adviceHistoryData = Array.isArray(historyResponse)
+          ? historyResponse.map(transformAdviceData)
+          : [];
       } catch (apiError) {
         console.error("Lỗi khi gọi API lời khuyên:", apiError);
 
@@ -486,6 +573,7 @@ const WeatherDataPage = () => {
 
       setCurrentAdvice(adviceData);
       setAdviceHistory(adviceHistoryData || []);
+      console.log("Đã cập nhật dữ liệu lời khuyên:", adviceData);
     } catch (err) {
       console.error("Lỗi khi xử lý lời khuyên nông nghiệp:", err);
       setError(
@@ -496,14 +584,99 @@ const WeatherDataPage = () => {
     }
   };
 
+  // Hàm chuyển đổi dữ liệu lời khuyên từ API sang định dạng phù hợp
+  const transformAdviceData = (apiData) => {
+    // Kiểm tra nếu dữ liệu đã có định dạng phù hợp
+    if (apiData?.weatherData && apiData?.farmingAdvice) {
+      return apiData;
+    }
+
+    // Nếu là mảng, lấy phần tử đầu tiên
+    if (Array.isArray(apiData) && apiData.length > 0) {
+      apiData = apiData[0];
+    }
+
+    // Chuyển đổi dữ liệu sang định dạng phù hợp
+    return {
+      id: apiData?.id || 1,
+      weatherData: {
+        city: apiData?.city || city,
+        country: apiData?.country || country,
+        temperature: apiData?.temperature || 27,
+        humidity: apiData?.humidity || 70,
+        windSpeed: apiData?.windSpeed || 2.5,
+        description: apiData?.weatherDescription || "Mây rải rác",
+      },
+      weatherSummary:
+        apiData?.weatherSummary || apiData?.summary || "Thời tiết ôn hòa",
+      farmingAdvice:
+        apiData?.farmingAdvice ||
+        apiData?.advice ||
+        "Tưới nước đều đặn, bón phân theo hướng dẫn",
+      cropAdvice: apiData?.cropAdvice || "Phù hợp cho đa dạng cây trồng",
+      warnings: apiData?.warnings || null,
+      isRainySeason: apiData?.isRainySeason || false,
+      isDrySeason: apiData?.isDrySeason || false,
+      isSuitableForPlanting:
+        apiData?.isSuitableForPlanting !== undefined
+          ? apiData.isSuitableForPlanting
+          : true,
+      isSuitableForHarvesting:
+        apiData?.isSuitableForHarvesting !== undefined
+          ? apiData.isSuitableForHarvesting
+          : true,
+      recommendedActivities: apiData?.recommendedActivities || "",
+      createdAt: apiData?.createdAt || new Date().toISOString(),
+      updatedAt: apiData?.updatedAt || new Date().toISOString(),
+    };
+  };
+
   // Format thời gian
   const formatDateTime = (dateTime) => {
-    if (!dateTime) return "";
+    if (!dateTime) return "N/A";
+
     try {
-      return new Date(dateTime).toLocaleString("vi-VN");
+      // Handle Unix timestamps in seconds (API often returns these)
+      if (typeof dateTime === "number") {
+        return new Date(dateTime * 1000).toLocaleString("vi-VN");
+      }
+
+      // If it's a Date object
+      if (dateTime instanceof Date) {
+        if (isNaN(dateTime.getTime())) {
+          return "N/A"; // Invalid Date object
+        }
+        return dateTime.toLocaleString("vi-VN");
+      }
+
+      // If it's already a formatted string, try to parse as ISO format first
+      const parsedDate = new Date(dateTime);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toLocaleString("vi-VN");
+      }
+
+      // Try special handling for dd/mm/yyyy format that might be coming from API
+      if (typeof dateTime === "string" && dateTime.includes("/")) {
+        const parts = dateTime.split(/[/ :]/);
+        // Check if it looks like dd/mm/yyyy format
+        if (parts.length >= 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+          const year = parseInt(parts[2], 10);
+
+          const parsedDate = new Date(year, month, day);
+          if (!isNaN(parsedDate.getTime())) {
+            return parsedDate.toLocaleString("vi-VN");
+          }
+        }
+      }
+
+      // If we couldn't parse it, return the original string
+      console.warn("Không thể định dạng thời gian:", dateTime);
+      return String(dateTime);
     } catch (error) {
-      console.error("Lỗi định dạng thời gian:", error);
-      return dateTime;
+      console.error("Lỗi định dạng thời gian:", error, "Input:", dateTime);
+      return "N/A";
     }
   };
 
@@ -572,24 +745,24 @@ const WeatherDataPage = () => {
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                 <ThermostatIcon color="error" sx={{ mr: 1, fontSize: 32 }} />
                 <Typography variant="h4">
-                  {formatTemperature(currentWeather.main.temp)}
+                  {formatTemperature(currentWeather.main?.temp)}
                 </Typography>
                 <Typography variant="body2" sx={{ ml: 1 }}>
                   Cảm giác như{" "}
-                  {formatTemperature(currentWeather.main.feels_like)}
+                  {formatTemperature(currentWeather.main?.feels_like)}
                 </Typography>
               </Box>
 
               <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-                {currentWeather.weather.main} -{" "}
-                {currentWeather.weather.description}
+                {currentWeather.weather?.main || "N/A"} -{" "}
+                {currentWeather.weather?.description || "N/A"}
               </Typography>
 
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
                 <Chip
                   icon={<ThermostatIcon />}
                   label={`Cao: ${formatTemperature(
-                    currentWeather.main.temp_max
+                    currentWeather.main?.temp_max
                   )}`}
                   color="error"
                   variant="outlined"
@@ -597,7 +770,7 @@ const WeatherDataPage = () => {
                 <Chip
                   icon={<ThermostatIcon />}
                   label={`Thấp: ${formatTemperature(
-                    currentWeather.main.temp_min
+                    currentWeather.main?.temp_min
                   )}`}
                   color="primary"
                   variant="outlined"
@@ -616,7 +789,7 @@ const WeatherDataPage = () => {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <WaterDropIcon color="primary" sx={{ mr: 1 }} />
                     <Typography>
-                      Độ ẩm: {currentWeather.main.humidity}%
+                      Độ ẩm: {currentWeather.main?.humidity || "N/A"}%
                     </Typography>
                   </Box>
                 </Grid>
@@ -625,7 +798,7 @@ const WeatherDataPage = () => {
                   <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                     <AirIcon color="primary" sx={{ mr: 1 }} />
                     <Typography>
-                      Gió: {currentWeather.wind.speed} m/s
+                      Gió: {currentWeather.wind?.speed || "N/A"} m/s
                     </Typography>
                   </Box>
                 </Grid>
@@ -633,7 +806,9 @@ const WeatherDataPage = () => {
                 <Grid item xs={6}>
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <CloudIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography>Mây: {currentWeather.clouds.all}%</Typography>
+                    <Typography>
+                      Mây: {currentWeather.clouds?.all || "N/A"}%
+                    </Typography>
                   </Box>
                 </Grid>
 
@@ -643,7 +818,7 @@ const WeatherDataPage = () => {
                     <Typography>
                       Lượng mưa:{" "}
                       {currentWeather.rain
-                        ? `${currentWeather.rain["1h"]} mm`
+                        ? `${currentWeather.rain["1h"] || "0"} mm`
                         : "0 mm"}
                     </Typography>
                   </Box>
@@ -660,7 +835,7 @@ const WeatherDataPage = () => {
                       Bình minh:{" "}
                       {
                         formatDateTime(
-                          new Date(currentWeather.sys.sunrise * 1000)
+                          new Date(currentWeather.sys?.sunrise * 1000)
                         ).split(", ")[1]
                       }
                     </Typography>
@@ -674,7 +849,7 @@ const WeatherDataPage = () => {
                       Hoàng hôn:{" "}
                       {
                         formatDateTime(
-                          new Date(currentWeather.sys.sunset * 1000)
+                          new Date(currentWeather.sys?.sunset * 1000)
                         ).split(", ")[1]
                       }
                     </Typography>
@@ -862,56 +1037,76 @@ const WeatherDataPage = () => {
           Lịch sử thời tiết 7 ngày qua
         </Typography>
         <List>
-          {weatherHistory.map((item, index) => (
-            <Card key={index} sx={{ mb: 2 }}>
-              <CardHeader
-                title={`Thời tiết ngày ${
-                  formatDateTime(new Date(item.dt * 1000)).split(",")[0]
-                }`}
-                subheader={formatDateTime(new Date(item.dt * 1000))}
-              />
-              <CardContent>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={4}>
-                    <ListItem>
-                      <ListItemIcon>
-                        <ThermostatIcon color="error" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={`Nhiệt độ: ${formatTemperature(
-                          item.main.temp
-                        )}`}
-                      />
-                    </ListItem>
+          {weatherHistory.map((item, index) => {
+            // Kiểm tra dữ liệu trước khi render
+            if (!item || !item.main || !item.weather || !item.weather[0]) {
+              console.error("Dữ liệu thời tiết không đầy đủ:", item);
+              return (
+                <Alert severity="warning" key={index} sx={{ mb: 2 }}>
+                  Dữ liệu thời tiết không đầy đủ
+                </Alert>
+              );
+            }
+
+            return (
+              <Card key={index} sx={{ mb: 2 }}>
+                {" "}
+                <CardHeader
+                  title={`Thời tiết ngày ${index + 1}`}
+                  subheader={
+                    item.dt
+                      ? formatDateTime(new Date(item.dt * 1000))
+                      : `Ngày ${index + 1}`
+                  }
+                />
+                <CardContent>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <ListItem>
+                        <ListItemIcon>
+                          <ThermostatIcon color="error" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`Nhiệt độ: ${formatTemperature(
+                            item.main?.temp
+                          )}`}
+                        />
+                      </ListItem>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <ListItem>
+                        <ListItemIcon>
+                          <WaterDropIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`Độ ẩm: ${item.main?.humidity || "N/A"}%`}
+                        />
+                      </ListItem>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <ListItem>
+                        <ListItemIcon>
+                          <AirIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`Gió: ${item.wind?.speed || "N/A"} m/s`}
+                        />
+                      </ListItem>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} md={4}>
-                    <ListItem>
-                      <ListItemIcon>
-                        <WaterDropIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText primary={`Độ ẩm: ${item.main.humidity}%`} />
-                    </ListItem>
-                  </Grid>
-                  <Grid item xs={12} md={4}>
-                    <ListItem>
-                      <ListItemIcon>
-                        <AirIcon />
-                      </ListItemIcon>
-                      <ListItemText primary={`Gió: ${item.wind.speed} m/s`} />
-                    </ListItem>
-                  </Grid>
-                </Grid>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  {item.weather[0].main} - {item.weather[0].description}
-                </Typography>
-                {item.rain && (
                   <Typography variant="body2" sx={{ mt: 1 }}>
-                    Lượng mưa: {item.rain["1h"] || item.rain["3h"] || 0} mm
+                    {item.weather[0]?.main || "N/A"} -{" "}
+                    {item.weather[0]?.description || "N/A"}
                   </Typography>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  {item.rain && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Lượng mưa: {item.rain["1h"] || item.rain["3h"] || 0} mm
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </List>
       </Box>
     );

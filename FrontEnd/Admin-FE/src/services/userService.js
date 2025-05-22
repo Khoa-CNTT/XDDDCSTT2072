@@ -5,6 +5,12 @@ import api from './api';
  */
 const mapApiResponse = (userData) => {
   try {
+    // Kiểm tra dữ liệu đầu vào
+    if (!userData) {
+      console.warn("Empty user data provided to mapper");
+      return {};
+    }
+    
     // Nếu đã có cấu trúc field chuẩn thì giữ nguyên
     if (userData.fullName) {
       return userData;
@@ -15,6 +21,7 @@ const mapApiResponse = (userData) => {
       ...userData,
       fullName: userData.userName || userData.fullName || userData.name || '',
       avatarUrl: userData.imageUrl || userData.avatarUrl || '',
+      role: userData.roleName || userData.role || 'User',
     };
   } catch (error) {
     console.error("Error mapping user data:", error);
@@ -33,11 +40,18 @@ const userService = {
       console.log("Users API response:", response.data);
       
       // Xử lý dữ liệu trả về
-      if (Array.isArray(response.data)) {
-        return response.data.map(mapApiResponse);
+      let userData = response.data;
+      
+      // Nếu response có cấu trúc {success, message, data}
+      if (response.data && response.data.data) {
+        userData = response.data.data;
       }
       
-      return response.data; // Trả về dữ liệu nguyên bản nếu không phải mảng
+      if (Array.isArray(userData)) {
+        return userData.map(mapApiResponse);
+      }
+      
+      return userData; // Trả về dữ liệu nguyên bản nếu không phải mảng
     } catch (error) {
       console.error("Error in getAllUsers:", error);
       throw error;
@@ -46,95 +60,138 @@ const userService = {
   
   async getUserById(id) {
     try {
+      if (!id) {
+        throw new Error("Invalid user ID provided");
+      }
+      
+      console.log(`Đang gọi API lấy thông tin người dùng với ID: ${id}`);
       const response = await api.get(`/users/${id}`);
-      return mapApiResponse(response.data);
+      console.log('Dữ liệu người dùng từ API:', response.data);
+      
+      // Kiểm tra dữ liệu trả về
+      if (!response.data) {
+        throw new Error("No data returned from API");
+      }
+      
+      // Lấy dữ liệu người dùng từ trường data trong response
+      const userData = response.data.data || response.data;
+      console.log('Dữ liệu người dùng thực tế:', userData);
+      
+      const mappedData = mapApiResponse(userData);
+      console.log('Dữ liệu người dùng sau khi map:', mappedData);
+      
+      // Đảm bảo ID được gán vào dữ liệu
+      return {
+        ...mappedData,
+        id: id
+      };
     } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng:', error);
       throw error;
     }
   },
   
   async getUserByEmail(email) {
-    try {
       const response = await api.get(`/users/email`, {
         params: { email }
       });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    
+    // Trả về data hoặc response.data.data nếu có
+    return response.data.data || response.data;
   },
 
   async findUserByName(name) {
-    try {
       const response = await api.get(`/users/findByName`, {
         params: { name }
       });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    
+    // Trả về data hoặc response.data.data nếu có
+    return response.data.data || response.data;
   },
   
   async createUser(userData) {
-    try {
       const response = await api.post('/users/register-with-image', userData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    
+    // Trả về data hoặc response.data.data nếu có
+    return response.data.data || response.data;
   },
   
   async updateUser(id, userData) {
     try {
+      // Kiểm tra xem id có hợp lệ không
+      if (!id || id === 'undefined') {
+        console.error('ID người dùng không hợp lệ:', id);
+        throw new Error('ID người dùng không hợp lệ');
+      }
+      
+      console.log('Đang cập nhật người dùng với ID:', id);
       let response;
       const hasImage = userData.image instanceof File;
       
-      // Nếu có hình ảnh mới, sử dụng API cập nhật cả thông tin và hình ảnh
+      // Bước 1: Cập nhật thông tin người dùng trước
+      const userDataToUpdate = {...userData};
+      
+      // Loại bỏ các trường không cần thiết
+      delete userDataToUpdate.image;
+      delete userDataToUpdate.avatarUrl;
+      
+      // Map các trường dữ liệu để phù hợp với UserDTO của backend
+      
+      // 1. Chuyển fullName thành userName
+      if (userDataToUpdate.fullName) {
+        userDataToUpdate.userName = userDataToUpdate.fullName;
+        delete userDataToUpdate.fullName; // Xóa trường fullName
+      }
+
+      // 2. Chuyển role thành roleName
+      if (userDataToUpdate.role) {
+        userDataToUpdate.roleName = userDataToUpdate.role;
+      }
+      // Luôn xóa trường role vì backend không chấp nhận
+      delete userDataToUpdate.role;
+      
+      // 3. Xóa trường status vì backend không chấp nhận
+      delete userDataToUpdate.status;
+      
+      // 4. Xử lý password
+      // Không gửi password nếu trống
+      if (!userDataToUpdate.password || userDataToUpdate.password.trim() === '') {
+        delete userDataToUpdate.password;
+        // Báo cho backend biết giữ nguyên mật khẩu cũ
+        userDataToUpdate.keepExistingPassword = true;
+      }
+      
+      console.log('ID người dùng:', id);
+      console.log('Dữ liệu cập nhật sau khi điều chỉnh:', userDataToUpdate);
+      
+      // Gọi API cập nhật thông tin người dùng
+      response = await api.put(`/users/${id}`, userDataToUpdate);
+      
+      // Bước 2: Nếu có ảnh mới, tải lên ảnh sau khi cập nhật thông tin thành công
       if (hasImage) {
+        console.log('Đang tải lên ảnh mới cho người dùng ID:', id);
         const formData = new FormData();
-        
-        // Thêm các trường thông tin người dùng
-        Object.keys(userData).forEach(key => {
-          if (key !== 'image' && key !== 'avatarUrl') {
-            formData.append(key, userData[key]);
-          }
-        });
-        
-        // Thêm hình ảnh
         formData.append('image', userData.image);
         
-        // Gọi API cập nhật có hình ảnh
-        response = await api.put(`/users/${id}/update-with-image`, formData, {
+        // Gọi API tải lên ảnh
+        const imageResponse = await api.post(`/users/${id}/upload-image`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
-      } else {
-        // Không có hình ảnh mới, chỉ cập nhật thông tin người dùng
-        const userDataToUpdate = {...userData};
-        delete userDataToUpdate.image;
-        delete userDataToUpdate.avatarUrl;
         
-        // Xử lý dữ liệu trước khi gửi đến API
-        // Không gửi password nếu trống
-        if (!userDataToUpdate.password || userDataToUpdate.password.trim() === '') {
-          delete userDataToUpdate.password;
+        // Cập nhật response với dữ liệu mới nhất từ việc tải lên ảnh
+        if (imageResponse.data) {
+          response = imageResponse;
+        }
         }
         
-        // Thêm trường userName từ fullName nếu chưa có
-        if (!userDataToUpdate.userName && userDataToUpdate.fullName) {
-          userDataToUpdate.userName = userDataToUpdate.fullName;
-        }
-        
-        console.log('Sending user data update:', userDataToUpdate);
-        response = await api.put(`/users/${id}`, userDataToUpdate);
-      }
-      
-      return response.data;
+      // Trả về data hoặc response.data.data nếu có
+      return response.data.data || response.data;
     } catch (error) {
       console.error('Error in updateUser:', error.response?.data || error);
       throw error;
@@ -142,7 +199,6 @@ const userService = {
   },
   
   async uploadProfileImage(id, imageFile) {
-    try {
       const formData = new FormData();
       formData.append('image', imageFile);
       
@@ -151,28 +207,23 @@ const userService = {
           'Content-Type': 'multipart/form-data'
         }
       });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    
+    // Trả về data hoặc response.data.data nếu có
+    return response.data.data || response.data;
   },
   
   async deleteUser(id) {
-    try {
       const response = await api.delete(`/users/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    
+    // Trả về data hoặc response.data.data nếu có
+    return response.data.data || response.data;
   },
   
   async getUserStats() {
-    try {
       const response = await api.get('/admin/user-stats');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    
+    // Trả về data hoặc response.data.data nếu có
+    return response.data.data || response.data;
   }
 };
 

@@ -318,7 +318,8 @@ const Subscriptions = () => {
             Nền tảng nông nghiệp toàn diện
           </h1>
           <p className="text-lg mb-6 opacity-90 animate-fade-in delay-200">
-            Trải nghiệm ngay để mua sắm, đăng bài, đọc tin tức và trò chuyện với AI - hoặc nâng cấp lên Premium để trở thành người bán hàng
+            Trải nghiệm ngay để mua sắm, đăng bài, đọc tin tức và trò chuyện với
+            AI - hoặc nâng cấp lên Premium để trở thành người bán hàng
           </p>
           <div className="flex flex-wrap gap-3 justify-center mb-6">
             <Badge className="bg-white text-green-700 px-3 py-1 text-sm font-medium rounded-full shadow-md hover:shadow-lg transition-all hover:scale-105 animate-fade-in delay-300">
@@ -387,6 +388,18 @@ const Subscriptions = () => {
                         </p>
                       )}
                     </div>
+
+                    {/* Thêm thông báo cho gói Premium */}
+                    {!isFree && (
+                      <div className="mt-3 bg-amber-100 border border-amber-300 rounded-md p-2 text-amber-800 text-sm">
+                        <p className="font-medium">Lưu ý:</p>
+                        <p className="text-xs">
+                          Tính năng đang phát triển nên giờ chưa tiến hành thanh
+                          toán được. Quý khách vui lòng điền thông tin đăng ký
+                          gửi lên cho ban quản trị.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
 
@@ -458,7 +471,7 @@ const Subscriptions = () => {
                   >
                     <div className="absolute inset-0 w-0 bg-white opacity-20 group-hover:w-full transition-all duration-500 ease-out"></div>
                     <span className="relative z-10">
-                      {isFree ? "Trải nghiệm ngay" : "Đăng ký Premium"}
+                      {isFree ? "Trải nghiệm ngay" : "Đăng ký thông tin"}
                     </span>
                   </Button>
                 </CardFooter>

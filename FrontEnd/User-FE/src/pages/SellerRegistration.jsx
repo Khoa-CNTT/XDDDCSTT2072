@@ -12,6 +12,7 @@ import SellerRegistrationForm from "@/components/user/SellerRegistrationForm";
 import userSubscriptionService from "@/services/userSubscriptionService";
 import sellerRegistrationService from "@/services/sellerRegistrationService";
 import { toast } from "react-hot-toast";
+import { formatDateWithFallback } from "@/lib/utils";
 
 const SellerRegistration = () => {
   const navigate = useNavigate();
@@ -174,8 +175,9 @@ const SellerRegistration = () => {
             <div className="flex justify-between mb-2">
               <span className="font-medium">Ngày đăng ký:</span>
               <span>
-                {new Date(registrationStatus.createdAt).toLocaleDateString(
-                  "vi-VN"
+                {formatDateWithFallback(
+                  registrationStatus.createdAt,
+                  "Đang cập nhật"
                 )}
               </span>
             </div>
@@ -203,11 +205,10 @@ const SellerRegistration = () => {
             <div className="flex justify-between mb-2">
               <span className="font-medium">Ngày xử lý:</span>
               <span>
-                {registrationStatus.processedAt
-                  ? new Date(registrationStatus.processedAt).toLocaleDateString(
-                      "vi-VN"
-                    )
-                  : "Không xác định"}
+                {formatDateWithFallback(
+                  registrationStatus.processedAt,
+                  "Không xác định"
+                )}
               </span>
             </div>
           </div>
