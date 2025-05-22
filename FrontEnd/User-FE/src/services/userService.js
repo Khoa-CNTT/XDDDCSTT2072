@@ -102,10 +102,26 @@ export const sendConnectionRequest = async (axiosPrivate, targetUserId) => {
   }
 };
 
-// Chấp nhận yêu cầu kết nối
+// Chấp nhận yêu cầu kết nối từ người dùng
 export const acceptConnectionRequest = async (axiosPrivate, requesterId) => {
   try {
+    console.log(`Accepting connection request from user ID: ${requesterId}`);
     const response = await axiosPrivate.put(`/connections/accept/${requesterId}`);
+    console.log("Response from accept connection:", response.data);
+    
+    // Kiểm tra response để đảm bảo rằng kết nối đã được chấp nhận
+    if (response.data && response.data.success) {
+      console.log("Kết nối đã được chấp nhận thành công");
+      
+      // Kiểm tra trạng thái kết nối ngay lập tức sau khi chấp nhận
+      try {
+        const checkResponse = await axiosPrivate.get(`/connections/check/${requesterId}`);
+        console.log("Trạng thái sau khi chấp nhận:", checkResponse.data);
+      } catch (checkErr) {
+        console.warn("Không thể kiểm tra trạng thái sau khi chấp nhận:", checkErr);
+      }
+    }
+    
     return response.data.data;
   } catch (error) {
     console.error(`Lỗi khi chấp nhận yêu cầu kết nối từ người dùng ID ${requesterId}:`, error);
@@ -157,39 +173,35 @@ export const unblockUser = async (axiosPrivate, targetUserId) => {
   }
 };
 
-// Lấy danh sách kết nối của người dùng hiện tại
-export const getUserConnections = async (axiosPrivate, userId = null, page = 0, size = 20) => {
+// Lấy kết nối của người dùng hiện tại
+export const getUserConnections = async (axiosPrivate) => {
   try {
-    // URL endpoint tùy thuộc vào việc có truyền userId hay không
-    const url = userId ? `/users/${userId}/connections` : '/connections';
+    console.log('Đang gọi API lấy danh sách kết nối...');
+    const response = await axiosPrivate.get('/connections');
+    console.log('Phản hồi từ API connections:', response.data);
     
-    // Gọi API từ UserConnectionController để lấy danh sách người đã kết nối
-    const response = await axiosPrivate.get(url, {
-      params: { 
-        page, 
-        size, 
-        onlyConnected: true,
-        status: 'ACCEPTED'
-      }
-    });
-    
-    console.log('Response từ API connections:', response.data);
-    
-    if (response.data && response.data.data && response.data.data.content) {
-      // Trường hợp API trả về dạng Page<> từ Spring Boot
-      return response.data.data.content;
-    } else if (response.data && response.data.data) {
-      // Trường hợp API trả về list bọc trong data
+    // Kiểm tra và xử lý các định dạng dữ liệu trả về khác nhau
+    if (response.data && response.data.data) {
+      // Định dạng 1: { data: [...] }
+      console.log('Số lượng kết nối:', Array.isArray(response.data.data) ? response.data.data.length : 'không phải mảng');
       return response.data.data;
-    } else if (response.data && Array.isArray(response.data)) {
-      // Trường hợp API trả về array trực tiếp
+    } else if (response.data && response.data.content) {
+      // Định dạng 2: { content: [...] }
+      console.log('Số lượng kết nối:', response.data.content.length);
+      return response.data.content;  
+    } else if (Array.isArray(response.data)) {
+      // Định dạng 3: Trực tiếp là mảng
+      console.log('Số lượng kết nối:', response.data.length);
       return response.data;
     } else {
-      console.warn('API trả về cấu trúc dữ liệu không xác định:', response.data);
+      console.warn('Định dạng dữ liệu không xác định:', response.data);
       return [];
     }
   } catch (error) {
     console.error('Lỗi khi lấy danh sách kết nối:', error);
+    if (error.response) {
+      console.error('Chi tiết lỗi API:', error.response.status, error.response.data);
+    }
     return [];
   }
 };
@@ -208,8 +220,36 @@ export const getPendingConnectionRequests = async (axiosPrivate) => {
 // Kiểm tra trạng thái kết nối với người dùng khác
 export const checkConnectionStatus = async (axiosPrivate, targetUserId) => {
   try {
+    console.log(`Checking connection status with user ID: ${targetUserId}`);
     const response = await axiosPrivate.get(`/connections/check/${targetUserId}`);
-    return response.data.data;
+    console.log("Raw API response from checkConnectionStatus:", response.data);
+    
+    // Add more detailed data validation and logging
+    const statusData = response.data.data || {};
+    
+    // Fix: Kiểm tra và đảm bảo các trường boolean được thiết lập đúng dựa trên status
+    if (statusData.status && typeof statusData.status === 'string') {
+      // Đảm bảo các trường boolean phù hợp với status
+      if (statusData.status === "CONNECTED" && !statusData.isConnected) {
+        statusData.isConnected = true;
+      }
+      if (statusData.status === "PENDING_SENT" && !statusData.isPendingSent) {
+        statusData.isPendingSent = true;
+      }
+      if (statusData.status === "PENDING_RECEIVED" && !statusData.isPendingReceived) {
+        statusData.isPendingReceived = true;
+      }
+    }
+    
+    console.log("Processed connection status data:", {
+      status: statusData.status,
+      isConnected: statusData.isConnected, 
+      isPendingSent: statusData.isPendingSent,
+      isPendingReceived: statusData.isPendingReceived,
+      isBlocked: statusData.isBlocked
+    });
+    
+    return statusData;
   } catch (error) {
     console.error(`Lỗi khi kiểm tra trạng thái kết nối với người dùng ID ${targetUserId}:`, error);
     // Trả về trạng thái mặc định khi có lỗi

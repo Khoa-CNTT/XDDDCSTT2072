@@ -925,34 +925,76 @@ export const getUserPosts = async (axiosPrivate, userId, page = 0, size = 10) =>
       params: { page, size }
     });
     
+    console.log('Phản hồi từ API getUserPosts:', response.data);
+    
     if (response.data && response.data.data) {
       console.log(`Đã lấy ${response.data.data.content?.length || 0} bài viết của người dùng ID ${userId}`);
+      
+      // Debug: Kiểm tra cấu trúc dữ liệu
+      if (response.data.data.content) {
+        console.log("Số bài viết:", response.data.data.content.length);
+        if (response.data.data.content.length > 0) {
+          console.log("Bài viết đầu tiên:", response.data.data.content[0].id, response.data.data.content[0].title);
+        }
+      } else if (Array.isArray(response.data.data)) {
+        console.log("Số bài viết (mảng):", response.data.data.length);
+      } else {
+        console.log("Cấu trúc dữ liệu không xác định:", response.data.data);
+      }
+      
       return response.data.data;
+    } else if (response.data && response.data.content) {
+      // Trường hợp API trả về content trực tiếp
+      console.log(`Đã lấy ${response.data.content.length || 0} bài viết của người dùng ID ${userId}`);
+      return response.data;
+    } else if (Array.isArray(response.data)) {
+      // Trường hợp API trả về mảng trực tiếp
+      console.log(`Đã lấy ${response.data.length || 0} bài viết của người dùng ID ${userId}`);
+      return { content: response.data, totalElements: response.data.length, totalPages: 1 };
     }
     
+    console.log("Không có dữ liệu bài viết hoặc cấu trúc không đúng:", response.data);
     return { content: [], totalElements: 0, totalPages: 0 };
   } catch (error) {
     console.error(`Lỗi khi lấy bài viết của người dùng ID ${userId}:`, error);
+    if (error.response) {
+      console.error('Chi tiết lỗi API:', error.response.status, error.response.data);
+    }
     return { content: [], totalElements: 0, totalPages: 0 };
   }
 };
 
 // Lấy bài viết từ những người đã kết nối
-export const getConnectionPosts = async (axiosPrivate, page = 0, size = 10) => {
+export const getConnectionPosts = async (axiosPrivate, page = 0, size = 20) => {
   try {
-    console.log(`Đang lấy bài viết từ những người kết nối`);
+    console.log(`Đang lấy bài viết từ những người kết nối (page=${page}, size=${size})`);
     const response = await axiosPrivate.get('/posts/connections', {
       params: { page, size }
     });
     
     if (response.data && response.data.data) {
       console.log(`Đã lấy ${response.data.data.content?.length || 0} bài viết từ những người kết nối`);
+      
+      // Debug: Kiểm tra xem có bài viết nào không
+      if (response.data.data.content?.length > 0) {
+        console.log("Bài viết đầu tiên:", response.data.data.content[0]);
+      } else {
+        console.log("Không có bài viết nào từ kết nối");
+      }
+      
       return response.data.data;
     }
     
+    console.log("Dữ liệu trả về không đúng định dạng expected:", response.data);
     return { content: [], totalElements: 0, totalPages: 0 };
   } catch (error) {
     console.error('Lỗi khi lấy bài viết từ những người kết nối:', error);
+    // Kiểm tra chi tiết lỗi
+    if (error.response) {
+      console.error('Lỗi từ API:', error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error('Không nhận được phản hồi từ server:', error.request);
+    }
     return { content: [], totalElements: 0, totalPages: 0 };
   }
 };

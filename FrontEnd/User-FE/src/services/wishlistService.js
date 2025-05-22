@@ -7,24 +7,22 @@ export const getUserWishlists = async (axiosPrivate) => {
   try {
     const response = await axiosPrivate.get('/wishlists');
     const wishlists = response.data;
-    
-    // Nếu có dữ liệu và là mảng, lấy chi tiết cho mỗi wishlist
+
     if (Array.isArray(wishlists) && wishlists.length > 0) {
       const wishlistsWithItems = await Promise.all(
         wishlists.map(async (wishlist) => {
           try {
-            // Lấy chi tiết từng wishlist
             const detailResponse = await axiosPrivate.get(`/wishlists/${wishlist.id}`);
             return detailResponse.data;
           } catch (error) {
             console.error(`Lỗi khi lấy chi tiết wishlist ID ${wishlist.id}:`, error);
-            return wishlist; // Trả về wishlist gốc nếu có lỗi
+            return wishlist;
           }
         })
       );
       return wishlistsWithItems;
     }
-    
+
     return wishlists;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách yêu thích:', error);
@@ -46,7 +44,15 @@ export const getWishlistById = async (axiosPrivate, wishlistId) => {
 // Tạo danh sách yêu thích mới
 export const createWishlist = async (axiosPrivate, wishlistData) => {
   try {
-    const response = await axiosPrivate.post('/wishlists', wishlistData);
+    const payload = {
+      name: wishlistData.name,
+    };
+
+    if (wishlistData.isDefault !== undefined) {
+      payload.isDefault = wishlistData.isDefault;
+    }
+
+    const response = await axiosPrivate.post('/wishlists', payload);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi tạo danh sách yêu thích:', error);
@@ -110,14 +116,19 @@ export const removeItemFromWishlist = async (axiosPrivate, wishlistId, itemId) =
 };
 
 // Di chuyển sản phẩm giữa các danh sách yêu thích
-export const moveItemBetweenWishlists = async (axiosPrivate, sourceWishlistId, targetWishlistId, itemId) => {
+export const moveItemBetweenWishlists = async (
+  axiosPrivate,
+  sourceWishlistId,
+  targetWishlistId,
+  itemId
+) => {
   try {
     const response = await axiosPrivate.post(
       `/wishlists/${sourceWishlistId}/items/${itemId}/move/${targetWishlistId}`
     );
     return response.data;
   } catch (error) {
-    console.error(`Lỗi khi di chuyển sản phẩm giữa danh sách yêu thích:`, error);
+    console.error('Lỗi khi di chuyển sản phẩm giữa danh sách yêu thích:', error);
     throw error;
   }
 };
@@ -125,21 +136,53 @@ export const moveItemBetweenWishlists = async (axiosPrivate, sourceWishlistId, t
 // Thêm sản phẩm vào danh sách yêu thích mặc định
 export const addToDefaultWishlist = async (axiosPrivate, productData) => {
   try {
-    // Lấy danh sách yêu thích hiện có
     const wishlists = await getUserWishlists(axiosPrivate);
-    
-    // Tìm danh sách yêu thích mặc định
     let defaultWishlist = wishlists.find(wishlist => wishlist.isDefault === true);
-    
-    // Nếu không có danh sách mặc định, tạo mới
+
     if (!defaultWishlist) {
       defaultWishlist = await createDefaultWishlist(axiosPrivate);
     }
-    
-    // Thêm sản phẩm vào danh sách mặc định
+
     return await addItemToWishlist(axiosPrivate, defaultWishlist.id, productData);
   } catch (error) {
     console.error('Lỗi khi thêm sản phẩm vào danh sách yêu thích mặc định:', error);
     throw error;
   }
-}; 
+};
+
+// Hàm lấy danh sách yêu thích của người dùng
+export const getWishlist = async (axiosPrivate, userId) => {
+  try {
+    const response = await axiosPrivate.get(`/wishlists/user/${userId}`);
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error('Error fetching wishlist:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Không thể tải danh sách yêu thích',
+    };
+  }
+};
+
+// Hàm thêm sản phẩm vào danh sách yêu thích
+export const addToWishlist = async (axiosPrivate, productId) => {
+  try {
+    const response = await axiosPrivate.post('/wishlists/add', {
+      productId: productId,
+    });
+    return {
+      success: true,
+      data: response.data,
+      message: 'Đã thêm vào danh sách yêu thích',
+    };
+  } catch (error) {
+    console.error('Lỗi khi thêm vào danh sách yêu thích:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Không thể thêm vào danh sách yêu thích',
+    };
+  }
+};

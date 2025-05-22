@@ -145,23 +145,26 @@ export default function CreateEditPostForm({ mode, post, onClose }) {
   };
 
   // lấy danh sách hashtag
-//   const { data: trendingHashtags } = useQuery({
-//     queryKey: ['hashtags', 'trending'],
-//     queryFn: async () => {
-//       const res = await axiosPrivate.get('hashtags/trending', {
-//         params: {
-//           page: 0,
-//           size: 10
-//         }
-//       });
-//       return res.data;
-//     }
-// });
-// console.log(trendingHashtags);
-
+  //   const { data: trendingHashtags } = useQuery({
+  //     queryKey: ['hashtags', 'trending'],
+  //     queryFn: async () => {
+  //       const res = await axiosPrivate.get('hashtags/trending', {
+  //         params: {
+  //           page: 0,
+  //           size: 10
+  //         }
+  //       });
+  //       return res.data;
+  //     }
+  // });
+  // console.log(trendingHashtags);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-2">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="grid gap-4 py-2
+     max-h-[500px] overflow-auto"
+    >
       <div className="flex items-center gap-3">
         <Avatar>
           <AvatarImage src={user?.imageUrl} />
@@ -199,7 +202,11 @@ export default function CreateEditPostForm({ mode, post, onClose }) {
 
       <div className="grid gap-1">
         <Label>Nội dung</Label>
-        <Textarea {...register("content")} placeholder="Viết gì đó..." />
+        <Textarea
+          className="max-h-[150]"
+          {...register("content")}
+          placeholder="Viết gì đó..."
+        />
         {errors.content && (
           <p className="text-sm text-red-500">{errors.content.message}</p>
         )}

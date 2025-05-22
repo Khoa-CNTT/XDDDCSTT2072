@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Plus, User, UserCheck } from "lucide-react";
+import { User, UserCheck, UserX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
@@ -11,12 +11,18 @@ import { Link } from "react-router-dom";
  * @param {function} onConnect - Hàm xử lý khi nhấn nút kết nối
  * @param {boolean} isConnected - Trạng thái đã kết nối hay chưa
  * @param {boolean} isPending - Trạng thái đang chờ xác nhận kết nối
+ * @param {boolean} isReceived - Trạng thái nhận được lời mời kết nối
+ * @param {function} onAccept - Hàm xử lý khi nhấn nút đồng ý kết nối
+ * @param {function} onDecline - Hàm xử lý khi nhấn nút từ chối kết nối
  */
 const UserConnectionItem = ({
   user,
   onConnect,
   isConnected = false,
   isPending = false,
+  isReceived = false,
+  onAccept,
+  onDecline,
   showRole = true,
 }) => {
   // Format user role label
@@ -71,28 +77,41 @@ const UserConnectionItem = ({
         </div>
       </div>
 
-      {!isConnected && !isPending && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex items-center gap-1"
-          onClick={() => onConnect(user.id)}
-        >
-          <Plus size={14} />
-          <span>Kết nối</span>
-        </Button>
-      )}
+      {/* Nút kết nối đã bị xóa theo yêu cầu */}
 
       {isPending && (
         <Button
           size="sm"
           variant="outline"
-          className="flex items-center gap-1 bg-gray-50"
+          className="flex items-center gap-1 text-gray-600 border-gray-300 bg-gray-50"
           disabled
         >
           <User size={14} />
-          <span>Đã gửi</span>
+          <span>Đã gửi lời mời kết bạn</span>
         </Button>
+      )}
+
+      {isReceived && (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="default"
+            className="flex items-center gap-1 bg-blue-600 text-white hover:bg-blue-700"
+            onClick={() => onAccept(user.id)}
+          >
+            <UserCheck size={14} />
+            <span>Đồng ý</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex items-center gap-1 bg-gray-50 text-gray-600 hover:bg-gray-100"
+            onClick={() => onDecline(user.id)}
+          >
+            <UserX size={14} />
+            <span>Từ chối</span>
+          </Button>
+        </div>
       )}
 
       {isConnected && (
@@ -103,7 +122,7 @@ const UserConnectionItem = ({
           disabled
         >
           <UserCheck size={14} />
-          <span>Đã kết nối</span>
+          <span>Bạn bè</span>
         </Button>
       )}
     </div>

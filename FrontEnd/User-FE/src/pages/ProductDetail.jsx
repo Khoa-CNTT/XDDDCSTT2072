@@ -114,7 +114,7 @@ const ProductDetail = () => {
   // Kiểm tra nếu có yêu cầu hiển thị form đánh giá từ location state
   useEffect(() => {
     if (location.state?.showReviewForm) {
-      // Chỉ hiển thị form đánh giá nếu ng  ời dùng đã mua sản phẩm
+      // Chỉ hiển thị form đánh giá nếu người dùng đã mua sản phẩm
       if (canReviewData?.data?.canReview) {
         setShowReviewForm(true);
       } else if (canReviewData?.data) {
@@ -187,287 +187,537 @@ const ProductDetail = () => {
     queryFn: () => getFlashSaleForProduct(axiosPrivate, id),
     enabled: !!product?.id,
     retry: 1,
-    onError: (error) => {
-      console.error("Lỗi khi tải thông tin flash sale:", error);
-    },
-  });
+    onSuccess: (data) => {
+      console.log("✅ FLASH SALE DATA SUCCESS (RAW):", JSON.stringify(data));
 
-  // Lấy sản phẩm liên quan từ data
-  const relatedProducts = relatedProductsData?.content || [];
-
-  // Lấy mã giảm giá cho sản phẩm
-  const { data: productCouponsData, isLoading: isLoadingCoupons } = useQuery({
-    queryKey: ["productCoupons", id],
-    queryFn: () => getCouponsForProduct(axiosPrivate, id),
-    retry: 1,
-    enabled: !!product?.id,
-    onError: (error) => {
-      console.error("Lỗi khi tải mã giảm giá cho sản phẩm:", error);
-    },
-  });
-
-  // Xử lý dữ liệu mã giảm giá
-  const productCoupons = productCouponsData?.data || [];
-
-  // Tính toán giá sau khi áp dụng mã giảm giá
-  useEffect(() => {
-    if (!product) return;
-
-    // Lấy giá gốc (đã tính sale nếu có)
-    const basePrice = product.onSale ? product.salePrice : product.price;
-
-    // Nếu có mã giảm giá được chọn, tính toán giá sau khi giảm
-    if (selectedCoupon) {
-      let discount = 0;
-      const totalPrice = basePrice * quantity;
-
-      // Kiểm tra điều kiện tối thiểu
-      if (
-        selectedCoupon.minOrderValue &&
-        totalPrice < selectedCoupon.minOrderValue
-      ) {
-        setCouponError(
-          `Đơn hàng tối thiểu ${selectedCoupon.minOrderValue.toLocaleString()}đ`
-        );
-        setDiscountedPrice(basePrice);
-        setDiscountAmount(0);
+      if (!product) {
+        console.log("❌ Không có thông tin sản phẩm");
         return;
       }
 
-      if (selectedCoupon.discountType === "PERCENTAGE") {
-        discount = (totalPrice * selectedCoupon.discountValue) / 100;
-        // Kiểm tra nếu có giới hạn giảm tối đa
-        if (
-          selectedCoupon.maxDiscountAmount &&
-          discount > selectedCoupon.maxDiscountAmount
-        ) {
-          discount = selectedCoupon.maxDiscountAmount;
+      // Lấy dữ liệu trực tiếp từ response để kiểm tra
+      if (data && data.status === "ACTIVE" && data.discountPercentage) {
+        // Tính giá Flash Sale từ discountPercentage
+        const productPrice = Number(product.price);
+        const discountPercentage = Number(data.discountPercentage);
+        const discountAmount = (productPrice * discountPercentage) / 100;
+        const salePrice =
+          Math.floor((productPrice - discountAmount) / 1000) * 1000;
+
+        console.log(
+          `🔥 KHỞI TẠO trực tiếp giá Flash Sale: ${salePrice} (giảm ${discountPercentage}% từ ${productPrice})`
+        );
+
+        // Cập nhật state
+        setFlashSalePrice(salePrice);
+        setFlashSalePercentage(discountPercentage);
+        if (data.endTime) {
+          setFlashSaleEndTime(new Date(data.endTime));
         }
-      } else {
-        discount = selectedCoupon.discountValue;
+      }
+      // Kiểm tra xem discountPercentage có trong rawData hay không
+      else if (
+        data &&
+        data.rawData &&
+        data.rawData.status === "ACTIVE" &&
+        data.rawData.discountPercentage
+      ) {
+        // Tính giá Flash Sale từ discountPercentage
+        const productPrice = Number(product.price);
+        const discountPercentage = Number(data.rawData.discountPercentage);
+        const discountAmount = (productPrice * discountPercentage) / 100;
+        const salePrice =
+          Math.floor((productPrice - discountAmount) / 1000) * 1000;
+
+        console.log(
+          `🔥 KHỞI TẠO từ rawData giá Flash Sale: ${salePrice} (giảm ${discountPercentage}% từ ${productPrice})`
+        );
+
+        // Cập nhật state
+        setFlashSalePrice(salePrice);
+        setFlashSalePercentage(discountPercentage);
+        if (data.rawData.endTime) {
+          setFlashSaleEndTime(new Date(data.rawData.endTime));
+        }
+      }
+      // Nếu có sản phẩm trong items
+      else if (data && data.items && Array.isArray(data.items)) {
+        const item = data.items.find(
+          (item) =>
+            String(item.productId) === String(id) ||
+            String(item.id) === String(id)
+        );
+
+        if (item && (item.salePrice || item.flashSalePrice)) {
+          const salePrice = Number(item.salePrice || item.flashSalePrice);
+          const productPrice = Number(product.price);
+          const discountPercentage = Math.round(
+            ((productPrice - salePrice) / productPrice) * 100
+          );
+
+          console.log(
+            `🔥 TÌM THẤY sản phẩm trong items với giá: ${salePrice} (giảm ${discountPercentage}% từ ${productPrice})`
+          );
+
+          setFlashSalePrice(salePrice);
+          setFlashSalePercentage(discountPercentage);
+          if (data.endTime) {
+            setFlashSaleEndTime(new Date(data.endTime));
+          }
+        }
       }
 
-      setDiscountAmount(discount);
-      setDiscountedPrice(basePrice - discount / quantity);
-      setCouponError("");
-    } else {
-      // Nếu không có mã giảm giá, giá sau giảm = giá gốc
-      setDiscountedPrice(basePrice);
-      setDiscountAmount(0);
-      setCouponError("");
-    }
-  }, [selectedCoupon, product, quantity]);
+      try {
+        // Trường hợp data là null (không có flash sale)
+        if (!data) {
+          console.log("⚠️ Không có dữ liệu Flash Sale");
+          return;
+        }
 
-  // Xử lý chọn mã giảm giá
-  const handleSelectCoupon = (coupon) => {
-    // Nếu đã chọn coupon này rồi, bỏ chọn
-    if (selectedCoupon && selectedCoupon.id === coupon.id) {
-      setSelectedCoupon(null);
-      setManualCouponCode("");
-    } else {
-      setSelectedCoupon(coupon);
-      setManualCouponCode(coupon.code);
+        // Trường hợp API trả về trực tiếp một mảng
+        if (Array.isArray(data)) {
+          console.log("📦 Flash Sale API trả về dạng mảng:", data);
+          // Tìm sản phẩm trong danh sách
+          const item = data.find(
+            (item) =>
+              String(item.productId) === String(id) ||
+              String(item.id) === String(id)
+          );
+
+          if (item) {
+            console.log("✓ Tìm thấy sản phẩm trong mảng Flash Sale:", item);
+            // Lấy giá Flash Sale từ item
+            let fsPrice = null;
+            if (item.salePrice !== undefined) {
+              fsPrice = Number(item.salePrice);
+            } else if (item.flashSalePrice !== undefined) {
+              fsPrice = Number(item.flashSalePrice);
+            }
+
+            if (fsPrice) {
+              console.log(`💰 Giá Flash Sale từ mảng: ${fsPrice}`);
+              setFlashSalePrice(fsPrice);
+              // Tính phần trăm giảm
+              const discountPercentage = Math.round(
+                ((product.price - fsPrice) / product.price) * 100
+              );
+              setFlashSalePercentage(discountPercentage);
+              return; // Đã tìm thấy, không cần xử lý thêm
+            }
+          }
+        }
+
+        // Giá sản phẩm gốc
+        const productPrice = Number(product.price);
+        console.log(`💲 Giá gốc sản phẩm: ${productPrice}`);
+
+        // Trường hợp 1: Format { code: 200, data: {...} } hoặc response đã được xử lý bởi service
+        if (data.flashSale || data.type) {
+          console.log("📦 Flash Sale đã được xử lý từ service:", data);
+
+          // Kiểm tra nếu có salePrice được trả về trực tiếp
+          if (data.salePrice !== undefined && data.salePrice !== null) {
+            console.log(
+              `💰 Giá Flash Sale được trả về trực tiếp: ${data.salePrice}`
+            );
+            const salePrice = Number(data.salePrice);
+            setFlashSalePrice(salePrice);
+
+            // Tính phần trăm giảm giá
+            const discountPercentage = Math.round(
+              ((productPrice - salePrice) / productPrice) * 100
+            );
+            setFlashSalePercentage(discountPercentage);
+            console.log(`📊 Phần trăm giảm tự tính: ${discountPercentage}%`);
+
+            // Set thời gian kết thúc nếu có
+            const flashSaleInfo = data.flashSale || data;
+            if (flashSaleInfo && flashSaleInfo.endTime) {
+              setFlashSaleEndTime(new Date(flashSaleInfo.endTime));
+            }
+
+            return; // Đã có giá, không cần tính toán thêm
+          }
+
+          const flashSaleInfo = data.flashSale || data;
+          const active = data.active || (flashSaleInfo && flashSaleInfo.active);
+          const discountPercentage =
+            data.discountPercentage ||
+            (flashSaleInfo && flashSaleInfo.discountPercentage);
+
+          if (active && discountPercentage) {
+            console.log(
+              `💲 Phần trăm giảm: ${discountPercentage}% cho sản phẩm giá ${productPrice}`
+            );
+
+            // Tính giá Flash Sale
+            const discountAmount = (productPrice * discountPercentage) / 100;
+            let salePrice = productPrice - discountAmount;
+
+            // Kiểm tra max discount
+            if (
+              flashSaleInfo.maxDiscountAmount &&
+              discountAmount > flashSaleInfo.maxDiscountAmount
+            ) {
+              salePrice = productPrice - flashSaleInfo.maxDiscountAmount;
+              console.log(
+                `✂️ Giới hạn giảm tối đa: ${flashSaleInfo.maxDiscountAmount}, giá mới: ${salePrice}`
+              );
+            }
+
+            // Làm tròn xuống hàng nghìn
+            salePrice = Math.floor(salePrice / 1000) * 1000;
+
+            console.log(
+              `🔥 GIÁ FLASH SALE TÍNH ĐƯỢC: ${salePrice} (giảm từ ${productPrice})`
+            );
+            setFlashSalePrice(salePrice);
+            setFlashSalePercentage(discountPercentage);
+
+            // Set thời gian kết thúc nếu có
+            if (flashSaleInfo.endTime) {
+              setFlashSaleEndTime(new Date(flashSaleInfo.endTime));
+            }
+          }
+
+          // Nếu có danh sách sản phẩm
+          if (
+            flashSaleInfo &&
+            flashSaleInfo.items &&
+            Array.isArray(flashSaleInfo.items)
+          ) {
+            console.log(
+              "📋 Danh sách sản phẩm Flash Sale:",
+              flashSaleInfo.items
+            );
+
+            // Tìm sản phẩm trong danh sách
+            const item = flashSaleInfo.items.find(
+              (item) =>
+                String(item.productId) === String(id) ||
+                String(item.id) === String(id)
+            );
+
+            if (item) {
+              console.log(
+                "✓ Tìm thấy sản phẩm trong danh sách Flash Sale:",
+                item
+              );
+
+              // Lấy giá Flash Sale từ item
+              if (
+                item.salePrice !== undefined ||
+                item.flashSalePrice !== undefined
+              ) {
+                const itemPrice = Number(item.salePrice || item.flashSalePrice);
+                console.log(`💰 Giá Flash Sale từ item: ${itemPrice}`);
+                setFlashSalePrice(itemPrice);
+
+                // Tính phần trăm giảm
+                const discountPercentage = Math.round(
+                  ((productPrice - itemPrice) / productPrice) * 100
+                );
+                setFlashSalePercentage(discountPercentage);
+                console.log(
+                  `📊 Phần trăm giảm tính được: ${discountPercentage}%`
+                );
+              }
+            }
+          }
+        }
+        // Trường hợp 2: API trả về data với format khác
+        else if (data && data.code === 200 && data.data) {
+          console.log("📦 Flash Sale API (format code/data):", data.data);
+          const fsData = data.data;
+
+          // Có phần trăm giảm giá và active = true
+          if (fsData.active === true && fsData.discountPercentage) {
+            const discountPercentage = Number(fsData.discountPercentage);
+            console.log(
+              `💲 Phần trăm giảm: ${discountPercentage}% cho sản phẩm giá ${productPrice}`
+            );
+
+            // Tính giá Flash Sale
+            const discountAmount = (productPrice * discountPercentage) / 100;
+            let salePrice = productPrice - discountAmount;
+
+            // Kiểm tra max discount
+            if (
+              fsData.maxDiscountAmount &&
+              discountAmount > fsData.maxDiscountAmount
+            ) {
+              salePrice = productPrice - fsData.maxDiscountAmount;
+              console.log(
+                `✂️ Giới hạn giảm tối đa: ${fsData.maxDiscountAmount}, giá mới: ${salePrice}`
+              );
+            }
+
+            // Làm tròn xuống hàng nghìn
+            salePrice = Math.floor(salePrice / 1000) * 1000;
+
+            console.log(
+              `🔥 GIÁ FLASH SALE TÍNH ĐƯỢC: ${salePrice} (giảm từ ${productPrice})`
+            );
+            setFlashSalePrice(salePrice);
+            setFlashSalePercentage(discountPercentage);
+
+            // Set thời gian kết thúc nếu có
+            if (fsData.endTime) {
+              setFlashSaleEndTime(new Date(fsData.endTime));
+            }
+          }
+
+          // Nếu API trả về trực tiếp flashSalePrice
+          if (fsData.items && Array.isArray(fsData.items)) {
+            console.log("📋 Danh sách sản phẩm Flash Sale:", fsData.items);
+
+            // Tìm sản phẩm trong danh sách - sử dụng String để so sánh chính xác
+            const item = fsData.items.find(
+              (item) =>
+                String(item.productId) === String(id) ||
+                String(item.id) === String(id)
+            );
+
+            if (item) {
+              console.log(
+                "✓ Tìm thấy sản phẩm trong danh sách Flash Sale:",
+                item
+              );
+
+              // Lấy giá Flash Sale từ item
+              let itemFlashSalePrice;
+              if (item.salePrice !== undefined) {
+                itemFlashSalePrice = Number(item.salePrice);
+              } else if (item.flashSalePrice !== undefined) {
+                itemFlashSalePrice = Number(item.flashSalePrice);
+              }
+
+              if (itemFlashSalePrice) {
+                console.log(`💰 Giá Flash Sale từ item: ${itemFlashSalePrice}`);
+                setFlashSalePrice(itemFlashSalePrice);
+
+                // Tính phần trăm giảm
+                const discountPercentage = Math.round(
+                  ((productPrice - itemFlashSalePrice) / productPrice) * 100
+                );
+                setFlashSalePercentage(discountPercentage);
+                console.log(
+                  `📊 Phần trăm giảm tính được: ${discountPercentage}%`
+                );
+              }
+            }
+          }
+        }
+        // Trường hợp 3: API trả về data trực tiếp
+        else if (data && data.active === true) {
+          console.log("📦 Flash Sale API (format trực tiếp):", data);
+
+          // Có discountPercentage
+          if (data.discountPercentage) {
+            const discountPercentage = Number(data.discountPercentage);
+            console.log(
+              `💲 Phần trăm giảm: ${discountPercentage}% cho sản phẩm giá ${productPrice}`
+            );
+
+            // Tính giá Flash Sale
+            const discountAmount = (productPrice * discountPercentage) / 100;
+            let salePrice = productPrice - discountAmount;
+
+            // Kiểm tra max discount
+            if (
+              data.maxDiscountAmount &&
+              discountAmount > data.maxDiscountAmount
+            ) {
+              salePrice = productPrice - data.maxDiscountAmount;
+              console.log(
+                `✂️ Giới hạn giảm tối đa: ${data.maxDiscountAmount}, giá mới: ${salePrice}`
+              );
+            }
+
+            // Làm tròn xuống hàng nghìn
+            salePrice = Math.floor(salePrice / 1000) * 1000;
+
+            console.log(
+              `🔥 GIÁ FLASH SALE TÍNH ĐƯỢC: ${salePrice} (giảm từ ${productPrice})`
+            );
+            setFlashSalePrice(salePrice);
+            setFlashSalePercentage(discountPercentage);
+
+            // Set thời gian kết thúc nếu có
+            if (data.endTime) {
+              setFlashSaleEndTime(new Date(data.endTime));
+            }
+          }
+        }
+      } catch (error) {
+        console.error("❌ Lỗi khi xử lý dữ liệu Flash Sale:", error);
+      }
+    },
+    onError: (error) => {
+      console.error("❌ Lỗi khi tải thông tin flash sale:", error);
+    },
+  });
+
+  // Hiển thị giá sản phẩm (debug)
+  useEffect(() => {
+    if (product) {
+      console.log(`📢 TRẠNG THÁI HIỂN THỊ GIÁ: 
+        - Sản phẩm: ${product.productName}
+        - Giá gốc: ${product.price}
+        - Giá Flash Sale: ${
+          flashSalePrice !== null ? flashSalePrice : "không có"
+        }
+        - Giảm: ${flashSalePercentage}%
+      `);
     }
+  }, [product, flashSalePrice, flashSalePercentage]);
+
+  // Hiển thị giá sản phẩm
+  const renderProductPrice = () => {
+    if (!product) return null;
+
+    console.log("💵 renderProductPrice được gọi:", {
+      flashSalePrice,
+      productPrice: product.price,
+    });
+
+    // Debug info
+    console.log("🧪 DEBUG: Flash Sale State Values:", {
+      flashSalePrice,
+      flashSalePercentage,
+      hasFlashSale: flashSalePrice !== null && flashSalePrice !== undefined,
+      productPrice: Number(product.price),
+      calculatedDiscount: flashSalePrice
+        ? Math.round(
+            ((Number(product.price) - Number(flashSalePrice)) /
+              Number(product.price)) *
+              100
+          )
+        : 0,
+    });
+
+    // Hiển thị giá Flash Sale nếu có
+    if (flashSalePrice !== null && flashSalePrice !== undefined) {
+      console.log("🏷️ Hiển thị giá Flash Sale:", flashSalePrice);
+      return (
+        <div className="mt-4">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-bold text-red-600">
+              {Number(flashSalePrice).toLocaleString()}đ
+            </span>
+            <span className="text-gray-500 line-through">
+              {Number(product.price).toLocaleString()}đ
+            </span>
+            <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-medium">
+              -{flashSalePercentage}%
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    // Hiển thị giá khuyến mãi thường nếu sản phẩm đang sale
+    if (product.onSale) {
+      const discountPercentage = Math.round(
+        ((product.price - product.salePrice) / product.price) * 100
+      );
+
+      return (
+        <div className="mt-4">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-bold text-red-600">
+              {Number(product.salePrice).toLocaleString()}đ
+            </span>
+            <span className="text-gray-500 line-through">
+              {Number(product.price).toLocaleString()}đ
+            </span>
+            <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-medium">
+              -{discountPercentage}%
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    // Giá thường
+    return (
+      <div className="mt-4">
+        <span className="text-3xl font-bold text-gray-800">
+          {Number(product.price).toLocaleString()}đ
+        </span>
+      </div>
+    );
   };
 
-  // Xử lý nhập mã giảm giá thủ công
-  const handleManualCouponChange = (e) => {
-    setManualCouponCode(e.target.value);
-    // Nếu đang có coupon được chọn, bỏ chọn
-    if (selectedCoupon) {
-      setSelectedCoupon(null);
-    }
-  };
+  // Kiểm tra xem sản phẩm đã nằm trong danh sách yêu thích chưa
+  useEffect(() => {
+    if (auth?.accessToken && product?.id) {
+      const checkWishlistStatus = async () => {
+        try {
+          const wishlists = await getUserWishlists(axiosPrivate);
+          if (wishlists && wishlists.length > 0) {
+            // Tìm danh sách mặc định
+            const defaultWishlist = wishlists.find((w) => w.isDefault === true);
+            if (defaultWishlist && defaultWishlist.items) {
+              // Kiểm tra sản phẩm có trong danh sách không
+              const found = defaultWishlist.items.some(
+                (item) => parseInt(item.productId) === parseInt(product.id)
+              );
+              setIsInWishlist(found);
+            }
+          }
+        } catch (error) {
+          console.error("Không thể kiểm tra trạng thái wishlist:", error);
+        }
+      };
 
-  // Xử lý áp dụng mã giảm giá thủ công
-  const handleApplyCoupon = async () => {
-    if (!manualCouponCode.trim()) {
-      setCouponError("Vui lòng nhập mã giảm giá");
+      checkWishlistStatus();
+    }
+  }, [auth?.accessToken, product?.id, axiosPrivate]);
+
+  // Thêm hàm xử lý thêm vào danh sách yêu thích
+  const handleAddToWishlist = async () => {
+    // Kiểm tra đăng nhập
+    if (!auth?.accessToken) {
+      toast.info("Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích");
+      navigate("/account/login", {
+        state: { from: { pathname: `/farmhub2/product/${id}` } },
+      });
       return;
     }
 
     try {
-      setIsValidatingCoupon(true);
-      setCouponError("");
+      setAddingToWishlist(true);
+      console.log("Chuẩn bị thêm sản phẩm vào wishlist, productId:", id);
 
-      // Kiểm tra mã giảm giá có hợp lệ không
-      const basePrice = product.onSale ? product.salePrice : product.price;
-      const totalPrice = basePrice * quantity;
-
-      try {
-        const response = await validateCoupon(
-          axiosPrivate,
-          manualCouponCode,
-          auth?.user?.id || null,
-          totalPrice
-        );
-
-        if (response.valid) {
-          // Tìm coupon trong danh sách coupon sản phẩm
-          const foundCoupon = productCoupons.find(
-            (c) => c.code === manualCouponCode
-          );
-
-          if (foundCoupon) {
-            setSelectedCoupon(foundCoupon);
-            toast.success("Đã áp dụng mã giảm giá!");
-          } else {
-            // Nếu không tìm thấy, tạo coupon mới từ response
-            const newCoupon = {
-              id: response.couponId || Date.now(),
-              code: manualCouponCode,
-              discountType: response.discountType || "PERCENTAGE",
-              discountValue: response.discountValue || 0,
-              minOrderValue: response.minOrderValue || 0,
-              maxDiscountAmount: response.maxDiscountAmount || null,
-            };
-            setSelectedCoupon(newCoupon);
-            toast.success("Đã áp dụng mã giảm giá!");
-          }
-        } else {
-          // Hiển thị lỗi từ response
-          setCouponError(response.message || "Mã giảm giá không hợp lệ");
-          setSelectedCoupon(null);
-        }
-      } catch (apiError) {
-        console.error("Chi tiết lỗi API:", apiError);
-
-        // Hiển thị chính xác lỗi từ response
-        if (apiError.response?.data) {
-          // Nếu response.data là string
-          if (typeof apiError.response.data === "string") {
-            setCouponError(apiError.response.data);
-          }
-          // Nếu có trường message
-          else if (apiError.response.data.message) {
-            setCouponError(apiError.response.data.message);
-          }
-          // Nếu có trường error
-          else if (apiError.response.data.error) {
-            setCouponError(apiError.response.data.error);
-          }
-          // Hiển thị toàn bộ response data dưới dạng string nếu không tìm thấy trường thông báo cụ thể
-          else {
-            setCouponError(JSON.stringify(apiError.response.data));
-          }
-        }
-        // Hiển thị status text nếu không có response.data
-        else if (apiError.response) {
-          setCouponError(
-            `Lỗi ${apiError.response.status}: ${apiError.response.statusText}`
-          );
-        }
-        // Hiển thị thông báo lỗi trong trường hợp không có response
-        else {
-          setCouponError(
-            apiError.message || "Lỗi không xác định khi kiểm tra mã giảm giá"
-          );
-        }
-
-        setSelectedCoupon(null);
-      }
-    } catch (error) {
-      console.error("Lỗi khi áp dụng mã giảm giá:", error);
-      // Hiện thị thông tin lỗi chi tiết nhất có thể
-      setCouponError(error.message || "Lỗi không xác định");
-      setSelectedCoupon(null);
-    } finally {
-      setIsValidatingCoupon(false);
-    }
-  };
-
-  // Xử lý thay đổi số lượng
-  const handleQuantityChange = (e) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value > 0) {
-      setQuantity(value);
-    }
-  };
-
-  // Tăng số lượng
-  const incrementQuantity = () => {
-    if (product && quantity < product.quantity) {
-      setQuantity(quantity + 1);
-    } else {
-      toast.error(
-        `Không thể thêm. Chỉ còn ${product?.quantity || 0} sản phẩm trong kho!`
-      );
-    }
-  };
-
-  // Giảm số lượng
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
-  };
-
-  // Mua ngay
-  const buyNow = async () => {
-    try {
-      // Kiểm tra số lượng với tồn kho
-      if (product && quantity > product.quantity) {
-        toast.error(
-          `Không thể mua ngay. Chỉ còn ${product.quantity} sản phẩm trong kho!`
-        );
-        return;
-      }
-
-      // Kiểm tra đăng nhập
-      if (!auth?.accessToken) {
-        toast.info("Vui lòng đăng nhập để mua sản phẩm");
-        navigate("/account/login", {
-          state: { from: { pathname: `/farmhub2/product/${id}` } },
-        });
-        return;
-      }
-
-      // Tạo dữ liệu giỏ hàng
-      const cartData = {
-        productId: product.id,
-        quantity: quantity,
+      // Chuẩn bị dữ liệu sản phẩm cần thêm vào wishlist
+      const wishlistItem = {
+        productId: parseInt(id),
+        variantId: null, // Có thể thêm logic chọn variant nếu cần
       };
 
-      // Truyền flash sale price nếu có
-      if (flashSalePrice) {
-        cartData.isFlashSale = true;
-        cartData.flashSalePrice = flashSalePrice;
-      }
+      console.log("Dữ liệu item gửi đi:", wishlistItem);
 
-      // Gọi API để thêm sản phẩm vào giỏ hàng
-      await createCart(
-        axiosPrivate,
-        cartData.productId,
-        cartData.quantity,
-        null, // Không còn sử dụng coupon
-        cartData.isFlashSale,
-        cartData.flashSalePrice
-      );
+      // Gọi service để thêm vào danh sách yêu thích mặc định
+      const response = await addToDefaultWishlist(axiosPrivate, wishlistItem);
+      console.log("Phản hồi từ API:", response);
 
-      await getCartQuery.refetch();
-      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
-
-      // Chuyển đến trang thanh toán
-      navigate("/checkout", {
-        state: {
-          fromBuyNow: true,
-          productId: product.id,
-          quantity: quantity,
-          flashSalePrice: flashSalePrice,
-        },
-      });
+      setIsInWishlist(true);
+      toast.success("Đã thêm vào danh sách yêu thích");
     } catch (error) {
-      console.error("Lỗi khi mua ngay:", error);
-      if (error.response && error.response.status === 400) {
-        // Xử lý lỗi 400 Bad Request - có thể là vấn đề về số lượng
-        if (error.response.data && error.response.data.message) {
-          toast.error(`Không thể mua ngay: ${error.response.data.message}`);
-        } else {
-          toast.error("Số lượng sản phẩm vượt quá số lượng trong kho");
-        }
+      console.error("Lỗi khi thêm vào danh sách yêu thích:", error);
+
+      if (
+        error.response?.status === 400 &&
+        error.response?.data?.message?.includes("đã tồn tại")
+      ) {
+        setIsInWishlist(true);
+        toast.info("Sản phẩm đã có trong danh sách yêu thích");
       } else {
-        toast.error("Có lỗi xảy ra khi xử lý mua ngay.");
+        toast.error("Không thể thêm vào danh sách yêu thích");
       }
+    } finally {
+      setAddingToWishlist(false);
     }
   };
 
@@ -486,7 +736,11 @@ const ProductDetail = () => {
       if (!auth?.accessToken) {
         toast.info("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
         navigate("/account/login", {
-          state: { from: { pathname: `/farmhub2/product/${id}` } },
+          state: {
+            from: { pathname: `/farmhub2/product/${id}` },
+            flashSalePrice: flashSalePrice, // Lưu giá Flash Sale vào location
+            flashSaleEndTime: flashSaleEndTime, // Lưu thời gian kết thúc vào location
+          },
         });
         return;
       }
@@ -503,6 +757,9 @@ const ProductDetail = () => {
         cartData.flashSalePrice = flashSalePrice;
       }
 
+      // Log để debug
+      console.log("🛒 Thêm vào giỏ hàng với dữ liệu:", cartData);
+
       // Gọi API để thêm sản phẩm vào giỏ hàng
       await createCart(
         axiosPrivate,
@@ -512,24 +769,49 @@ const ProductDetail = () => {
         cartData.isFlashSale,
         cartData.flashSalePrice
       );
+
       toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
       await getCartQuery.refetch();
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
-      if (error.response && error.response.status === 400) {
-        // Xử lý lỗi 400 Bad Request - có thể là vấn đề về số lượng
-        if (error.response.data && error.response.data.message) {
-          toast.error(
-            `Không thể thêm vào giỏ hàng: ${error.response.data.message}`
-          );
-        } else {
-          toast.error("Số lượng sản phẩm vượt quá số lượng trong kho");
-        }
-      } else {
-        toast.error("Có lỗi xảy ra khi thêm vào giỏ hàng");
-      }
+      toast.error("Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng");
     }
   };
+
+  // Cập nhật đếm ngược thời gian flash sale
+  useEffect(() => {
+    if (!flashSaleEndTime) return;
+
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const difference = flashSaleEndTime - now;
+
+      if (difference <= 0) {
+        // Flash sale đã kết thúc
+        setFlashSaleTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        setFlashSalePrice(null);
+        setFlashSaleEndTime(null);
+        return;
+      }
+
+      // Tính thời gian còn lại
+      const hours = Math.floor(difference / (1000 * 60 * 60));
+      const minutes = Math.floor((difference / (1000 * 60)) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      setFlashSaleTimeLeft({ hours, minutes, seconds });
+    };
+
+    // Tính thời gian ban đầu
+    calculateTimeLeft();
+
+    // Cập nhật mỗi giây
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [flashSaleEndTime]);
 
   // Hiển thị gallery hình ảnh
   const renderImageGallery = () => {
@@ -638,72 +920,6 @@ const ProductDetail = () => {
     );
   };
 
-  // Xử lý dữ liệu flash sale
-  useEffect(() => {
-    if (flashSaleData?.success && flashSaleData?.data) {
-      const flashSale = flashSaleData.data;
-
-      // Tìm sản phẩm trong danh sách flash sale
-      const flashSaleProduct = flashSale.items?.find(
-        (item) => item.productId === parseInt(id)
-      );
-
-      if (flashSaleProduct) {
-        // Cập nhật giá flash sale
-        setFlashSalePrice(flashSaleProduct.flashSalePrice);
-
-        // Tính % giảm giá
-        if (product && product.price > 0) {
-          const discount = Math.round(
-            ((product.price - flashSaleProduct.flashSalePrice) /
-              product.price) *
-              100
-          );
-          setFlashSalePercentage(discount);
-        }
-
-        // Cập nhật thời gian kết thúc
-        const endTime = new Date(flashSale.endDate);
-        setFlashSaleEndTime(endTime);
-      }
-    }
-  }, [flashSaleData, product, id]);
-
-  // Cập nhật đếm ngược thời gian flash sale
-  useEffect(() => {
-    if (!flashSaleEndTime) return;
-
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      const difference = flashSaleEndTime - now;
-
-      if (difference <= 0) {
-        // Flash sale đã kết thúc
-        setFlashSaleTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-        setFlashSalePrice(null);
-        setFlashSaleEndTime(null);
-        return;
-      }
-
-      // Tính toán thời gian còn lại
-      const hours = Math.floor(difference / (1000 * 60 * 60));
-      const minutes = Math.floor((difference / (1000 * 60)) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-
-      setFlashSaleTimeLeft({ hours, minutes, seconds });
-    };
-
-    // Tính thời gian lần đầu
-    calculateTimeLeft();
-
-    // Cập nhật mỗi giây
-    const timer = setInterval(calculateTimeLeft, 1000);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [flashSaleEndTime]);
-
   // Hiển thị bộ đếm ngược flash sale
   const renderFlashSaleCountdown = () => {
     if (!flashSaleEndTime) return null;
@@ -737,131 +953,96 @@ const ProductDetail = () => {
     );
   };
 
-  // Hiển thị giá sản phẩm
-  const renderProductPrice = () => {
-    if (!product) return null;
+  // Lấy sản phẩm liên quan từ data
+  const relatedProducts = relatedProductsData?.content || [];
 
-    // Nếu có flash sale
-    if (flashSalePrice) {
-      return (
-        <div className="mt-4">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-red-600">
-              {flashSalePrice.toLocaleString()}đ
-            </span>
-            <span className="text-gray-500 line-through">
-              {product.price.toLocaleString()}đ
-            </span>
-            <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-medium">
-              -{flashSalePercentage}%
-            </span>
-          </div>
-        </div>
-      );
+  // Xử lý thay đổi số lượng
+  const handleQuantityChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value > 0) {
+      setQuantity(value);
     }
-
-    // Nếu sản phẩm đang sale
-    if (product.onSale) {
-      const discountPercentage = Math.round(
-        ((product.price - product.salePrice) / product.price) * 100
-      );
-
-      return (
-        <div className="mt-4">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-red-600">
-              {product.salePrice.toLocaleString()}đ
-            </span>
-            <span className="text-gray-500 line-through">
-              {product.price.toLocaleString()}đ
-            </span>
-            <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-medium">
-              -{discountPercentage}%
-            </span>
-          </div>
-        </div>
-      );
-    }
-
-    // Giá thường
-    return (
-      <div className="mt-4">
-        <span className="text-3xl font-bold text-gray-800">
-          {product.price.toLocaleString()}đ
-        </span>
-      </div>
-    );
   };
 
-  // Kiểm tra xem sản phẩm đã nằm trong danh sách yêu thích chưa
-  useEffect(() => {
-    if (auth?.accessToken && product?.id) {
-      const checkWishlistStatus = async () => {
-        try {
-          const wishlists = await getUserWishlists(axiosPrivate);
-          if (wishlists && wishlists.length > 0) {
-            // Tìm danh sách mặc định
-            const defaultWishlist = wishlists.find((w) => w.isDefault === true);
-            if (defaultWishlist && defaultWishlist.items) {
-              // Kiểm tra sản phẩm có trong danh sách không
-              const found = defaultWishlist.items.some(
-                (item) => parseInt(item.productId) === parseInt(product.id)
-              );
-              setIsInWishlist(found);
-            }
-          }
-        } catch (error) {
-          console.error("Không thể kiểm tra trạng thái wishlist:", error);
-        }
-      };
-
-      checkWishlistStatus();
+  // Tăng số lượng
+  const incrementQuantity = () => {
+    if (product && quantity < product.quantity) {
+      setQuantity(quantity + 1);
+    } else {
+      toast.error(
+        `Không thể thêm. Chỉ còn ${product?.quantity || 0} sản phẩm trong kho!`
+      );
     }
-  }, [auth?.accessToken, product?.id, axiosPrivate]);
+  };
 
-  // Thêm hàm xử lý thêm vào danh sách yêu thích
-  const handleAddToWishlist = async () => {
-    // Kiểm tra đăng nhập
-    if (!auth?.accessToken) {
-      toast.info("Vui lòng đăng nhập để thêm sản phẩm vào danh sách yêu thích");
-      navigate("/account/login", {
-        state: { from: { pathname: `/farmhub2/product/${id}` } },
-      });
-      return;
+  // Giảm số lượng
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
     }
+  };
 
+  // Mua ngay
+  const buyNow = async () => {
     try {
-      setAddingToWishlist(true);
-      console.log("Chuẩn bị thêm sản phẩm vào wishlist, productId:", id);
+      // Kiểm tra số lượng với tồn kho
+      if (product && quantity > product.quantity) {
+        toast.error(
+          `Không thể mua ngay. Chỉ còn ${product.quantity} sản phẩm trong kho!`
+        );
+        return;
+      }
 
-      // Chuẩn bị dữ liệu sản phẩm cần thêm vào wishlist
-      const wishlistItem = {
-        productId: parseInt(id),
-        variantId: null, // Có thể thêm logic chọn variant nếu cần
+      // Kiểm tra đăng nhập
+      if (!auth?.accessToken) {
+        toast.info("Vui lòng đăng nhập để mua sản phẩm");
+        navigate("/account/login", {
+          state: {
+            from: { pathname: `/farmhub2/product/${id}` },
+            flashSalePrice: flashSalePrice,
+            flashSaleEndTime: flashSaleEndTime,
+          },
+        });
+        return;
+      }
+
+      // Tạo dữ liệu giỏ hàng
+      const cartData = {
+        productId: product.id,
+        quantity: quantity,
       };
 
-      console.log("Dữ liệu item gửi đi:", wishlistItem);
-
-      // Gọi service để thêm vào danh sách yêu thích mặc định
-      const response = await addToDefaultWishlist(axiosPrivate, wishlistItem);
-      console.log("Phản hồi t   API:", response);
-
-      setIsInWishlist(true);
-      toast.success("Đã thêm vào danh sách yêu thích");
-    } catch (error) {
-      console.error("Lỗi khi thêm vào danh sách yêu thích:", error);
-
-      if (
-        error.response?.status === 400 &&
-        error.response?.data?.message?.includes("đã tồn tại")
-      ) {
-        setIsInWishlist(true);
-        toast.info("Sản phẩm đã có trong danh sách yêu thích");
-      } else {
-        toast.error("Không thể thêm vào danh sách yêu thích");
+      // Truyền flash sale price nếu có
+      if (flashSalePrice) {
+        cartData.isFlashSale = true;
+        cartData.flashSalePrice = flashSalePrice;
       }
-    } finally {
-      setAddingToWishlist(false);
+
+      // Gọi API để thêm sản phẩm vào giỏ hàng
+      await createCart(
+        axiosPrivate,
+        cartData.productId,
+        cartData.quantity,
+        null, // Không còn sử dụng coupon
+        cartData.isFlashSale,
+        cartData.flashSalePrice
+      );
+
+      await getCartQuery.refetch();
+      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+
+      // Chuyển đến trang thanh toán
+      navigate("/checkout", {
+        state: {
+          fromBuyNow: true,
+          productId: product.id,
+          quantity: quantity,
+          flashSalePrice: flashSalePrice,
+        },
+      });
+    } catch (error) {
+      console.error("Lỗi khi mua ngay:", error);
+      toast.error("Có lỗi xảy ra khi xử lý mua ngay.");
     }
   };
 

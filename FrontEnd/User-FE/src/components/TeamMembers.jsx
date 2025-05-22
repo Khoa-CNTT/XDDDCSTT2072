@@ -12,6 +12,7 @@ import bgMember4 from "../assets/images/bg-member4.jpg";
 import bgMember5 from "../assets/images/bg-member5.jpg";
 import bgInstructor from "../assets/images/bg-member5.jpg";
 import imageInstructor from "../assets/images/phuc.jpg";
+
 const instructor = {
   name: "Thầy Nguyễn Hữu Phúc",
   role: "Người Hướng Dẫn",
