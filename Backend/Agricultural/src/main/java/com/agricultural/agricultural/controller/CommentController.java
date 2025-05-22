@@ -26,24 +26,14 @@ public class CommentController {
 
     private final IForumReplyService forumReplyService;
 
-    /**
-     * Lấy tất cả bình luận gốc của một bài viết
-     * @param postId ID của bài viết
-     * @return Danh sách các bình luận gốc
-     */
+
     @GetMapping("/post/{postId}/root")
     public ResponseEntity<ApiResponse<List<ForumReplyDTO>>> getRootCommentsByPostId(@PathVariable Integer postId) {
         List<ForumReplyDTO> comments = forumReplyService.getRootRepliesByPostId(postId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bình luận thành công", comments));
     }
 
-    /**
-     * Lấy tất cả bình luận gốc của một bài viết với phân trang
-     * @param postId ID của bài viết
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách các bình luận gốc theo trang
-     */
+
     @GetMapping("/post/{postId}")
     public ResponseEntity<ApiResponse<Page<ForumReplyDTO>>> getPaginatedRootCommentsByPostId(
             @PathVariable Integer postId,
@@ -59,24 +49,13 @@ public class CommentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bình luận thành công", comments));
     }
 
-    /**
-     * Lấy tất cả bình luận con của một bình luận cha
-     * @param parentId ID của bình luận cha
-     * @return Danh sách các bình luận con
-     */
+
     @GetMapping("/parent/{parentId}")
     public ResponseEntity<ApiResponse<List<ForumReplyDTO>>> getChildCommentsByParentId(@PathVariable Integer parentId) {
         List<ForumReplyDTO> comments = forumReplyService.getRepliesByParentId(parentId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bình luận con thành công", comments));
     }
 
-    /**
-     * Lấy tất cả bình luận con của một bình luận cha với phân trang
-     * @param parentId ID của bình luận cha
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách các bình luận con theo trang
-     */
     @GetMapping("/parent/{parentId}/paged")
     public ResponseEntity<ApiResponse<Page<ForumReplyDTO>>> getPaginatedChildCommentsByParentId(
             @PathVariable Integer parentId,
@@ -88,12 +67,7 @@ public class CommentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bình luận con thành công", comments));
     }
 
-    /**
-     * Tạo bình luận mới
-     * @param request Thông tin bình luận
-     * @param user Người dùng hiện tại
-     * @return Bình luận đã tạo
-     */
+
     @PostMapping
     public ResponseEntity<ApiResponse<ForumReplyDTO>> createComment(
             @Valid @RequestBody ForumReplyRequest request,
@@ -104,13 +78,7 @@ public class CommentController {
                 .body(new ApiResponse<>(true, "Tạo bình luận thành công", createdComment));
     }
 
-    /**
-     * Cập nhật nội dung bình luận
-     * @param id ID của bình luận
-     * @param content Nội dung mới
-     * @param user Người dùng hiện tại
-     * @return Bình luận đã cập nhật
-     */
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ForumReplyDTO>> updateComment(
             @PathVariable Integer id,
@@ -126,12 +94,7 @@ public class CommentController {
         }
     }
 
-    /**
-     * Xóa bình luận
-     * @param id ID của bình luận
-     * @param user Người dùng hiện tại
-     * @return Thông báo xóa thành công
-     */
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(
             @PathVariable Integer id,
@@ -146,12 +109,7 @@ public class CommentController {
         }
     }
 
-    /**
-     * Thích bình luận
-     * @param id ID của bình luận
-     * @param user Người dùng hiện tại
-     * @return Bình luận đã thích
-     */
+
     @PostMapping("/{id}/like")
     public ResponseEntity<ApiResponse<ForumReplyDTO>> likeComment(
             @PathVariable Integer id,
@@ -161,12 +119,7 @@ public class CommentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Thích bình luận thành công", likedComment));
     }
 
-    /**
-     * Bỏ thích bình luận
-     * @param id ID của bình luận
-     * @param user Người dùng hiện tại
-     * @return Bình luận đã bỏ thích
-     */
+
     @PostMapping("/{id}/unlike")
     public ResponseEntity<ApiResponse<ForumReplyDTO>> unlikeComment(
             @PathVariable Integer id,
@@ -176,22 +129,14 @@ public class CommentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Bỏ thích bình luận thành công", unlikedComment));
     }
 
-    /**
-     * Đếm số lượng bình luận của một bài viết
-     * @param postId ID của bài viết
-     * @return Số lượng bình luận
-     */
+
     @GetMapping("/count/post/{postId}")
     public ResponseEntity<ApiResponse<Long>> countCommentsByPostId(@PathVariable Integer postId) {
         Long count = forumReplyService.countAllRepliesByPostId(postId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Đếm số lượng bình luận thành công", count));
     }
 
-    /**
-     * Đếm số lượng bình luận gốc của một bài viết
-     * @param postId ID của bài viết
-     * @return Số lượng bình luận gốc
-     */
+
     @GetMapping("/count/post/{postId}/root")
     public ResponseEntity<ApiResponse<Long>> countRootCommentsByPostId(@PathVariable Integer postId) {
         Long count = forumReplyService.countRootRepliesByPostId(postId);

@@ -60,18 +60,7 @@ public class PaymentController {
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
-    /**
-     * API tạo URL thanh toán VNPAY
-     * POST /api/v1/payment/create
-     * 
-     * Request Body:
-     * {
-     *   "orderId": 123,
-     *   "amount": 10000,
-     *   "paymentMethod": "VNPAY",
-     *   "description": "Thanh toán đơn hàng #123"
-     * }
-     */
+
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<PaymentUrlResponse>> createPayment(@RequestBody PaymentRequest paymentRequest, HttpServletRequest request) {
         log.info("Tạo URL thanh toán cho đơn hàng ID: {}", paymentRequest.getOrderId());
@@ -87,12 +76,7 @@ public class PaymentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Tạo URL thanh toán thành công", paymentUrl));
     }
 
-    /**
-     * API test tạo URL thanh toán VNPAY với dữ liệu mẫu
-     * GET /api/v1/payment/test-create-vnpay?orderId=123&amount=10000
-     * 
-     * Không yêu cầu đơn hàng thật - tạo trực tiếp URL thanh toán VNPAY
-     */
+
     @GetMapping("/test-create-vnpay")
     public ResponseEntity<ApiResponse<Map<String, Object>>> testCreateVnpayPayment(
             @RequestParam(required = false, defaultValue = "123") Long orderId,
@@ -140,10 +124,7 @@ public class PaymentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy lịch sử thanh toán thành công", paymentOpt.get()));
     }
 
-    /**
-     * Lấy tất cả lịch sử thanh toán của một đơn hàng
-     * GET /api/v1/payment/history/all/{orderId}
-     */
+
     @GetMapping("/history/all/{orderId}")
     public ResponseEntity<ApiResponse<List<PaymentDTO>>> getAllPaymentHistory(@PathVariable Long orderId) {
         log.info("Lấy tất cả lịch sử thanh toán cho đơn hàng ID: {}", orderId);
@@ -189,10 +170,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * API test tạo một thanh toán mẫu và kiểm tra trạng thái của nó
-     * GET /api/v1/payment/test-payment?orderId=123&status=COMPLETED
-     */
+
     @GetMapping("/test-payment")
     public ResponseEntity<ApiResponse<Map<String, Object>>> testPayment(
             @RequestParam Long orderId,
@@ -212,9 +190,7 @@ public class PaymentController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Tạo thanh toán mẫu thành công", result));
     }
 
-    /**
-     * VNPAY return URL - Xử lý kết quả thanh toán khi VNPAY chuyển hướng người dùng về
-     */
+
     @GetMapping("/vnpay-return")
     public ResponseEntity<?> handleVnpayReturn(HttpServletRequest request) {
         try {
@@ -328,11 +304,7 @@ public class PaymentController {
                 .build();
     }
     
-    /**
-     * VNPAY IPN URL - Xử lý IPN (Instant Payment Notification) từ VNPAY
-     * IPN được gọi tự động từ VNPAY để cập nhật trạng thái thanh toán
-     * IPN phải trả về đúng định dạng theo yêu cầu của VNPAY
-     */
+
     @PostMapping("/vnpay-ipn")
     public ResponseEntity<Map<String, String>> handleVnpayIpn(HttpServletRequest request) {
         log.info("===== BẮT ĐẦU XỬ LÝ IPN TỪ VNPAY =====");
@@ -445,7 +417,6 @@ public class PaymentController {
                 ipnResponse.put("Message", "Transaction processing error");
             }
             
-            // Ghi log kết quả xử lý
             log.info("IPN response: {}", ipnResponse);
             log.info("===== KẾT THÚC XỬ LÝ IPN TỪ VNPAY =====");
             
@@ -460,18 +431,7 @@ public class PaymentController {
         }
     }
     
-    /**
-     * API mô phỏng webhook VNPAY để test
-     * POST /api/v1/payment/simulate-vnpay-ipn
-     * 
-     * Request Body:
-     * {
-     *   "vnp_TxnRef": "123",
-     *   "vnp_Amount": "1000000",
-     *   "vnp_ResponseCode": "00",
-     *   "vnp_TransactionNo": "13349437"
-     * }
-     */
+
     @PostMapping("/simulate-vnpay-ipn")
     public ResponseEntity<ApiResponse<Map<String, Object>>> simulateVnpayIpn(
             @RequestBody Map<String, String> params,
@@ -495,9 +455,7 @@ public class PaymentController {
         }
     }
     
-    /**
-     * Trang thanh toán thành công (redirect từ VNPAY)
-     */
+
     @GetMapping("/success")
     public ResponseEntity<String> paymentSuccess() {
         String html = "<html><body>"
@@ -509,9 +467,7 @@ public class PaymentController {
         return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
     
-    /**
-     * Trang thanh toán thất bại (redirect từ VNPAY)
-     */
+
     @GetMapping("/cancel")
     public ResponseEntity<String> paymentCancel() {
         String html = "<html><body>"
@@ -523,22 +479,7 @@ public class PaymentController {
         return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
     
-    /**
-     * Tạo mã QR thanh toán VNPAY
-     * POST /api/v1/payment/create-qr
-     * 
-     * Request Body:
-     * {
-     *   "orderId": 123,
-     *   "amount": 10000,
-     *   "description": "Thanh toán đơn hàng #123",
-     *   "returnUrl": "https://yourdomain.com/payment/return"
-     * }
-     * 
-     * @param paymentRequest Thông tin yêu cầu thanh toán
-     * @param request HttpServletRequest
-     * @return Thông tin mã QR thanh toán
-     */
+
     @PostMapping("/create-qr")
     public ResponseEntity<ApiResponse<PaymentQRDTO>> createPaymentQR(
             @RequestBody PaymentRequest paymentRequest,
@@ -564,10 +505,7 @@ public class PaymentController {
         ));
     }
 
-    /**
-     * API test tính năng thanh toán VNPAY và kiểm tra cấu hình
-     * GET /api/v1/payment/test-vnpay
-     */
+
     @GetMapping("/test-vnpay")
     public ResponseEntity<ApiResponse<Map<String, Object>>> testVnpayConfig() {
         log.info("Kiểm tra cấu hình VNPAY");
@@ -587,7 +525,6 @@ public class PaymentController {
         // Thông tin thời gian hiện tại
         responseData.put("server_time", new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
         
-        // Tạo URL test không cần kiểm tra đơn hàng thật
         try {
             // Tạo tham số truy vấn
             Map<String, String> vnp_Params = new TreeMap<>();
@@ -648,24 +585,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * Tạo URL thanh toán cho nhiều mặt hàng
-     * POST /api/v1/payment/create-batch
-     * 
-     * Request Body:
-     * {
-     *   "orderId": 123,
-     *   "amount": 10000,
-     *   "description": "Thanh toán đơn hàng #123",
-     *   "items": [
-     *     {
-     *       "name": "Sản phẩm A",
-     *       "quantity": 2,
-     *       "price": 5000
-     *     }
-     *   ]
-     * }
-     */
+
     @PostMapping("/create-batch")
     public ResponseEntity<ApiResponse<PaymentUrlResponse>> createBatchPayment(
             @RequestBody PaymentRequest paymentRequest, 
@@ -725,13 +645,7 @@ public class PaymentController {
         ));
     }
 
-    /**
-     * API truy vấn kết quả giao dịch từ VNPAY (queryDr)
-     * GET /api/v1/payment/query-dr?transactionId=123456
-     * 
-     * Tham số:
-     * - transactionId: Mã giao dịch hoặc vnp_TxnRef
-     */
+
     @GetMapping("/query-dr")
     public ResponseEntity<ApiResponse<Map<String, Object>>> queryTransactionStatus(
             @RequestParam String transactionId) {
@@ -869,10 +783,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * API test tạo bản ghi thanh toán mà không cần đơn hàng thật
-     * GET /api/v1/payment/test-create-payment?orderId=123&amount=10000&status=PENDING
-     */
+
     @GetMapping("/test-create-payment")
     public ResponseEntity<ApiResponse<Map<String, Object>>> testCreatePayment(
             @RequestParam(required = false, defaultValue = "999999") Integer orderId,
@@ -913,9 +824,7 @@ public class PaymentController {
         return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
     
-    /**
-     * Kiểm thử trạng thái VNPAY thành công trực tiếp 
-     */
+
     @GetMapping("/test-vnpay-success")
     public ResponseEntity<String> testVnpaySuccess() {
         // Tạo HTML form để test
@@ -942,19 +851,7 @@ public class PaymentController {
         return ResponseEntity.ok().header("Content-Type", "text/html").body(html);
     }
 
-    /**
-     * API quản lý thanh toán - Lấy danh sách tất cả thanh toán (cho Admin)
-     * GET /api/v1/payment/list
-     * 
-     * Tham số:
-     * - page: Số trang
-     * - size: Số mục mỗi trang
-     * - search: Từ khóa tìm kiếm
-     * - status: Trạng thái thanh toán
-     * - paymentMethod: Phương thức thanh toán
-     * - fromDate: Ngày bắt đầu (yyyy-MM-dd)
-     * - toDate: Ngày kết thúc (yyyy-MM-dd)
-     */
+
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getAllPayments(
             @RequestParam(required = false, defaultValue = "0") int page,
@@ -1024,10 +921,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * API quản lý thanh toán - Lấy chi tiết một thanh toán (cho Admin)
-     * GET /api/v1/payment/{id}
-     */
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PaymentDTO>> getPaymentById(@PathVariable Long id) {
         log.info("Lấy chi tiết thanh toán có ID: {}", id);
@@ -1060,15 +954,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * API quản lý thanh toán - Cập nhật trạng thái thanh toán (cho Admin)
-     * PUT /api/v1/payment/{id}/status
-     * 
-     * Request Body:
-     * {
-     *   "status": "COMPLETED"
-     * }
-     */
+
     @PutMapping("/{id}/status")
     public ResponseEntity<ApiResponse<PaymentDTO>> updatePaymentStatus(
             @PathVariable Long id, 
@@ -1127,14 +1013,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * API quản lý thanh toán - Lấy thống kê thanh toán (cho Admin)
-     * GET /api/v1/payment/statistics
-     * 
-     * Tham số:
-     * - fromDate: Ngày bắt đầu (yyyy-MM-dd)
-     * - toDate: Ngày kết thúc (yyyy-MM-dd)
-     */
+
     @GetMapping("/statistics")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentStatistics(
             @RequestParam(required = false) String fromDate,
@@ -1182,14 +1061,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * API quản lý thanh toán - Xuất báo cáo thanh toán (cho Admin)
-     * GET /api/v1/payment/export
-     * 
-     * Tham số:
-     * - fromDate: Ngày bắt đầu (yyyy-MM-dd)
-     * - toDate: Ngày kết thúc (yyyy-MM-dd)
-     */
+
     @GetMapping("/export")
     public ResponseEntity<?> exportPaymentReport(
             @RequestParam(required = false) String fromDate,
@@ -1231,16 +1103,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * API quản lý thanh toán - Lấy dữ liệu thống kê cho biểu đồ (cho Admin)
-     * GET /api/v1/payment/chart-data
-     * 
-     * Tham số:
-     * - type: Loại thống kê (daily, weekly, monthly, yearly)
-     * - fromDate: Ngày bắt đầu (yyyy-MM-dd)
-     * - toDate: Ngày kết thúc (yyyy-MM-dd)
-     * - paymentMethod: Phương thức thanh toán
-     */
+
     @GetMapping("/chart-data")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getChartData(
             @RequestParam(required = false, defaultValue = "monthly") String type,

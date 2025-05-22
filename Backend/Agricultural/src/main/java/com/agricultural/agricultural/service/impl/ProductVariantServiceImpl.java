@@ -30,22 +30,18 @@ public class ProductVariantServiceImpl implements IProductVariantService {
     @Override
     @Transactional
     public ProductVariantDTO createVariant(ProductVariantDTO variantDTO) {
-        // Kiểm tra sản phẩm tồn tại
         MarketPlace product = marketPlaceRepository.findById(variantDTO.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + variantDTO.getProductId()));
         
-        // Kiểm tra SKU đã tồn tại chưa
         if (variantDTO.getSku() != null && !variantDTO.getSku().isEmpty()) {
             if (productVariantRepository.existsBySku(variantDTO.getSku())) {
                 throw new BadRequestException("SKU đã tồn tại: " + variantDTO.getSku());
             }
         }
         
-        // Tạo biến thể mới
         ProductVariant variant = productVariantMapper.toEntity(variantDTO);
         variant.setProduct(product);
         
-        // Lưu vào database
         ProductVariant savedVariant = productVariantRepository.save(variant);
         return productVariantMapper.toDTO(savedVariant);
     }
@@ -53,7 +49,6 @@ public class ProductVariantServiceImpl implements IProductVariantService {
     @Override
     @Transactional
     public ProductVariantDTO updateVariant(Integer id, ProductVariantDTO variantDTO) {
-        // Tìm biến thể cần cập nhật
         ProductVariant variant = productVariantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể với ID: " + id));
         Integer sellerId = variant.getProduct().getUser().getId();
@@ -67,20 +62,16 @@ public class ProductVariantServiceImpl implements IProductVariantService {
             variant.setProduct(product);
         }
         
-        // Kiểm tra SKU đã tồn tại chưa
         if (variantDTO.getSku() != null && !variantDTO.getSku().isEmpty()) {
             if (!variantDTO.getSku().equals(variant.getSku()) && productVariantRepository.existsBySku(variantDTO.getSku())) {
                 throw new BadRequestException("SKU đã tồn tại: " + variantDTO.getSku());
             }
         }
         
-        // Cập nhật thông tin
         productVariantMapper.updateVariantFromDTO(variantDTO, variant);
         
-        // Lưu vào database
         ProductVariant updatedVariant = productVariantRepository.save(variant);
         
-        // Gửi notification khi hết hàng
         if (oldQuantity > 0 && updatedVariant.getQuantity() == 0) {
             NotificationDTO notification = NotificationDTO.builder()
                 .userId(sellerId)
@@ -91,7 +82,6 @@ public class ProductVariantServiceImpl implements IProductVariantService {
                 .build();
             notificationService.sendRealTimeNotification(notification);
         }
-        // Gửi notification khi thay đổi giá
         if (variantDTO.getPriceAdjustment() != null && !variantDTO.getPriceAdjustment().equals(oldPrice.subtract(variant.getProduct().getCurrentPrice()))) {
             NotificationDTO notification = NotificationDTO.builder()
                 .userId(sellerId)
@@ -113,7 +103,6 @@ public class ProductVariantServiceImpl implements IProductVariantService {
             throw new ResourceNotFoundException("Không tìm thấy biến thể với ID: " + id);
         }
         
-        // Xóa biến thể
         productVariantRepository.deleteById(id);
     }
 

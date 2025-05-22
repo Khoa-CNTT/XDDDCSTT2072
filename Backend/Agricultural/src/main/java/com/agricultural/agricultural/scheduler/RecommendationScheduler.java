@@ -16,10 +16,7 @@ public class RecommendationScheduler {
 
     private final IProductRecommendationService recommendationService;
 
-    /**
-     * Cập nhật mô hình gợi ý sản phẩm hàng ngày lúc 1:00 AM
-     * Có thể điều chỉnh tần suất cập nhật tùy theo nhu cầu
-     */
+
     @Scheduled(cron = "0 0 1 * * ?") // 1:00 AM mỗi ngày
     public void updateRecommendationModels() {
         log.info("Bắt đầu lịch trình cập nhật mô hình gợi ý sản phẩm");

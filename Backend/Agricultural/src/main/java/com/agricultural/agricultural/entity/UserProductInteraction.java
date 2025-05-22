@@ -30,27 +30,16 @@ public class UserProductInteraction {
     @Column(name = "product_id", nullable = false)
     private Integer productId;
     
-    /**
-     * Loại tương tác: VIEW, CART, PURCHASE, WISHLIST, REVIEW
-     */
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private InteractionType type;
     
-    /**
-     * Điểm tương tác, càng cao càng quan trọng:
-     * - Xem: 1
-     * - Thêm vào giỏ hàng: 2
-     * - Thêm vào wishlist: 3
-     * - Đánh giá: 4
-     * - Mua: 5
-     */
+
     @Column(name = "interaction_score")
     private Integer interactionScore;
     
-    /**
-     * Số lần tương tác
-     */
+
     @Column(name = "interaction_count", nullable = false)
     private Integer interactionCount = 1;
     
@@ -62,9 +51,7 @@ public class UserProductInteraction {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
-    /**
-     * Enum định nghĩa các loại tương tác của người dùng với sản phẩm
-     */
+
     public enum InteractionType {
         VIEW,       // Người dùng xem sản phẩm
         CART,       // Người dùng thêm sản phẩm vào giỏ hàng
@@ -73,9 +60,7 @@ public class UserProductInteraction {
         REVIEW      // Người dùng đánh giá sản phẩm
     }
     
-    /**
-     * Tăng số lần tương tác
-     */
+
     public void incrementInteractionCount() {
         this.interactionCount += 1;
     }

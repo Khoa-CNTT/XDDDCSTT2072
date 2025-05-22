@@ -12,11 +12,10 @@ public interface ForumPostMapper {
     // Tạo một instance của ForumPostMapper
     ForumPostMapper INSTANCE = Mappers.getMapper(ForumPostMapper.class);
 
-    // Chuyển từ ForumPost (Entity) sang ForumPostDTO
     @Mapping(source = "user.id", target = "userId") // Ánh xạ userId từ user.id
     @Mapping(source = "user.username", target = "userName") // Ánh xạ userName từ user.username
     @Mapping(source = "user.imageUrl", target = "userAvatar") // Ánh xạ userAvatar từ user.imageUrl
-    @Mapping(source = "images", target = "images") // Ánh xạ danh sách ảnh
+    @Mapping(source = "images", target = "images")
     ForumPostDTO toDTO(ForumPost forumPost);
 
     // Chuyển từ ForumPostDTO sang ForumPost (Entity)

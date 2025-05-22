@@ -79,7 +79,6 @@ public class DebugController {
                 
                 result.put("alternativeSelectors", selectorResults);
                 
-                // Đề xuất selector tốt nhất
                 String bestSelector = null;
                 int maxCount = 0;
                 for (Map.Entry<String, Integer> entry : selectorResults.entrySet()) {
@@ -128,7 +127,6 @@ public class DebugController {
                                 
                                 result.put("articleTitle", articleDoc.title());
                                 
-                                // Kiểm tra các selectors cho nội dung
                                 Map<String, String> contentResults = new HashMap<>();
                                 
                                 if (source.getTitleSelector() != null) {
@@ -141,7 +139,6 @@ public class DebugController {
                                     contentResults.put("content", contentHtml.substring(0, Math.min(contentHtml.length(), 200)) + "...");
                                 }
                                 
-                                // Thử các selectors phổ biến cho nội dung nếu cần
                                 if (contentResults.getOrDefault("content", "").isEmpty()) {
                                     String[] commonContentSelectors = {
                                         ".article-content", ".news-content", ".detail-content", 

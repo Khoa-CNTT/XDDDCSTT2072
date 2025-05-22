@@ -14,30 +14,20 @@ import java.util.Optional;
 @Repository
 public interface IHashtagRepository extends JpaRepository<Hashtag, Integer> {
     
-    /**
-     * Tìm hashtag theo tên chính xác
-     */
+
     Optional<Hashtag> findByName(String name);
     
-    /**
-     * Tìm hashtag theo một phần của tên
-     */
+
     List<Hashtag> findByNameContainingIgnoreCase(String name);
     
-    /**
-     * Lấy danh sách hashtag phổ biến dựa trên số lượng bài viết
-     */
+
     Page<Hashtag> findAllByOrderByPostCountDesc(Pageable pageable);
     
-    /**
-     * Tìm tất cả hashtag của một bài viết
-     */
+
     @Query("SELECT h FROM Hashtag h JOIN h.posts p WHERE p.id = :postId")
     List<Hashtag> findAllByPostId(@Param("postId") Integer postId);
     
-    /**
-     * Tìm một hashtag cụ thể của một bài viết
-     */
+
     @Query("SELECT h FROM Hashtag h JOIN h.posts p WHERE p.id = :postId AND h.id = :hashtagId")
     Optional<Hashtag> findByPostIdAndHashtagId(@Param("postId") Integer postId, @Param("hashtagId") Integer hashtagId);
 } 

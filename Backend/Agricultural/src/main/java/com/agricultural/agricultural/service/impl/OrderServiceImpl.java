@@ -783,7 +783,75 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public Page<OrderDTO> getRecentOrders(Pageable pageable) {
-        Page<Order> recentOrders = orderRepository.findAll(pageable);
-        return recentOrders.map(orderMapper::toDTO);
+        return orderRepository.findAllByOrderByOrderDateDesc(pageable)
+                .map(order -> {
+                    Order fullOrder = orderRepository.findOrderWithDetails(order.getId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng với ID: " + order.getId()));
+                    return orderMapper.toDTO(fullOrder);
+                });
+    }
+
+    @Override
+    public List<OrderDTO> getOrdersBySellerProducts() {
+        try {
+            // Lấy thông tin người dùng hiện tại
+            User currentUser = getCurrentUser();
+            Integer sellerId = currentUser.getId();
+            
+            log.info("Đang lấy đơn hàng cho người bán có ID: {}", sellerId);
+            
+            // Tìm danh sách sản phẩm của người bán - sửa để truyền thêm Pageable
+            Page<MarketPlace> sellerProductsPage = marketPlaceRepository.findByUserId(sellerId, Pageable.unpaged());
+            List<MarketPlace> sellerProducts = sellerProductsPage.getContent();
+            
+            if (sellerProducts.isEmpty()) {
+                log.warn("Không tìm thấy sản phẩm nào cho người bán có ID: {}", sellerId);
+                return new ArrayList<>();
+            }
+            
+            // Lấy tất cả ID sản phẩm của người bán
+            List<Integer> productIds = sellerProducts.stream()
+                .map(MarketPlace::getId)
+                .collect(Collectors.toList());
+            
+            log.info("Tìm thấy {} sản phẩm của người bán ID {}", productIds.size(), sellerId);
+            
+            // Tìm tất cả chi tiết đơn hàng có chứa sản phẩm của người bán
+            List<OrderDetail> orderDetails = orderDetailRepository.findByProductIdIn(productIds);
+            
+            if (orderDetails.isEmpty()) {
+                log.warn("Không tìm thấy chi tiết đơn hàng nào cho sản phẩm của người bán ID: {}", sellerId);
+                return new ArrayList<>();
+            }
+            
+            // Lấy tất cả ID đơn hàng từ chi tiết đơn hàng
+            List<Integer> orderIds = orderDetails.stream()
+                .map(OrderDetail::getOrderId)
+                .distinct()
+                .collect(Collectors.toList());
+            
+            log.info("Tìm thấy {} đơn hàng chứa sản phẩm của người bán", orderIds.size());
+            
+            // Lấy đơn hàng từ các ID
+            List<Order> orders = orderRepository.findAllById(orderIds);
+            
+            // Chuyển đổi Order sang OrderDTO với đầy đủ thông tin chi tiết
+            return orders.stream()
+                .map(order -> {
+                    try {
+                        Order fullOrder = orderRepository.findOrderWithDetails(order.getId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng với ID: " + order.getId()));
+                        return orderMapper.toDTO(fullOrder);
+                    } catch (Exception e) {
+                        log.error("Lỗi khi lấy chi tiết đơn hàng {}: {}", order.getId(), e.getMessage());
+                        // Trả về DTO cơ bản nếu không lấy được chi tiết
+                        return orderMapper.toDTO(order);
+                    }
+                })
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy danh sách đơn hàng theo sản phẩm người bán: {}", e.getMessage());
+            throw new BusinessException("Không thể lấy danh sách đơn hàng: " + e.getMessage());
+        }
     }
 }

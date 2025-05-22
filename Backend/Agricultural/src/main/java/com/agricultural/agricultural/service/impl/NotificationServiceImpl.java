@@ -28,7 +28,6 @@ public class NotificationServiceImpl implements INotificationService {
         notificationDTO.setCreatedAt(LocalDateTime.now());
         notificationDTO.setRead(false);
         
-        // Đảm bảo trường message không null khi mapper từ content
         if (notificationDTO.getMessage() == null && notificationDTO.getContent() != null) {
             notificationDTO.setMessage(notificationDTO.getContent());
         } else if (notificationDTO.getContent() == null && notificationDTO.getMessage() != null) {
@@ -39,9 +38,7 @@ public class NotificationServiceImpl implements INotificationService {
             notificationDTO.setContent("Bạn có thông báo mới");
         }
         
-        // Đảm bảo trường title không null
         if (notificationDTO.getTitle() == null) {
-            // Tạo title dựa vào type hoặc đặt giá trị mặc định
             String title = "Thông báo mới";
             if (notificationDTO.getType() != null) {
                 switch (notificationDTO.getType()) {
@@ -64,7 +61,6 @@ public class NotificationServiceImpl implements INotificationService {
             notificationDTO.setTitle(title);
         }
         
-        // Xử lý việc ánh xạ userId và receiverId
         if (notificationDTO.getUserId() == null && notificationDTO.getReceiverId() != null) {
             notificationDTO.setUserId(notificationDTO.getReceiverId());
         } else if (notificationDTO.getReceiverId() == null && notificationDTO.getUserId() != null) {

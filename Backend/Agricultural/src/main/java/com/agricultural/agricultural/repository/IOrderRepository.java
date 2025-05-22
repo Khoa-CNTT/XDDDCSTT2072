@@ -39,4 +39,8 @@ public interface IOrderRepository extends JpaRepository<Order, Integer> {
     
     @Query("SELECT o FROM Order o WHERE o.buyerId = :userId AND o.status = :status")
     List<Order> findByUserIdAndStatus(Integer userId, OrderStatus status);
+    
+    List<Order> findAllBySellerIdOrderByOrderDateDesc(Integer sellerId);
+    
+    Page<Order> findAllByOrderByOrderDateDesc(Pageable pageable);
 } 

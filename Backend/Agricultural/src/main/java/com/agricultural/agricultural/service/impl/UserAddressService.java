@@ -10,6 +10,8 @@ import com.agricultural.agricultural.repository.IUserAddressRepository;
 import com.agricultural.agricultural.repository.IUserRepository;
 import com.agricultural.agricultural.service.IUserAddressService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +26,25 @@ public class UserAddressService implements IUserAddressService {
     private final IUserRepository userRepository;
     private final UserAddressMapper userAddressMapper;
 
-    /**
-     * Thêm địa chỉ mới cho User
-     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BadRequestException("Bạn cần đăng nhập để thực hiện thao tác này");
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof User)) {
+            throw new BadRequestException("Không thể xác thực thông tin người dùng");
+        }
+
+        User currentUser = (User) principal;
+        if (false) {
+            throw new BadRequestException("Không tìm thấy thông tin người dùng");
+        }
+
+        return currentUser;
+    }
+
     @Override
     @Transactional
     public UserAddressDTO addAddress(UserAddressDTO addressDTO) {
@@ -34,7 +52,6 @@ public class UserAddressService implements IUserAddressService {
             throw new BadRequestException("Thông tin địa chỉ không được để trống");
         }
         
-        // Lấy userId từ DTO
         Integer userId = addressDTO.getUserId();
         if (userId == null) {
             throw new BadRequestException("ID người dùng không được để trống");
@@ -54,9 +71,7 @@ public class UserAddressService implements IUserAddressService {
         return userAddressMapper.toDTO(userAddress);
     }
 
-    /**
-     * Cập nhật địa chỉ
-     */
+
     @Override
     @Transactional
     public UserAddressDTO updateAddress(int addressId, UserAddressDTO addressDTO) {
@@ -71,7 +86,6 @@ public class UserAddressService implements IUserAddressService {
         UserAddress address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy địa chỉ với ID: " + addressId));
 
-        // Cập nhật thông tin địa chỉ
         address.setAddress(addressDTO.getAddress());
         address.setCity(addressDTO.getCity());
         address.setCountry(addressDTO.getCountry());
@@ -82,9 +96,7 @@ public class UserAddressService implements IUserAddressService {
         return userAddressMapper.toDTO(updatedAddress);
     }
 
-    /**
-     * Xóa địa chỉ theo ID
-     */
+
     @Override
     @Transactional
     public void deleteAddress(int addressId) {
@@ -94,11 +106,11 @@ public class UserAddressService implements IUserAddressService {
         addressRepository.deleteById(addressId);
     }
 
-    /**
-     * Lấy tất cả địa chỉ của User
-     */
+
     @Override
     public List<UserAddressDTO> getUserAddresses(int userId) {
+
+
         // Kiểm tra người dùng có tồn tại không
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
@@ -110,9 +122,7 @@ public class UserAddressService implements IUserAddressService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lấy địa chỉ theo ID
-     */
+
     @Override
     public UserAddressDTO getAddressById(int addressId) {
         UserAddress address = addressRepository.findById(addressId)

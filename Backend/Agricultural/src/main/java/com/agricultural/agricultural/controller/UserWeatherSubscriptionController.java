@@ -17,19 +17,13 @@ public class UserWeatherSubscriptionController {
 
     private final IUserWeatherSubscriptionService subscriptionService;
 
-    // ========== API cho người dùng đăng nhập hiện tại ==========
-    
-    /**
-     * Lấy tất cả đăng ký thời tiết của người dùng đăng nhập hiện tại
-     */
+
     @GetMapping
     public ResponseEntity<List<UserWeatherSubscriptionDTO>> getCurrentUserSubscriptions() {
         return ResponseEntity.ok(subscriptionService.getCurrentUserSubscriptions());
     }
 
-    /**
-     * Lấy thông tin đăng ký cụ thể của người dùng đăng nhập hiện tại
-     */
+
     @GetMapping("/{locationId}")
     public ResponseEntity<?> getCurrentUserSubscription(
             @PathVariable String locationId) {
@@ -44,9 +38,7 @@ public class UserWeatherSubscriptionController {
         }
     }
 
-    /**
-     * Đăng ký theo dõi địa điểm cho người dùng đăng nhập hiện tại
-     */
+
     @PostMapping("/{locationId}")
     public ResponseEntity<?> subscribeToLocation(
             @PathVariable String locationId,
@@ -65,9 +57,7 @@ public class UserWeatherSubscriptionController {
         }
     }
 
-    /**
-     * Cập nhật trạng thái thông báo cho người dùng đăng nhập hiện tại
-     */
+
     @PatchMapping("/{locationId}/notifications")
     public ResponseEntity<?> updateNotificationStatus(
             @PathVariable String locationId,
@@ -85,9 +75,7 @@ public class UserWeatherSubscriptionController {
         }
     }
 
-    /**
-     * Hủy đăng ký theo dõi địa điểm cho người dùng đăng nhập hiện tại
-     */
+
     @DeleteMapping("/{locationId}")
     public ResponseEntity<?> unsubscribeFromLocation(
             @PathVariable String locationId) {
@@ -104,12 +92,7 @@ public class UserWeatherSubscriptionController {
         }
     }
     
-    // ========== API cho Admin ==========
-    
-    /**
-     * Lấy tất cả đăng ký thời tiết của một người dùng cụ thể
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> getUserSubscriptions(@PathVariable String userId) {
@@ -125,10 +108,7 @@ public class UserWeatherSubscriptionController {
         }
     }
 
-    /**
-     * Lấy thông tin đăng ký cụ thể của một người dùng
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @GetMapping("/users/{userId}/locations/{locationId}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> getUserSubscription(
@@ -149,10 +129,7 @@ public class UserWeatherSubscriptionController {
         }
     }
 
-    /**
-     * Cập nhật trạng thái thông báo cho một người dùng cụ thể
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @PatchMapping("/users/{userId}/locations/{locationId}/notifications")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> updateUserNotificationStatus(
@@ -173,10 +150,7 @@ public class UserWeatherSubscriptionController {
         }
     }
 
-    /**
-     * Hủy đăng ký theo dõi địa điểm cho một người dùng cụ thể
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @DeleteMapping("/users/{userId}/locations/{locationId}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> unsubscribeUserFromLocation(
@@ -196,10 +170,7 @@ public class UserWeatherSubscriptionController {
         }
     }
     
-    /**
-     * Lấy tất cả các đăng ký có bật thông báo
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @GetMapping("/active-notifications")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<List<UserWeatherSubscriptionDTO>> getActiveNotificationSubscriptions() {

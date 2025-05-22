@@ -31,7 +31,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     @Override
     @Transactional
     public ChatSession saveMessages(String sessionId, String userId, String userMessage, String aiResponse, String source) {
-        // Tìm session hoặc tạo mới nếu không tồn tại
         ChatSession session = chatSessionRepository.findBySessionId(sessionId)
                 .orElseGet(() -> createSession(userId, source));
 
@@ -58,9 +57,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
         chatMessageRepository.save(userMsg);
         chatMessageRepository.save(aiMsg);
 
-        // Cập nhật tiêu đề phiên chat nếu chưa có
         if (session.getTitle() == null || session.getTitle().isEmpty()) {
-            // Lấy 50 ký tự đầu tiên của tin nhắn người dùng làm tiêu đề
             String title = userMessage;
             if (title.length() > 50) {
                 title = title.substring(0, 47) + "...";
@@ -100,9 +97,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                 // Nếu có sessionId, lấy tin nhắn theo phiên
                 messages = chatMessageRepository.findBySessionIdOrderByTimestampAsc(sessionId);
             } else if (userId != null && !userId.isEmpty()) {
-                // Nếu có userId, lấy tin nhắn theo người dùng
                 messages = chatMessageRepository.findByUserIdOrderByTimestampDesc(userId);
-                // Giới hạn số lượng tin nhắn
                 if (messages.size() > limit) {
                     messages = messages.subList(0, limit);
                 }

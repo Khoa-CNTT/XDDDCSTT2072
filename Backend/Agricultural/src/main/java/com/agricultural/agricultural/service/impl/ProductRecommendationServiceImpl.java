@@ -42,7 +42,6 @@ public class ProductRecommendationServiceImpl implements IProductRecommendationS
     private final SeasonalAnalyzer seasonalAnalyzer;
     private final INotificationService notificationService;
     
-    // Điểm số tương tác
     private static final Map<InteractionType, Integer> INTERACTION_SCORES = Map.of(
         InteractionType.VIEW, 1,
         InteractionType.CART, 2,
@@ -55,7 +54,6 @@ public class ProductRecommendationServiceImpl implements IProductRecommendationS
     public Page<MarketPlaceDTO> getPersonalizedRecommendations(Integer userId, Pageable pageable) {
         log.info("Lấy danh sách gợi ý cá nhân hóa cho người dùng ID: {}", userId);
         
-        // Lấy danh sách sản phẩm người dùng đã tương tác
         List<Object[]> userInteractions = interactionRepository.findMostInteractedProductsByUser(userId, 10);
         
         if (userInteractions.isEmpty()) {

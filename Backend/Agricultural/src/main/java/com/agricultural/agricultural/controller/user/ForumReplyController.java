@@ -27,13 +27,7 @@ public class ForumReplyController {
 
     private final IForumReplyService replyService;
 
-    /**
-     * Lấy danh sách bình luận gốc của bài viết
-     * @param postId ID bài viết
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách bình luận gốc
-     */
+
     @GetMapping("/post/{postId}")
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<Page<ForumReplyDTO>>> getRootRepliesByPostId(
@@ -50,13 +44,7 @@ public class ForumReplyController {
                 repliesPage));
     }
 
-    /**
-     * Lấy danh sách bình luận con của một bình luận
-     * @param parentId ID bình luận cha
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách bình luận con
-     */
+
     @GetMapping("/parent/{parentId}")
     public ResponseEntity<ApiResponse<Page<ForumReplyDTO>>> getRepliesByParentId(
             @PathVariable Integer parentId,
@@ -72,11 +60,7 @@ public class ForumReplyController {
                 repliesPage));
     }
 
-    /**
-     * Đếm số lượng bình luận của bài viết
-     * @param postId ID bài viết
-     * @return Số lượng bình luận
-     */
+
     @GetMapping("/post/{postId}/count")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getReplyCountByPostId(@PathVariable Integer postId) {
         Long rootCount = replyService.countRootRepliesByPostId(postId);
@@ -92,12 +76,7 @@ public class ForumReplyController {
                 counts));
     }
 
-    /**
-     * Tạo bình luận mới
-     * @param request Thông tin bình luận
-     * @param currentUser Người dùng hiện tại
-     * @return Bình luận đã tạo
-     */
+
     @PostMapping
     public ResponseEntity<ApiResponse<ForumReplyDTO>> createReply(
             @Valid @RequestBody ForumReplyRequest request,
@@ -112,14 +91,7 @@ public class ForumReplyController {
                         createdReply));
     }
 
-    /**
-     * Cập nhật bình luận
-     * @param replyId ID bình luận
-     * @param request Nội dung cập nhật
-     * @param currentUser Người dùng hiện tại
-     * @return Bình luận đã cập nhật
-     * @throws PermissionDenyException Nếu không có quyền cập nhật
-     */
+
     @PutMapping("/{replyId}")
     public ResponseEntity<ApiResponse<ForumReplyDTO>> updateReply(
             @PathVariable Integer replyId,
@@ -143,13 +115,7 @@ public class ForumReplyController {
                 updatedReply));
     }
 
-    /**
-     * Xóa bình luận
-     * @param replyId ID bình luận
-     * @param currentUser Người dùng hiện tại
-     * @return Thông báo xóa thành công
-     * @throws PermissionDenyException Nếu không có quyền xóa
-     */
+
     @DeleteMapping("/{replyId}")
     public ResponseEntity<ApiResponse<Void>> deleteReply(
             @PathVariable Integer replyId,
@@ -163,12 +129,7 @@ public class ForumReplyController {
                 null));
     }
 
-    /**
-     * Thích bình luận
-     * @param replyId ID bình luận
-     * @param currentUser Người dùng hiện tại
-     * @return Bình luận đã thích
-     */
+
     @PostMapping("/{replyId}/like")
     public ResponseEntity<ApiResponse<ForumReplyDTO>> likeReply(
             @PathVariable Integer replyId,
@@ -182,12 +143,7 @@ public class ForumReplyController {
                 likedReply));
     }
 
-    /**
-     * Bỏ thích bình luận
-     * @param replyId ID bình luận
-     * @param currentUser Người dùng hiện tại
-     * @return Bình luận đã bỏ thích
-     */
+
     @PostMapping("/{replyId}/unlike")
     public ResponseEntity<ApiResponse<ForumReplyDTO>> unlikeReply(
             @PathVariable Integer replyId,

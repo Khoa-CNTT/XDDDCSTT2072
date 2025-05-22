@@ -31,12 +31,10 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
     @Override
     @Transactional
     public ProductCategoryDTO createCategory(ProductCategoryDTO categoryDTO) {
-        // Kiểm tra tên danh mục đã tồn tại chưa
         if (productCategoryRepository.existsByNameIgnoreCase(categoryDTO.getName())) {
             throw new BadRequestException("Tên danh mục đã tồn tại");
         }
         
-        // Xử lý danh mục cha nếu có
         ProductCategory category = productCategoryMapper.toEntity(categoryDTO);
         if (categoryDTO.getParentId() != null) {
             ProductCategory parent = productCategoryRepository.findById(categoryDTO.getParentId())
@@ -44,7 +42,6 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
             category.setParent(parent);
         }
         
-        // Lưu vào database
         ProductCategory savedCategory = productCategoryRepository.save(category);
         return productCategoryMapper.toDTO(savedCategory);
     }
@@ -52,22 +49,17 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
     @Override
     @Transactional
     public ProductCategoryDTO updateCategory(Integer id, ProductCategoryDTO categoryDTO) {
-        // Tìm danh mục cần cập nhật
         ProductCategory category = productCategoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + id));
         
-        // Kiểm tra nếu tên thay đổi và đã tồn tại
-        if (!category.getName().equalsIgnoreCase(categoryDTO.getName()) && 
+        if (!category.getName().equalsIgnoreCase(categoryDTO.getName()) &&
             productCategoryRepository.existsByNameIgnoreCase(categoryDTO.getName())) {
             throw new BadRequestException("Tên danh mục đã tồn tại");
         }
         
-        // Cập nhật thông tin cơ bản
         productCategoryMapper.updateCategoryFromDTO(categoryDTO, category);
         
-        // Cập nhật danh mục cha nếu có
         if (categoryDTO.getParentId() != null) {
-            // Kiểm tra không thể đặt chính nó làm cha
             if (categoryDTO.getParentId().equals(id)) {
                 throw new BadRequestException("Không thể đặt danh mục làm cha của chính nó");
             }
@@ -92,14 +84,12 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
     @Override
     @Transactional
     public void deleteCategory(Integer id) {
-        // Kiểm tra danh mục tồn tại
         ProductCategory category = productCategoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + id));
         
         // Lấy URL ảnh
         String imageUrl = category.getImageUrl();
         
-        // Kiểm tra có sản phẩm trong danh mục không
         long productCount = productCategoryRepository.countProductsByCategoryId(id);
         if (productCount > 0) {
             throw new BadRequestException("Không thể xóa danh mục có sản phẩm. Vui lòng xóa sản phẩm trước.");
@@ -120,7 +110,6 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
                 String publicId = cloudinaryService.extractPublicIdFromUrl(imageUrl);
                 cloudinaryService.deleteImage(publicId);
             } catch (Exception e) {
-                // Bỏ qua lỗi khi xóa ảnh
             }
         }
     }
@@ -133,7 +122,6 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
         
         ProductCategoryDTO dto = productCategoryMapper.toDTO(category);
         
-        // Bổ sung thông tin số sản phẩm
         dto.setProductCount(productCategoryRepository.countProductsByCategoryId(id));
         
         return dto;
@@ -193,10 +181,8 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductCategoryDTO> getCategoryTree() {
-        // Lấy tất cả danh mục gốc (không có cha)
         List<ProductCategory> rootCategories = productCategoryRepository.findByParentIsNull();
         
-        // Chuyển đổi danh sách và xây dựng cây đệ quy
         return rootCategories.stream()
                 .map(this::buildCategoryTree)
                 .collect(Collectors.toList());
@@ -205,7 +191,6 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
     @Override
     @Transactional(readOnly = true)
     public Long countProductsInCategory(Integer categoryId) {
-        // Kiểm tra danh mục tồn tại
         if (!productCategoryRepository.existsById(categoryId)) {
             throw new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + categoryId);
         }
@@ -216,7 +201,6 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
     @Override
     @Transactional(readOnly = true)
     public boolean hasSubcategories(Integer categoryId) {
-        // Kiểm tra danh mục tồn tại
         if (!productCategoryRepository.existsById(categoryId)) {
             throw new ResourceNotFoundException("Không tìm thấy danh mục với ID: " + categoryId);
         }
@@ -228,10 +212,8 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
     private ProductCategoryDTO buildCategoryTree(ProductCategory category) {
         ProductCategoryDTO dto = productCategoryMapper.toDTO(category);
         
-        // Thêm số lượng sản phẩm
         dto.setProductCount(productCategoryRepository.countProductsByCategoryId(category.getId()));
         
-        // Đệ quy để thêm danh mục con
         if (category.getChildren() != null && !category.getChildren().isEmpty()) {
             List<ProductCategoryDTO> childrenDTO = new ArrayList<>();
             for (ProductCategory child : category.getChildren()) {
@@ -243,7 +225,6 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
         return dto;
     }
     
-    // Kiểm tra nếu một danh mục là con của danh mục khác
     private boolean isChildCategory(Integer parentId, Integer potentialChildId) {
         if (parentId.equals(potentialChildId)) {
             return true;
@@ -269,7 +250,6 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
             Integer displayOrder,
             MultipartFile image) throws IOException {
         
-        // Tạo DTO từ dữ liệu form
         ProductCategoryDTO categoryDTO = ProductCategoryDTO.builder()
                 .name(name)
                 .description(description)
@@ -278,13 +258,11 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
                 .displayOrder(displayOrder)
                 .build();
         
-        // Upload ảnh lên Cloudinary nếu có
         if (image != null && !image.isEmpty()) {
             String imageUrl = cloudinaryService.uploadImage(image, "product-categories");
             categoryDTO.setImageUrl(imageUrl);
         }
         
-        // Gọi phương thức createCategory để tạo danh mục
         return createCategory(categoryDTO);
     }
     
@@ -299,10 +277,8 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
             Integer displayOrder,
             MultipartFile image) throws IOException {
         
-        // Lấy thông tin danh mục hiện tại
         ProductCategoryDTO existingCategory = getCategory(id);
         
-        // Tạo DTO mới với các giá trị được cập nhật
         ProductCategoryDTO categoryDTO = ProductCategoryDTO.builder()
                 .id(id)
                 .name(name != null ? name : existingCategory.getName())
@@ -313,7 +289,6 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
                 .imageUrl(existingCategory.getImageUrl()) // Giữ lại URL ảnh hiện tại
                 .build();
         
-        // Upload ảnh mới nếu có
         if (image != null && !image.isEmpty()) {
             // Xóa ảnh cũ nếu có
             if (existingCategory.getImageUrl() != null && !existingCategory.getImageUrl().isEmpty()) {
@@ -325,12 +300,10 @@ public class ProductCategoryServiceImpl implements IProductCategoryService {
                 }
             }
             
-            // Upload ảnh mới
             String imageUrl = cloudinaryService.uploadImage(image, "product-categories");
             categoryDTO.setImageUrl(imageUrl);
         }
         
-        // Gọi phương thức updateCategory để cập nhật danh mục
         return updateCategory(id, categoryDTO);
     }
 } 

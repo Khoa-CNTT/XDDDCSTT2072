@@ -44,9 +44,6 @@ public class SellerRegistrationServiceImpl implements ISellerRegistrationService
         }
 
         User currentUser = (User) principal;
-//        if (currentUser.getId() == null) {
-//            throw new BadRequestException("Không tìm thấy thông tin người dùng");
-//        }
 
         return currentUser;
     }
@@ -54,26 +51,21 @@ public class SellerRegistrationServiceImpl implements ISellerRegistrationService
     @Override
     public SellerRegistrationDTO createRegistration(SellerRegistrationDTO registrationDTO) {
         User currentUser = getCurrentUser();
-        // Kiểm tra người dùng đã có đơn đăng ký nào đang chờ xét duyệt chưa
         if (sellerRegistrationRepository.existsByUserIdAndStatus(currentUser.getId(), SellerRegistrationStatus.PENDING.getValue())) {
             throw new BusinessException("Bạn đã có đơn đăng ký bán hàng đang chờ xét duyệt");
         }
         
-        // Kiểm tra người dùng đã có đơn đăng ký nào đã được chấp thuận chưa
         if (sellerRegistrationRepository.existsByUserIdAndStatusEquals(currentUser.getId(), SellerRegistrationStatus.APPROVED.getValue())) {
             throw new BusinessException("Bạn đã được phê duyệt bán hàng trước đó");
         }
         
-        // Tạo entity từ DTO
         SellerRegistration registration = sellerRegistrationMapper.toEntity(registrationDTO, currentUser, null);
         registration.setStatus(SellerRegistrationStatus.PENDING.getValue());
         
-        // Đảm bảo ngày tạo luôn được thiết lập
         if (registration.getCreatedAt() == null) {
             registration.setCreatedAt(LocalDateTime.now());
         }
         
-        // Lưu đơn đăng ký
         SellerRegistration savedRegistration = sellerRegistrationRepository.save(registration);
         log.info("Đã tạo đơn đăng ký bán hàng mới cho người dùng: {}", currentUser.getUsername());
         
@@ -101,18 +93,14 @@ public class SellerRegistrationServiceImpl implements ISellerRegistrationService
     public SellerRegistrationDTO approveRegistration(Integer id, String notes) {
         User admin = getCurrentUser();
 
-
-        // Lấy thông tin đơn đăng ký
         SellerRegistration registration = sellerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đăng ký bán hàng"));
         
-        // Cập nhật trạng thái đơn đăng ký
         registration.setStatus(SellerRegistrationStatus.APPROVED.getValue());
         registration.setNotes(notes);
         registration.setProcessedBy(admin);
         registration.setProcessedAt(LocalDateTime.now());
         
-        // Lưu đơn đăng ký
         SellerRegistration updatedRegistration = sellerRegistrationRepository.save(registration);
         log.info("Đã phê duyệt đơn đăng ký bán hàng cho người dùng: {}", registration.getUser().getUsername());
         
@@ -124,17 +112,14 @@ public class SellerRegistrationServiceImpl implements ISellerRegistrationService
     public SellerRegistrationDTO rejectRegistration(Integer id, String notes) {
         User admin = getCurrentUser();
 
-        // Lấy thông tin đơn đăng ký
         SellerRegistration registration = sellerRegistrationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn đăng ký bán hàng"));
         
-        // Cập nhật trạng thái đơn đăng ký
         registration.setStatus(SellerRegistrationStatus.REJECTED.getValue());
         registration.setNotes(notes);
         registration.setProcessedBy(admin);
         registration.setProcessedAt(LocalDateTime.now());
         
-        // Lưu đơn đăng ký
         SellerRegistration updatedRegistration = sellerRegistrationRepository.save(registration);
         log.info("Đã từ chối đơn đăng ký bán hàng của người dùng: {}", registration.getUser().getUsername());
         
@@ -143,10 +128,8 @@ public class SellerRegistrationServiceImpl implements ISellerRegistrationService
     
     @Override
     public List<SellerRegistrationDTO> getAllRegistrations() {
-        // Sử dụng phương thức mới để lấy thông tin người dùng đầy đủ
         List<SellerRegistration> registrations = sellerRegistrationRepository.findAllWithUsers();
         
-        // Log để debug - kiểm tra thông tin ngày tháng
         for (SellerRegistration registration : registrations) {
             if (registration.getCreatedAt() == null) {
                 log.warn("Registration ID {} có createdAt là null", registration.getId());
@@ -160,21 +143,18 @@ public class SellerRegistrationServiceImpl implements ISellerRegistrationService
     
     @Override
     public List<SellerRegistrationDTO> getRegistrationsByStatus(String status) {
-        // Kiểm tra trạng thái hợp lệ
         try {
             SellerRegistrationStatus.fromValue(status);
         } catch (IllegalArgumentException e) {
             throw new BusinessException("Trạng thái không hợp lệ: " + status);
         }
         
-        // Sử dụng phương thức mới với JOIN FETCH để lấy thông tin người dùng đầy đủ
         List<SellerRegistration> registrations = sellerRegistrationRepository.findByStatusWithUsers(status);
         return sellerRegistrationMapper.toDTOList(registrations);
     }
     
     @Override
     public boolean hasCurrentUserPendingRegistration() {
-        // Lấy thông tin người dùng hiện tại
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUserEmail = authentication.getName();
         
@@ -186,7 +166,6 @@ public class SellerRegistrationServiceImpl implements ISellerRegistrationService
     
     @Override
     public boolean hasCurrentUserApprovedRegistration() {
-        // Lấy thông tin người dùng hiện tại
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUserEmail = authentication.getName();
         

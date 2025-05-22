@@ -24,12 +24,7 @@ public class UserConnectionController {
 
     private final IUserConnectionService userConnectionService;
 
-    /**
-     * Gửi yêu cầu kết nối đến người dùng khác
-     * @param targetUserId ID người dùng đích
-     * @param user Người dùng hiện tại
-     * @return Thông tin kết nối đã tạo
-     */
+
     @PostMapping("/request/{targetUserId}")
     public ResponseEntity<ApiResponse<UserConnectionDTO>> sendConnectionRequest(
             @PathVariable Integer targetUserId,
@@ -45,12 +40,7 @@ public class UserConnectionController {
         }
     }
 
-    /**
-     * Chấp nhận yêu cầu kết nối
-     * @param requesterId ID người dùng đã gửi yêu cầu
-     * @param user Người dùng hiện tại
-     * @return Thông tin kết nối đã cập nhật
-     */
+
     @PutMapping("/accept/{requesterId}")
     public ResponseEntity<ApiResponse<UserConnectionDTO>> acceptConnectionRequest(
             @PathVariable Integer requesterId,
@@ -65,12 +55,7 @@ public class UserConnectionController {
         }
     }
 
-    /**
-     * Từ chối yêu cầu kết nối
-     * @param requesterId ID người dùng đã gửi yêu cầu
-     * @param user Người dùng hiện tại
-     * @return Thông tin kết nối đã cập nhật
-     */
+
     @PutMapping("/reject/{requesterId}")
     public ResponseEntity<ApiResponse<UserConnectionDTO>> rejectConnectionRequest(
             @PathVariable Integer requesterId,
@@ -85,12 +70,7 @@ public class UserConnectionController {
         }
     }
 
-    /**
-     * Chặn người dùng
-     * @param targetUserId ID người dùng cần chặn
-     * @param user Người dùng hiện tại
-     * @return Thông tin kết nối chặn
-     */
+
     @PostMapping("/block/{targetUserId}")
     public ResponseEntity<ApiResponse<UserConnectionDTO>> blockUser(
             @PathVariable Integer targetUserId,
@@ -105,12 +85,7 @@ public class UserConnectionController {
         }
     }
 
-    /**
-     * Bỏ chặn người dùng
-     * @param targetUserId ID người dùng cần bỏ chặn
-     * @param user Người dùng hiện tại
-     * @return Thông tin kết nối đã xóa
-     */
+
     @DeleteMapping("/unblock/{targetUserId}")
     public ResponseEntity<ApiResponse<UserConnectionDTO>> unblockUser(
             @PathVariable Integer targetUserId,
@@ -125,12 +100,7 @@ public class UserConnectionController {
         }
     }
 
-    /**
-     * Xóa kết nối với người dùng
-     * @param connectedUserId ID người dùng đã kết nối
-     * @param user Người dùng hiện tại
-     * @return Thông báo xóa thành công
-     */
+
     @DeleteMapping("/{connectedUserId}")
     public ResponseEntity<ApiResponse<Void>> removeConnection(
             @PathVariable Integer connectedUserId,
@@ -145,13 +115,7 @@ public class UserConnectionController {
         }
     }
 
-    /**
-     * Lấy danh sách kết nối của người dùng
-     * @param user Người dùng hiện tại
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách kết nối theo trang
-     */
+
     @GetMapping
     public ResponseEntity<ApiResponse<Page<UserConnectionDTO>>> getUserConnections(
             @AuthenticationPrincipal User user,
@@ -163,11 +127,7 @@ public class UserConnectionController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách kết nối thành công", connections));
     }
 
-    /**
-     * Lấy danh sách yêu cầu kết nối đang chờ
-     * @param user Người dùng hiện tại
-     * @return Danh sách yêu cầu kết nối
-     */
+
     @GetMapping("/pending")
     public ResponseEntity<ApiResponse<List<UserConnectionDTO>>> getPendingRequests(
             @AuthenticationPrincipal User user) {
@@ -176,12 +136,7 @@ public class UserConnectionController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách yêu cầu kết nối thành công", pendingRequests));
     }
 
-    /**
-     * Kiểm tra trạng thái kết nối giữa hai người dùng
-     * @param targetUserId ID người dùng cần kiểm tra
-     * @param user Người dùng hiện tại
-     * @return Trạng thái kết nối chi tiết
-     */
+
     @GetMapping("/check/{targetUserId}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> checkConnectionStatus(
             @PathVariable Integer targetUserId,
@@ -191,36 +146,21 @@ public class UserConnectionController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Kiểm tra trạng thái kết nối thành công", connectionDetails));
     }
 
-    /**
-     * Đếm số lượng kết nối của người dùng
-     * @param user Người dùng hiện tại
-     * @return Số lượng kết nối
-     */
+
     @GetMapping("/count")
     public ResponseEntity<ApiResponse<Long>> countUserConnections(@AuthenticationPrincipal User user) {
         long count = userConnectionService.countUserConnections(user.getId());
         return ResponseEntity.ok(new ApiResponse<>(true, "Đếm số lượng kết nối thành công", count));
     }
 
-    /**
-     * Lấy ID của tất cả người dùng đã kết nối
-     * @param user Người dùng hiện tại
-     * @return Danh sách ID người dùng đã kết nối
-     */
+
     @GetMapping("/connected-ids")
     public ResponseEntity<ApiResponse<List<Integer>>> getConnectedUserIds(@AuthenticationPrincipal User user) {
         List<Integer> connectedIds = userConnectionService.getConnectedUserIds(user.getId());
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách ID người dùng đã kết nối thành công", connectedIds));
     }
 
-    /**
-     * Lấy danh sách kết nối của người dùng (bao gồm cả kết nối từ hai hướng)
-     * @param user Người dùng hiện tại
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @param status Trạng thái kết nối (mặc định là ACCEPTED)
-     * @return Danh sách kết nối theo trang
-     */
+
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<UserConnectionDTO>>> getAllUserConnections(
             @AuthenticationPrincipal User user,

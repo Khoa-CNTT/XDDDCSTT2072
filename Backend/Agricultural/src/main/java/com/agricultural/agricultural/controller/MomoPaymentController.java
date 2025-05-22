@@ -29,17 +29,7 @@ public class MomoPaymentController {
     private final MomoPaymentService momoPaymentService;
     private final IPaymentRepository paymentRepository;
 
-    /**
-     * Tạo mã QR thanh toán Momo
-     * POST /api/v1/payment/momo/create-qr
-     * 
-     * Request Body:
-     * {
-     *   "orderId": 123,
-     *   "amount": 10000,
-     *   "description": "Thanh toán đơn hàng #123"
-     * }
-     */
+
     @PostMapping("/create-qr")
     public ResponseEntity<ApiResponse<PaymentQRDTO>> createMomoQR(
             @RequestBody PaymentRequest paymentRequest,
@@ -73,10 +63,7 @@ public class MomoPaymentController {
         ));
     }
     
-    /**
-     * Xử lý callback từ Momo khi thanh toán hoàn tất
-     * GET /api/v1/payment/momo/return
-     */
+
     @GetMapping("/return")
     public ResponseEntity<?> handleMomoReturn(@RequestParam Map<String, String> params) {
         log.info("Nhận callback từ Momo Return URL với params: {}", params);
@@ -90,7 +77,6 @@ public class MomoPaymentController {
         boolean isSuccess = "0".equals(resultCode);
         String message = isSuccess ? "Thanh toán thành công" : "Thanh toán thất bại";
         
-        // Tìm giao dịch theo orderId trong payment_note
         Optional<Payment> paymentOpt = paymentRepository.findAll().stream()
                 .filter(p -> p.getPaymentNote() != null && p.getPaymentNote().contains(orderId))
                 .findFirst();
@@ -141,10 +127,7 @@ public class MomoPaymentController {
                 .body(htmlBuilder.toString());
     }
     
-    /**
-     * Xử lý callback IPN từ Momo
-     * POST /api/v1/payment/momo/ipn
-     */
+
     @PostMapping("/ipn")
     public ResponseEntity<?> handleMomoIPN(@RequestBody Map<String, Object> body) {
         log.info("Nhận IPN từ Momo: {}", body);
@@ -156,7 +139,6 @@ public class MomoPaymentController {
         
         boolean isSuccess = "0".equals(resultCode);
         
-        // Tìm giao dịch theo orderId trong payment_note
         Optional<Payment> paymentOpt = paymentRepository.findAll().stream()
                 .filter(p -> p.getPaymentNote() != null && p.getPaymentNote().contains(orderId))
                 .findFirst();
@@ -182,10 +164,7 @@ public class MomoPaymentController {
         ));
     }
     
-    /**
-     * Kiểm tra trạng thái thanh toán
-     * GET /api/v1/payment/momo/status/{transactionId}
-     */
+
     @GetMapping("/status/{transactionId}")
     public ResponseEntity<ApiResponse<PaymentResponse>> checkPaymentStatus(@PathVariable String transactionId) {
         log.info("Kiểm tra trạng thái thanh toán Momo cho giao dịch: {}", transactionId);

@@ -17,19 +17,13 @@ public class UserSubscriptionController {
     
     private final IUserSubscriptionService userSubscriptionService;
     
-    // ========== API cho người dùng đăng nhập hiện tại ==========
-    
-    /**
-     * Lấy tất cả gói đăng ký của người dùng đăng nhập hiện tại
-     */
+
     @GetMapping
     public ResponseEntity<List<UserSubscriptionDTO>> getCurrentUserSubscriptions() {
         return ResponseEntity.ok(userSubscriptionService.getCurrentUserSubscriptions());
     }
     
-    /**
-     * Lấy gói đăng ký đang hoạt động mới nhất của người dùng đăng nhập hiện tại
-     */
+
     @GetMapping("/active")
     public ResponseEntity<UserSubscriptionDTO> getCurrentUserActiveSubscription() {
         return userSubscriptionService.getCurrentUserActiveSubscription()
@@ -37,9 +31,7 @@ public class UserSubscriptionController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
     
-    /**
-     * Đăng ký gói cho người dùng đăng nhập hiện tại
-     */
+
     @PostMapping("/{planId}")
     public ResponseEntity<?> subscribeCurrentUserToPlan(
             @PathVariable String planId,
@@ -57,9 +49,7 @@ public class UserSubscriptionController {
         }
     }
     
-    /**
-     * Hủy đăng ký gói cho người dùng đăng nhập hiện tại
-     */
+
     @DeleteMapping("/{subscriptionId}")
     public ResponseEntity<?> cancelSubscription(@PathVariable String subscriptionId) {
         try {
@@ -75,40 +65,28 @@ public class UserSubscriptionController {
         }
     }
     
-    /**
-     * Kiểm tra liệu người dùng có thể đăng ký thêm địa điểm
-     */
+
     @GetMapping("/can-subscribe-more")
     public ResponseEntity<Boolean> canSubscribeMoreLocations() {
         Integer currentUserId = getCurrentUserId();
         return ResponseEntity.ok(userSubscriptionService.canSubscribeMoreLocations(currentUserId));
     }
     
-    /**
-     * Lấy số lượng địa điểm còn lại có thể đăng ký
-     */
+
     @GetMapping("/remaining-locations")
     public ResponseEntity<Integer> getRemainingLocations() {
         Integer currentUserId = getCurrentUserId();
         return ResponseEntity.ok(userSubscriptionService.getRemainingLocations(currentUserId));
     }
     
-    // ========== API dành cho Admin ==========
-    
-    /**
-     * Lấy tất cả đăng ký trong hệ thống
-     * Chỉ Admin mới có quyền truy cập
-     */
+
+
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<List<UserSubscriptionDTO>> getAllSubscriptions() {
         return ResponseEntity.ok(userSubscriptionService.getAllSubscriptions());
     }
-    
-    /**
-     * Lấy tất cả gói đăng ký của một người dùng cụ thể
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> getUserSubscriptions(@PathVariable String userId) {
@@ -124,10 +102,7 @@ public class UserSubscriptionController {
         }
     }
     
-    /**
-     * Lấy gói đăng ký đang hoạt động mới nhất của một người dùng cụ thể
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @GetMapping("/users/{userId}/active")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<UserSubscriptionDTO> getUserActiveSubscription(@PathVariable String userId) {
@@ -143,10 +118,7 @@ public class UserSubscriptionController {
         }
     }
     
-    /**
-     * Đăng ký gói cho một người dùng cụ thể
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @PostMapping("/users/{userId}/plans/{planId}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> subscribeUserToPlan(
@@ -167,10 +139,7 @@ public class UserSubscriptionController {
         }
     }
     
-    /**
-     * Kiểm tra liệu người dùng có thể đăng ký thêm địa điểm
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @GetMapping("/users/{userId}/can-subscribe-more")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> canUserSubscribeMoreLocations(@PathVariable String userId) {
@@ -186,10 +155,7 @@ public class UserSubscriptionController {
         }
     }
     
-    /**
-     * Lấy số lượng địa điểm còn lại có thể đăng ký của một người dùng cụ thể
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @GetMapping("/users/{userId}/remaining-locations")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<?> getUserRemainingLocations(@PathVariable String userId) {

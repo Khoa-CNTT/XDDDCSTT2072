@@ -44,39 +44,31 @@ public class FeedbackController {
             @RequestParam(name = "images", required = false) List<MultipartFile> images) {
         
         try {
-            // Lấy người dùng hiện tại
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             User currentUser = (User) authentication.getPrincipal();
             
-            // Kiểm tra quyền đánh giá
             if (!feedbackService.userHasPurchasedProduct(currentUser.getId(), productId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(ResponseDTO.error("PERMISSION_DENIED", "Bạn chưa mua sản phẩm này hoặc đơn hàng chưa được xử lý nên không thể đánh giá"));
             }
             
-            // Kiểm tra nếu đã đánh giá rồi
             if (feedbackService.userHasReviewedProduct(currentUser.getId(), productId)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(ResponseDTO.error("ALREADY_REVIEWED", "Bạn đã đánh giá sản phẩm này rồi"));
             }
             
-            // Tạo FeedbackDTO từ các tham số riêng lẻ
             FeedbackDTO feedbackDTO = new FeedbackDTO();
             feedbackDTO.setProductId(productId);
             feedbackDTO.setRating(rating);
             feedbackDTO.setComment(comment);
             
-            // Xử lý status nếu có
             if (status != null && !status.isEmpty()) {
                 try {
-                    // Chuyển đổi status thành chữ hoa và loại bỏ khoảng trắng
                     String statusUpperCase = status.toUpperCase().trim();
                     FeedbackStatus statusEnum = FeedbackStatus.valueOf(statusUpperCase);
                     feedbackDTO.setStatus(statusEnum);
                 } catch (IllegalArgumentException e) {
-                    // Ghi log lỗi
                     System.out.println("Lỗi chuyển đổi status: " + status + ", sử dụng giá trị mặc định APPROVED");
-                    // Mặc định là APPROVED
                     feedbackDTO.setStatus(FeedbackStatus.APPROVED);
                 }
             } else {
@@ -84,7 +76,6 @@ public class FeedbackController {
                 feedbackDTO.setStatus(FeedbackStatus.APPROVED);
             }
             
-            // Gọi service để tạo đánh giá
             FeedbackDTO createdFeedback = feedbackService.createFeedback(feedbackDTO, images);
             
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -114,16 +105,13 @@ public class FeedbackController {
             System.out.println("Comment: " + comment);
             System.out.println("Status input: " + status);
             
-            // Tạo FeedbackDTO từ các tham số riêng lẻ
             FeedbackDTO feedbackDTO = new FeedbackDTO();
             feedbackDTO.setProductId(productId);
             feedbackDTO.setRating(rating);
             feedbackDTO.setComment(comment);
             
-            // Xử lý status nếu có
             if (status != null && !status.isEmpty()) {
                 try {
-                    // Chuyển đổi status thành chữ hoa và loại bỏ khoảng trắng
                     String statusUpperCase = status.toUpperCase().trim();
                     System.out.println("Status after uppercase: " + statusUpperCase);
                     
@@ -132,26 +120,21 @@ public class FeedbackController {
                     
                     feedbackDTO.setStatus(statusEnum);
                 } catch (IllegalArgumentException e) {
-                    // Ghi log lỗi
                     System.out.println("Lỗi chuyển đổi status: " + status + ", sử dụng giá trị mặc định APPROVED");
                     System.out.println("Error details: " + e.getMessage());
-                    // Mặc định là APPROVED nếu không hợp lệ
                     feedbackDTO.setStatus(FeedbackStatus.APPROVED);
                 }
             } else {
-                // Nếu không có status, sử dụng APPROVED
                 System.out.println("No status provided, using APPROVED");
                 feedbackDTO.setStatus(FeedbackStatus.APPROVED);
             }
             
             System.out.println("Final status in DTO: " + feedbackDTO.getStatus());
             
-            // Gọi service để cập nhật đánh giá
             FeedbackDTO updatedFeedback = feedbackService.updateFeedback(id, feedbackDTO, images);
             
             return ResponseEntity.ok(ResponseDTO.success(updatedFeedback, "Đánh giá đã được cập nhật thành công"));
         } catch (Exception e) {
-            // Log chi tiết lỗi
             System.out.println("===== ERROR UPDATE FEEDBACK =====");
             System.out.println("Error message: " + e.getMessage());
             e.printStackTrace();

@@ -36,11 +36,7 @@ public class ForumPostController {
     private final IForumPostImageService forumPostImageService;
     private final IHashtagService hashtagService;
 
-    /**
-     * Tạo bài viết mới
-     * @param postRequest Thông tin bài viết
-     * @return Bài viết đã tạo
-     */
+
     @PostMapping
     public ResponseEntity<ApiResponse<ForumPostDTO>> createPost(@Valid @RequestBody ForumPostRequest postRequest) {
         ForumPostDTO forumPostDTO = new ForumPostDTO();
@@ -68,12 +64,7 @@ public class ForumPostController {
                 .body(new ApiResponse<>(true, "Tạo bài viết thành công", savedPost));
     }
 
-    /**
-     * Tạo bài viết với ảnh đính kèm
-     * @param postRequest Thông tin bài viết dạng form-data
-     * @param images Danh sách ảnh đính kèm
-     * @return Bài viết đã tạo
-     */
+
     @PostMapping(value = "/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ForumPostDTO>> createPostWithImages(
             @Valid @RequestPart("post") ForumPostRequest postRequest,
@@ -85,13 +76,6 @@ public class ForumPostController {
                 .body(new ApiResponse<>(true, "Tạo bài viết với ảnh thành công", savedPost));
     }
 
-    /**
-     * Cập nhật bài viết
-     * @param id ID bài viết
-     * @param postRequest Thông tin cập nhật
-     * @return Bài viết đã cập nhật
-     * @throws AccessDeniedException Nếu không có quyền cập nhật
-     */
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ForumPostDTO>> updatePost(
             @PathVariable int id,
@@ -129,23 +113,14 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật bài viết thành công", updatedPost));
     }
 
-    /**
-     * Xóa bài viết
-     * @param id ID bài viết
-     * @return Thông báo xóa thành công
-     */
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable int id) {
         forumPostService.deletePost(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Xóa bài viết thành công", null));
     }
 
-    /**
-     * Lấy tất cả bài viết với phân trang
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách bài viết phân trang
-     */
+
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ForumPostDTO>>> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
@@ -160,12 +135,7 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bài viết thành công", posts));
     }
 
-    /**
-     * Lấy bài viết theo ID
-     * @param id ID bài viết
-     * @param user Người dùng hiện tại (để cập nhật lượt xem)
-     * @return Bài viết
-     */
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ForumPostDTO>> getPostById(
             @PathVariable int id,
@@ -180,13 +150,7 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy bài viết thành công", post));
     }
 
-    /**
-     * Lấy bài viết theo người dùng
-     * @param userId ID người dùng
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách bài viết của người dùng
-     */
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<Page<ForumPostDTO>>> getPostsByUserId(
             @PathVariable Integer userId,
@@ -199,13 +163,7 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bài viết của người dùng thành công", posts));
     }
 
-    /**
-     * Lấy bài viết theo hashtag
-     * @param hashtag Tên hashtag
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách bài viết
-     */
+
     @GetMapping("/hashtag/{hashtag}")
     public ResponseEntity<ApiResponse<Page<ForumPostDTO>>> getPostsByHashtag(
             @PathVariable String hashtag,
@@ -218,13 +176,7 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bài viết theo hashtag thành công", posts));
     }
     
-    /**
-     * Tìm kiếm bài viết
-     * @param keyword Từ khóa tìm kiếm
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách bài viết
-     */
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<ForumPostDTO>>> searchPosts(
             @RequestParam String keyword,
@@ -237,34 +189,21 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Tìm kiếm bài viết thành công", posts));
     }
     
-    /**
-     * Ghim bài viết
-     * @param id ID bài viết
-     * @return Bài viết đã ghim
-     */
+
     @PutMapping("/{id}/pin")
     public ResponseEntity<ApiResponse<ForumPostDTO>> pinPost(@PathVariable Integer id) throws AccessDeniedException {
         ForumPostDTO pinnedPost = forumPostService.pinPost(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Ghim bài viết thành công", pinnedPost));
     }
     
-    /**
-     * Bỏ ghim bài viết
-     * @param id ID bài viết
-     * @return Bài viết đã bỏ ghim
-     */
+
     @PutMapping("/{id}/unpin")
     public ResponseEntity<ApiResponse<ForumPostDTO>> unpinPost(@PathVariable Integer id) throws AccessDeniedException {
         ForumPostDTO unpinnedPost = forumPostService.unpinPost(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Bỏ ghim bài viết thành công", unpinnedPost));
     }
     
-    /**
-     * Chia sẻ bài viết
-     * @param id ID bài viết gốc
-     * @param content Nội dung chia sẻ
-     * @return Bài viết đã chia sẻ
-     */
+
     @PostMapping("/{id}/share")
     public ResponseEntity<ApiResponse<ForumPostDTO>> sharePost(
             @PathVariable Integer id,
@@ -275,12 +214,7 @@ public class ForumPostController {
                 .body(new ApiResponse<>(true, "Chia sẻ bài viết thành công", sharedPost));
     }
 
-    /**
-     * Thêm lượt xem cho bài viết
-     * @param id ID bài viết
-     * @param user Người dùng đang xem
-     * @return Thông báo thành công
-     */
+
     @PostMapping("/{id}/view")
     public ResponseEntity<ApiResponse<Void>> incrementViewCount(
             @PathVariable Integer id,
@@ -290,23 +224,14 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Thêm lượt xem thành công", null));
     }
     
-    /**
-     * Lấy danh sách ảnh của bài viết
-     * @param id ID bài viết
-     * @return Danh sách ảnh
-     */
+
     @GetMapping("/{id}/images")
     public ResponseEntity<ApiResponse<List<ForumPostImageDTO>>> getPostImages(@PathVariable Integer id) {
         List<ForumPostImageDTO> images = forumPostImageService.getALlImagesByPost(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách ảnh thành công", images));
     }
     
-    /**
-     * Thêm ảnh vào bài viết
-     * @param id ID bài viết
-     * @param images Danh sách ảnh cần thêm
-     * @return Danh sách ảnh đã thêm
-     */
+
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<List<ForumPostImageDTO>>> addImagesToPost(
             @PathVariable Integer id,
@@ -321,12 +246,7 @@ public class ForumPostController {
         }
     }
     
-    /**
-     * Xóa ảnh khỏi bài viết
-     * @param id ID bài viết
-     * @param imageId ID ảnh
-     * @return Thông báo xóa thành công
-     */
+
     @DeleteMapping("/{id}/images/{imageId}")
     public ResponseEntity<ApiResponse<Void>> deletePostImage(
             @PathVariable Integer id,
@@ -336,13 +256,7 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Xóa ảnh thành công", null));
     }
     
-    /**
-     * Lấy bài viết theo mức độ riêng tư
-     * @param privacyLevel Mức độ riêng tư
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @return Danh sách bài viết
-     */
+
     @GetMapping("/privacy/{privacyLevel}")
     public ResponseEntity<ApiResponse<Page<ForumPostDTO>>> getPostsByPrivacyLevel(
             @PathVariable PrivacyLevel privacyLevel,
@@ -355,13 +269,6 @@ public class ForumPostController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách bài viết theo mức độ riêng tư thành công", posts));
     }
 
-    /**
-     * Lấy bài viết của người dùng và người dùng đã kết nối
-     * @param page Số trang
-     * @param size Kích thước trang
-     * @param user Người dùng hiện tại
-     * @return Danh sách bài viết từ những người đã kết nối
-     */
     @GetMapping("/connections")
     public ResponseEntity<ApiResponse<Page<ForumPostDTO>>> getPostsFromConnections(
             @RequestParam(defaultValue = "0") int page,

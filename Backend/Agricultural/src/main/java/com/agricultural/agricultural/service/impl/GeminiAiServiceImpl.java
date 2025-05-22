@@ -52,7 +52,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
     private final ChatHistoryService chatHistoryService;
     private final IMarketPlaceRepository marketPlaceRepository;
     
-    // Deprecated: Lưu trữ lịch sử chat tạm thời (trong memory) - sẽ bị loại bỏ trong tương lai
     @Deprecated
     private final Map<String, List<Map<String, String>>> chatHistory = new HashMap<>();
 
@@ -141,10 +140,10 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 
                 return response;
             } else {
-                log.error("Error calling Gemini API: {}", responseEntity.getStatusCode());
+                log.error("Lỗi khi gọi Gemini API: {}", responseEntity.getStatusCode());
                 return ChatResponse.builder()
                         .success(false)
-                        .error("Error calling Gemini API: " + responseEntity.getStatusCode())
+                        .error("Lỗi khi gọi Gemini API: " + responseEntity.getStatusCode())
                         .build();
             }
         } catch (RestClientException e) {
@@ -167,7 +166,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
         try {
             log.info("Processing chatbot request with Gemini: {}", request.getMessage());
             
-            // Kiểm tra nếu người dùng đang hỏi về sản phẩm
             List<MarketPlaceDTO> relatedProducts = findRelatedProducts(request.getMessage());
             boolean isProductQuery = isProductRelatedQuery(request.getMessage());
             boolean isWebsiteInfoQuery = isWebsiteInfoQuery(request.getMessage());
@@ -195,12 +193,10 @@ public class GeminiAiServiceImpl implements GeminiAiService {
             UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(apiUrl)
                     .queryParam("key", apiKey);
             
-            // Lấy danh sách từ khóa nông nghiệp
             String keywords = keywordValidatorService.getAgricultureKeywordsString();
             
             StringBuilder contextStr = new StringBuilder();
             
-            // Thêm thông tin về website
             String websiteInfo = "Thông tin về website AgroSphere:\n" +
                     "- Tên website: AgroSphere\n" +
                     "- Chủ sở hữu: Nhóm phát triển KLTN gồm Văn Dũng và các thành viên\n" +
@@ -221,8 +217,7 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                     contextStr.append(role).append(": ").append(ctx.getContent()).append("\n");
                 }
             } else if (request.getSessionId() != null && !request.getSessionId().isEmpty()) {
-                // Nếu không có context nhưng có sessionId, lấy context từ lịch sử
-                List<ChatBotRequest.MessageContext> historyContext = 
+                List<ChatBotRequest.MessageContext> historyContext =
                         chatHistoryService.getContextFromHistory(request.getSessionId(), 10); // Lấy 10 tin nhắn gần nhất
                 
                 if (!historyContext.isEmpty()) {
@@ -234,7 +229,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 }
             }
             
-            // Tạo prompt tổng hợp
             String promptTemplate = "Tôi sẽ hỏi bạn về các vấn đề liên quan đến nông nghiệp. " +
                     "Hãy trả lời câu hỏi của tôi CHỈ nếu nó liên quan đến các chủ đề sau: %s HOẶC nếu người dùng đang hỏi thông tin về website AgroSphere. " +
                     "Nếu câu hỏi KHÔNG liên quan đến các chủ đề trên hoặc không phải về website, hãy từ chối trả lời và " +
@@ -244,7 +238,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                     "%s\n" +
                     "Câu hỏi hiện tại của tôi là: %s";
             
-            // Nếu là câu hỏi về sản phẩm, thêm hướng dẫn đề cập đến việc hiển thị sản phẩm
             if (isProductQuery) {
                 promptTemplate = "Tôi sẽ hỏi bạn về các vấn đề liên quan đến nông nghiệp. " +
                         "Hãy trả lời câu hỏi của tôi CHỈ nếu nó liên quan đến các chủ đề sau: %s HOẶC nếu người dùng đang hỏi thông tin về website AgroSphere. " +
@@ -266,7 +259,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 promptText = String.format(promptTemplate, keywords, "", contextStr.toString(), request.getMessage());
             }
             
-            // Chuẩn bị request body theo định dạng của Gemini API
             Map<String, Object> requestBody = new HashMap<>();
             Map<String, Object> contents = new HashMap<>();
             Map<String, Object> parts = new HashMap<>();
@@ -275,11 +267,9 @@ public class GeminiAiServiceImpl implements GeminiAiService {
             contents.put("parts", new Object[]{parts});
             requestBody.put("contents", new Object[]{contents});
             
-            // Chuẩn bị headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             
-            // Tạo HTTP Entity
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
             
             // Gọi API Gemini
@@ -339,11 +329,10 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 return dbResponse;
             }
             
-            // Fallback: sử dụng dữ liệu từ memory (compatibility)
+
             log.info("Falling back to in-memory message history");
             String sessionId = request.getSessionId() != null ? request.getSessionId() : request.getUserId();
             
-            // Lấy lịch sử chat từ bộ nhớ
             List<Map<String, String>> history = chatHistory.getOrDefault(sessionId, new ArrayList<>());
             int limit = request.getLimit() != null ? request.getLimit() : 50;
             
@@ -370,7 +359,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
         try {
             JsonNode rootNode = objectMapper.readTree(responseJson);
 
-            // Lấy nội dung phản hồi từ Gemini
             String content = "";
             if (rootNode.has("candidates") && rootNode.get("candidates").isArray() &&
                     rootNode.get("candidates").size() > 0) {
@@ -403,10 +391,8 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 sessionId = "anonymous_" + System.currentTimeMillis();
             }
             
-            // Lưu vào DB thông qua ChatHistoryService
             chatHistoryService.saveMessages(sessionId, sessionId, userMessage, aiResponse, "gemini");
             
-            // Đồng thời vẫn lưu vào memory cho compatibility
             List<Map<String, String>> history = chatHistory.computeIfAbsent(sessionId, k -> new ArrayList<>());
             
             // Thêm tin nhắn người dùng
@@ -416,7 +402,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
             userEntry.put("timestamp", LocalDateTime.now().toString());
             history.add(userEntry);
             
-            // Thêm phản hồi AI
             Map<String, String> aiEntry = new HashMap<>();
             aiEntry.put("role", "assistant");
             aiEntry.put("content", aiResponse);
@@ -449,7 +434,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 "mua ở đâu"
         );
         
-        // Kiểm tra xem có chứa bất kỳ từ khoá nào không
         for (String keyword : productKeywords) {
             if (lowercaseQuery.contains(keyword)) {
                 return true;
@@ -468,7 +452,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
         }
         
         try {
-            // Trích xuất từ khóa từ câu hỏi
             List<String> keywords = extractProductKeywords(query);
             
             if (keywords.isEmpty()) {
@@ -478,11 +461,9 @@ public class GeminiAiServiceImpl implements GeminiAiService {
             // Tăng số lượng sản phẩm tối đa lên 6
             final int MAX_PRODUCTS = 6;
             
-            // Sử dụng Map để theo dõi điểm phù hợp của từng sản phẩm
             Map<Integer, Integer> productScores = new HashMap<>(); // id sản phẩm -> điểm
-            Map<Integer, MarketPlaceDTO> productMap = new HashMap<>(); // id sản phẩm -> DTO
+            Map<Integer, MarketPlaceDTO> productMap = new HashMap<>();
             
-            // Tìm theo khớp chính xác với tên sản phẩm trước
             for (String keyword : keywords) {
                 if (keyword.length() < 2) continue;
                 
@@ -493,18 +474,15 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                             keyword, keyword, exactMatchPageable);
                     
                     for (MarketPlace product : exactMatches) {
-                        // Tính điểm ưu tiên cao cho khớp chính xác
                         int score = productScores.getOrDefault(product.getId(), 0);
                         
-                        // Nếu từ khóa xuất hiện trong tên sản phẩm
                         if (product.getProductName().toLowerCase().contains(keyword.toLowerCase())) {
-                            score += 10; // Điểm cao hơn cho khớp tên
+                            score += 10;
                         } else if (product.getDescription() != null && 
                                    product.getDescription().toLowerCase().contains(keyword.toLowerCase())) {
-                            score += 5; // Điểm thấp hơn cho khớp mô tả
+                            score += 5;
                         }
                         
-                        // Lưu điểm và sản phẩm
                         productScores.put(product.getId(), score);
                         
                         if (!productMap.containsKey(product.getId())) {
@@ -533,7 +511,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 for (MarketPlace product : products) {
                     int score = productScores.getOrDefault(product.getId(), 0);
                     
-                    // Điểm cộng thêm cho mỗi lần sản phẩm khớp với từ khóa khác
                     score += 1;
                     
                     productScores.put(product.getId(), score);
@@ -558,7 +535,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 }
             }
             
-            // Sắp xếp sản phẩm theo điểm số và giới hạn kết quả
             results = productScores.entrySet().stream()
                     .sorted(Map.Entry.<Integer, Integer>comparingByValue().reversed())
                     .limit(MAX_PRODUCTS)
@@ -576,13 +552,12 @@ public class GeminiAiServiceImpl implements GeminiAiService {
     }
 
     private List<String> extractProductKeywords(String query) {
-        Set<String> keywordSet = new HashSet<>(); // Sử dụng Set để tránh trùng lặp từ khóa
+        Set<String> keywordSet = new HashSet<>();
         
         if (query == null || query.trim().isEmpty()) {
             return new ArrayList<>();
         }
         
-        // Danh sách từ dừng - các từ không mang nhiều ý nghĩa khi tìm kiếm
         Set<String> stopwords = new HashSet<>(List.of(
                 "là", "và", "hay", "hoặc", "trong", "ngoài", "với", "từ", "thì", 
                 "có", "không", "của", "cho", "được", "bởi", "về", "tôi", "các", "những", 
@@ -608,7 +583,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 "khoai", "sắn", "rau", "củ", "quả", "trái"
         ));
         
-        // Trích xuất từ đơn có ý nghĩa
         for (String word : words) {
             if (word.length() > 2 && !stopwords.contains(word)) {
                 // Ưu tiên các từ liên quan đến sản phẩm
@@ -620,7 +594,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
             }
         }
         
-        // Trích xuất cụm từ 2-3 từ có ý nghĩa
         for (int i = 0; i < words.length - 1; i++) {
             if (words[i].length() > 1) {
                 // Cụm 2 từ

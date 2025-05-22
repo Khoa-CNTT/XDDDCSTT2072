@@ -27,14 +27,14 @@ public class GeminiAiController {
 
     @PostMapping("/chat")
     public ResponseEntity<ChatResponse> generateContent(@RequestBody ChatRequest request) {
-        log.info("Received Gemini chat request: {}", request.getMessage());
+        log.info("Nhận yêu cầu từ gemini: {}", request.getMessage());
         ChatResponse response = geminiAiService.generateContent(request);
         return ResponseEntity.ok(response);
     }
     
     @PostMapping("/chatbot")
     public ResponseEntity<ChatResponse> chatbot(@RequestBody ChatBotRequest request) {
-        log.info("Received chatbot request: {}", request.getMessage());
+        log.info("Nhận yêu cầu từ chatbot: {}", request.getMessage());
         ChatResponse response = geminiAiService.processChatBot(request);
         return ResponseEntity.ok(response);
     }
@@ -57,7 +57,6 @@ public class GeminiAiController {
                 return ResponseEntity.badRequest().body("UserId is required");
             }
             
-            // Chuyển đổi dữ liệu thành DTO trước khi trả về
             List<Object> sessionDtos = sessions.stream()
                     .map(session -> {
                         return new Object() {
