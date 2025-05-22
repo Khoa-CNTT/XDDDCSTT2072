@@ -2,6 +2,7 @@ package com.agricultural.agricultural.dto.request;
 
 import com.agricultural.agricultural.enums.FlashSaleStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)  // Thêm dòng này
 public class FlashSaleRequest {
     
     @NotBlank(message = "Tên không được để trống")
