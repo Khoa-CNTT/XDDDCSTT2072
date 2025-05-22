@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SnackbarProvider } from "notistack";
+import NotificationFilter from "./components/NotificationFilter";
 import "./index.css";
 
 // Import pages
@@ -32,6 +33,7 @@ import SellerRegistrationsPage from "./pages/SellerRegistrationsPage.jsx";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <SnackbarProvider maxSnack={3} autoHideDuration={3000}>
+      <NotificationFilter />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

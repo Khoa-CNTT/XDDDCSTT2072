@@ -220,23 +220,65 @@ const UsersPage = () => {
   // Open dialog to edit user
   const handleEditUser = async (id) => {
     try {
+      if (!id) {
+        console.error("ID người dùng không hợp lệ:", id);
+        setSnackbar({
+          open: true,
+          message: "ID người dùng không hợp lệ!",
+          severity: "error",
+        });
+        return;
+      }
+
       setLoading(true);
+      console.log(`Đang lấy thông tin người dùng với ID: ${id} để chỉnh sửa`);
       const userData = await userService.getUserById(id);
-      setSelectedUser(userData);
-      setUserForm({
-        fullName: userData.fullName || "",
+      console.log("Thông tin người dùng nhận được:", userData);
+
+      // Kiểm tra nếu userData rỗng
+      if (!userData || Object.keys(userData).length === 0) {
+        console.error("Không nhận được dữ liệu người dùng hợp lệ");
+        setSnackbar({
+          open: true,
+          message: "Không thể tải thông tin người dùng. Dữ liệu trống!",
+          severity: "error",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Lưu ID vào selectedUser
+      setSelectedUser({
+        ...userData,
+        id: id, // Đảm bảo ID luôn được lưu
+      });
+
+      // Tạo dữ liệu form từ thông tin người dùng
+      const formData = {
+        fullName: userData.fullName || userData.userName || "",
         email: userData.email || "",
         password: "", // Không hiển thị mật khẩu khi chỉnh sửa
         phone: userData.phone || "",
-        role: userData.role || "User",
+        role: userData.roleName || userData.role || "User",
         status: userData.status || "ACTIVE",
         userName: userData.userName || userData.fullName || "",
         image: null,
-        avatarUrl: userData.avatarUrl || "",
-      });
-      setOpenDialog(true);
+        avatarUrl: userData.avatarUrl || userData.imageUrl || "",
+      };
+
+      // Log chi tiết để debug
+      console.log("Dữ liệu người dùng gốc:", userData);
+      console.log("Dữ liệu form được điền:", formData);
+
+      // Cập nhật form
+      setUserForm(formData);
+
+      // Đảm bảo trạng thái dialog mở sau khi đã cập nhật dữ liệu form
+      setTimeout(() => {
+        setOpenDialog(true);
+      }, 100); // Tăng timeout lên 100ms để đảm bảo dữ liệu được render
     } catch (error) {
-      console.error("Error fetching user details:", error);
+      console.error("Lỗi khi lấy thông tin người dùng:", error);
       setSnackbar({
         open: true,
         message: "Không thể tải thông tin người dùng. Vui lòng thử lại!",
@@ -257,6 +299,8 @@ const UsersPage = () => {
   const handleSubmit = async () => {
     try {
       setLoading(true);
+      console.log("Form dữ liệu gửi đi:", userForm);
+      console.log("Thông tin selectedUser:", selectedUser);
 
       // Validate required fields
       if (
@@ -273,43 +317,102 @@ const UsersPage = () => {
         return;
       }
 
-      // Form data to submit
-      const formData = new FormData();
-
-      // Append text fields
-      Object.keys(userForm).forEach((key) => {
-        if (key !== "image" && key !== "avatarUrl") {
-          formData.append(key, userForm[key]);
-        }
-      });
-
-      // Append image if exists
-      if (userForm.image) {
-        formData.append("image", userForm.image);
+      // Validate user ID when updating
+      if (selectedUser && !selectedUser.id) {
+        console.error(
+          "ID người dùng không tồn tại trong selectedUser:",
+          selectedUser
+        );
+        setSnackbar({
+          open: true,
+          message: "Lỗi: Không tìm thấy ID người dùng",
+          severity: "error",
+        });
+        setLoading(false);
+        return;
       }
+
+      // Chuẩn bị dữ liệu gửi đi - chỉ bao gồm các trường backend chấp nhận
+      const dataToSubmit = {
+        userName: userForm.fullName, // Chuyển fullName thành userName
+        email: userForm.email,
+        phone: userForm.phone,
+        password: userForm.password,
+        roleName: userForm.role, // Chuyển role thành roleName
+        image: userForm.image,
+      };
+
+      // Log chi tiết
+      console.log("Dữ liệu sẽ gửi đến API:", dataToSubmit);
 
       // Create or update user
       if (selectedUser) {
-        await userService.updateUser(selectedUser.id, userForm);
-        setSnackbar({
-          open: true,
-          message: "Cập nhật người dùng thành công!",
-          severity: "success",
-        });
+        // Log the user ID being updated
+        console.log(`Đang cập nhật người dùng với ID: ${selectedUser.id}`);
+
+        try {
+          // Update user data
+          const updatedUser = await userService.updateUser(
+            selectedUser.id,
+            dataToSubmit
+          );
+          console.log("Kết quả cập nhật:", updatedUser);
+
+          setSnackbar({
+            open: true,
+            message: "Cập nhật người dùng thành công!",
+            severity: "success",
+          });
+
+          // Close dialog and refresh user list
+          setOpenDialog(false);
+          fetchUsers();
+        } catch (updateError) {
+          console.error("Lỗi khi cập nhật người dùng:", updateError);
+          throw updateError;
+        }
       } else {
-        await userService.createUser(formData);
+        console.log("Đang tạo người dùng mới");
+
+        // Tạo FormData cho người dùng mới
+        const formData = new FormData();
+
+        // Thêm các trường thông tin hợp lệ
+        formData.append("userName", dataToSubmit.userName);
+        formData.append("email", dataToSubmit.email);
+
+        if (dataToSubmit.phone) {
+          formData.append("phone", dataToSubmit.phone);
+        }
+
+        if (dataToSubmit.password) {
+          formData.append("password", dataToSubmit.password);
+        }
+
+        if (dataToSubmit.roleName) {
+          formData.append("roleName", dataToSubmit.roleName);
+        }
+
+        // Thêm hình ảnh nếu có
+        if (dataToSubmit.image) {
+          formData.append("image", dataToSubmit.image);
+        }
+
+        const newUser = await userService.createUser(formData);
+        console.log("Kết quả tạo mới:", newUser);
         setSnackbar({
           open: true,
           message: "Thêm người dùng mới thành công!",
           severity: "success",
         });
-      }
 
-      // Close dialog and refresh user list
-      setOpenDialog(false);
-      fetchUsers();
+        // Close dialog and refresh user list
+        setOpenDialog(false);
+        fetchUsers();
+      }
     } catch (error) {
-      console.error("Error saving user:", error);
+      console.error("Lỗi khi lưu thông tin người dùng:", error);
+      console.error("Chi tiết lỗi:", error.response?.data);
       let errorMessage =
         "Không thể lưu thông tin người dùng. Vui lòng thử lại!";
 
@@ -318,7 +421,7 @@ const UsersPage = () => {
         if (typeof error.response.data === "object") {
           // Trường hợp lỗi trả về là object với các trường lỗi
           const errorDetails = Object.entries(error.response.data)
-            .map(([, msg]) => `${msg}`)
+            .map(([field, msg]) => `${field}: ${msg}`)
             .join("; ");
 
           if (errorDetails) {
@@ -748,7 +851,6 @@ const UsersPage = () => {
                 onChange={handleFormChange}
                 fullWidth
                 required
-                disabled={!!selectedUser}
               />
             </Grid>
             <Grid item xs={12}>

@@ -150,22 +150,37 @@ const LoginPage = () => {
     setError("");
 
     try {
-      await authService.login(credentials.email, credentials.password);
+      console.log("Đang thử đăng nhập với:", credentials.email);
+      const result = await authService.login(
+        credentials.email,
+        credentials.password
+      );
 
       // Thêm log để kiểm tra thông tin sau khi đăng nhập
-      console.log("=== THÔNG TIN ĐĂNG NHẬP ===");
+      console.log("=== THÔNG TIN ĐĂNG NHẬP THÀNH CÔNG ===");
       console.log("Token:", localStorage.getItem("token"));
       console.log("User:", localStorage.getItem("user"));
       console.log("userRole:", localStorage.getItem("userRole"));
-      console.log("============================");
+      console.log("API Response:", result);
+      console.log("=========================================");
 
       navigate("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);
-      setError(
-        error.response?.data?.message ||
-          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
-      );
+      console.error("Error message:", error.message);
+      console.error("Error response:", error.response);
+
+      // Hiển thị thông báo lỗi liên quan đến quyền truy cập
+      if (error.message === "Bạn không có quyền truy cập vào trang Admin") {
+        setError(
+          "Bạn không có quyền truy cập vào trang Admin. Chỉ tài khoản với vai trò Admin được phép đăng nhập."
+        );
+      } else {
+        setError(
+          error.response?.data?.message ||
+            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -324,7 +339,7 @@ const LoginPage = () => {
               align="center"
               sx={{ mt: 4, color: "#4e73df", fontWeight: 500 }}
             >
-              © 2024 AgroSphere. Bản quyền thuộc về Agricultural.
+              © 2025 AgroSphere. Bản quyền thuộc về Agricultural.
             </Typography>
           </CardContent>
         </LoginCard>

@@ -131,6 +131,22 @@ const FlashSalesPage = () => {
   }, [statusFilter]);
 
   const handleOpenForm = (flashSale = null) => {
+    if (flashSale) {
+      console.log(
+        "Opening form with Flash Sale data:",
+        JSON.stringify(flashSale)
+      );
+      console.log("Flash Sale date fields:", {
+        startTime: flashSale.startTime,
+        startTimeType: typeof flashSale.startTime,
+        startTimeIsDate: flashSale.startTime instanceof Date,
+        endTime: flashSale.endTime,
+        endTimeType: typeof flashSale.endTime,
+        endTimeIsDate: flashSale.endTime instanceof Date,
+        startDate: flashSale.startDate,
+        endDate: flashSale.endDate,
+      });
+    }
     setSelectedFlashSale(flashSale);
     setOpenForm(true);
   };
@@ -162,17 +178,60 @@ const FlashSalesPage = () => {
 
   const handleSubmitForm = async (formData) => {
     try {
-      let response;
-      if (selectedFlashSale) {
-        response = await flashSaleService.updateFlashSale(
-          selectedFlashSale.id,
-          formData
+      console.log("🔍 FormData trước khi gửi:", formData);
+
+      // Đảm bảo dữ liệu gửi đi chỉ có startTime/endTime không có startDate/endDate
+      const submissionData = {
+        name: formData.name,
+        description: formData.description,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        status: formData.status,
+        discountPercentage: parseInt(formData.discountPercentage, 10),
+        maxDiscountAmount: parseFloat(formData.maxDiscountAmount),
+      };
+
+      // Xoá rõ ràng các trường không cần thiết và kiểm tra xem dữ liệu có hợp lệ không
+      delete submissionData.startDate;
+      delete submissionData.endDate;
+
+      console.log(
+        "📤 Dữ liệu sẽ gửi đi API từ FlashSalesPage:",
+        JSON.stringify(submissionData)
+      );
+
+      // Chuyển đổi thành JSON để đảm bảo không còn tham chiếu
+      const cleanData = JSON.parse(JSON.stringify(submissionData));
+
+      // Kiểm tra thêm lần nữa
+      if ("startDate" in cleanData || "endDate" in cleanData) {
+        console.error(
+          "⚠️ CẢNH BÁO: Vẫn còn startDate/endDate trong dữ liệu!",
+          cleanData
         );
-      } else {
-        response = await flashSaleService.createFlashSale(formData);
+        delete cleanData.startDate;
+        delete cleanData.endDate;
       }
 
-      console.log("Kết quả lưu Flash Sale:", response);
+      let response;
+      if (selectedFlashSale) {
+        console.log(
+          `🔄 Cập nhật Flash Sale ID=${selectedFlashSale.id} với dữ liệu:`,
+          JSON.stringify(cleanData)
+        );
+        response = await flashSaleService.updateFlashSale(
+          selectedFlashSale.id,
+          cleanData
+        );
+      } else {
+        console.log(
+          "🆕 Tạo Flash Sale mới với dữ liệu:",
+          JSON.stringify(cleanData)
+        );
+        response = await flashSaleService.createFlashSale(cleanData);
+      }
+
+      console.log("✅ Kết quả lưu Flash Sale:", response);
 
       if (response && response.success) {
         handleCloseForm();
@@ -194,7 +253,10 @@ const FlashSalesPage = () => {
         });
       }
     } catch (error) {
-      console.error("Error submitting flash sale:", error);
+      console.error("❌ Lỗi khi gửi flash sale:", error);
+      if (error.response) {
+        console.error("❌ Dữ liệu lỗi từ server:", error.response.data);
+      }
       enqueueSnackbar("Đã xảy ra lỗi khi lưu Flash Sale", { variant: "error" });
     }
   };

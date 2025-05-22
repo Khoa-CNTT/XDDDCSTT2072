@@ -42,10 +42,33 @@ api.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+
+    // Kiểm tra và xử lý các trường startDate/endDate trong request body
+    if (config.data) {
+      console.log('📤 Request body trước khi xử lý:', JSON.stringify(config.data));
+      
+      // Kiểm tra xem có các trường startDate/endDate không
+      if (typeof config.data === 'object' && (config.data.startDate || config.data.endDate)) {
+        console.error('⚠️ CẢNH BÁO: Request vẫn chứa startDate/endDate:', config.data);
+        
+        // Tạo bản sao sâu để tránh tham chiếu
+        const cleanData = JSON.parse(JSON.stringify(config.data));
+        
+        // Xóa các trường gây lỗi
+        delete cleanData.startDate;
+        delete cleanData.endDate;
+        
+        console.log('🧹 Dữ liệu sau khi làm sạch:', JSON.stringify(cleanData));
+        
+        // Thay thế dữ liệu request bằng phiên bản đã làm sạch
+        config.data = cleanData;
+      }
+    }
+    
     return config;
   },
   (error) => {
-    console.error('[API Request Error]', error);
+    console.error('❌ Lỗi request API:', error);
     return Promise.reject(error);
   }
 );
@@ -64,10 +87,33 @@ axiosPrivate.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+
+    // Kiểm tra và xử lý các trường startDate/endDate trong request body
+    if (config.data) {
+      console.log('📤 Request body trước khi xử lý:', JSON.stringify(config.data));
+      
+      // Kiểm tra xem có các trường startDate/endDate không
+      if (typeof config.data === 'object' && (config.data.startDate || config.data.endDate)) {
+        console.error('⚠️ CẢNH BÁO: Request vẫn chứa startDate/endDate:', config.data);
+        
+        // Tạo bản sao sâu để tránh tham chiếu
+        const cleanData = JSON.parse(JSON.stringify(config.data));
+        
+        // Xóa các trường gây lỗi
+        delete cleanData.startDate;
+        delete cleanData.endDate;
+        
+        console.log('🧹 Dữ liệu sau khi làm sạch:', JSON.stringify(cleanData));
+        
+        // Thay thế dữ liệu request bằng phiên bản đã làm sạch
+        config.data = cleanData;
+      }
+    }
+    
     return config;
   },
   (error) => {
-    console.error('[API Request Error]', error);
+    console.error('❌ Lỗi request API:', error);
     return Promise.reject(error);
   }
 );

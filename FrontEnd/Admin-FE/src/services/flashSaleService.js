@@ -311,9 +311,36 @@ const flashSaleService = {
    */
   createFlashSale: async (flashSaleData) => {
     try {
-      const response = await api.post('flash-sales', flashSaleData);
+      // Đảm bảo không có startDate/endDate trong dữ liệu gửi đi
+      console.log("🔄 Dữ liệu trước khi xử lý trong createFlashSale:", JSON.stringify(flashSaleData));
+
+      // Kiểm tra có phải object không và chuyển đổi nếu là chuỗi JSON
+      let dataToSend = flashSaleData;
+      if (typeof flashSaleData === 'string') {
+        try {
+          dataToSend = JSON.parse(flashSaleData);
+        } catch (e) {
+          console.error("❌ Lỗi parse JSON:", e);
+        }
+      }
+
+      // Tạo bản sao sâu để tránh tham chiếu
+      const safeData = JSON.parse(JSON.stringify(dataToSend));
       
-      console.log("Kết quả tạo Flash Sale:", response.data);
+      // Xóa các trường gây lỗi
+      delete safeData.startDate;
+      delete safeData.endDate;
+      
+      console.log("📤 Dữ liệu gửi tạo Flash Sale mới sau khi xử lý:", JSON.stringify(safeData));
+      
+      // Kiểm tra lại xem còn trường startDate/endDate không
+      if (safeData.startDate || safeData.endDate) {
+        console.error("⚠️ CẢNH BÁO: Vẫn còn startDate/endDate sau khi xử lý!");
+      }
+      
+      const response = await api.post('flash-sales', safeData);
+      
+      console.log("✅ Kết quả tạo Flash Sale:", response.data);
       
       // Xử lý cấu trúc dữ liệu API thực tế từ server
       if (response.data && response.data.code === 200) {
@@ -336,7 +363,11 @@ const flashSaleService = {
         data: response.data
       };
     } catch (error) {
-      console.error('Error creating flash sale:', error);
+      console.error('❌ Lỗi khi tạo flash sale:', error);
+      if (error.response) {
+        console.error("❌ Dữ liệu lỗi từ server:", error.response.data);
+        console.error("❌ Status code:", error.response.status);
+      }
       return {
         success: false,
         message: error.message || "Không thể tạo Flash Sale",
@@ -350,9 +381,36 @@ const flashSaleService = {
    */
   updateFlashSale: async (id, flashSaleData) => {
     try {
-      const response = await api.put(`flash-sales/${id}`, flashSaleData);
+      // Đảm bảo không có startDate/endDate trong dữ liệu gửi đi
+      console.log("🔄 Dữ liệu trước khi xử lý trong updateFlashSale:", JSON.stringify(flashSaleData));
+
+      // Kiểm tra có phải object không và chuyển đổi nếu là chuỗi JSON
+      let dataToSend = flashSaleData;
+      if (typeof flashSaleData === 'string') {
+        try {
+          dataToSend = JSON.parse(flashSaleData);
+        } catch (e) {
+          console.error("❌ Lỗi parse JSON:", e);
+        }
+      }
+
+      // Tạo bản sao sâu để tránh tham chiếu
+      const safeData = JSON.parse(JSON.stringify(dataToSend));
       
-      console.log(`Kết quả cập nhật Flash Sale ${id}:`, response.data);
+      // Xóa các trường gây lỗi
+      delete safeData.startDate;
+      delete safeData.endDate;
+      
+      console.log(`📤 Dữ liệu gửi cập nhật Flash Sale ${id} sau khi xử lý:`, JSON.stringify(safeData));
+      
+      // Kiểm tra lại xem còn trường startDate/endDate không
+      if (safeData.startDate || safeData.endDate) {
+        console.error("⚠️ CẢNH BÁO: Vẫn còn startDate/endDate sau khi xử lý!");
+      }
+      
+      const response = await api.put(`flash-sales/${id}`, safeData);
+      
+      console.log(`✅ Kết quả cập nhật Flash Sale ${id}:`, response.data);
       
       // Xử lý cấu trúc dữ liệu API thực tế từ server
       if (response.data && response.data.code === 200) {
@@ -375,7 +433,11 @@ const flashSaleService = {
         data: response.data
       };
     } catch (error) {
-      console.error(`Error updating flash sale with ID ${id}:`, error);
+      console.error(`❌ Lỗi cập nhật flash sale với ID ${id}:`, error);
+      if (error.response) {
+        console.error("❌ Dữ liệu lỗi từ server:", error.response.data);
+        console.error("❌ Status code:", error.response.status);
+      }
       return {
         success: false,
         message: error.message || "Không thể cập nhật Flash Sale",
