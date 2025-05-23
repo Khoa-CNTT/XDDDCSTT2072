@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "react-toastify";
 import useAuth from "@/hooks/useAuth";
 import useAxiosPrivate from "@/hooks/useAxiosPrivate";
+import UserAddressManager from "@/components/user/UserAddressManager";
 import {
   getUserById,
   updateUserProfile,
@@ -700,9 +701,9 @@ const EditProfile = () => {
             </h1>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6">
             {/* Phần avatar */}
-            <Card className="md:col-span-1 bg-white dark:bg-gray-800 shadow-sm">
+            <Card className="md:col-span-3 bg-white dark:bg-gray-800 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-center flex items-center justify-center gap-2">
                   <User size={18} />
@@ -883,11 +884,11 @@ const EditProfile = () => {
             </Card>
 
             {/* Form chỉnh sửa thông tin */}
-            <Card className="md:col-span-2 bg-white dark:bg-gray-800 shadow-sm">
+            <Card className="md:col-span-3 bg-white dark:bg-gray-800 shadow-sm">
               <CardHeader>
                 <CardTitle>Thông tin cá nhân</CardTitle>
                 <CardDescription>
-                  Chỉnh sửa thông tin hồ sơ của bạn
+                  Cập nhật thông tin cá nhân của bạn
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1082,141 +1083,16 @@ const EditProfile = () => {
                 </form>
               </CardContent>
               <CardFooter className="flex justify-between">
-                <Dialog
-                  open={passwordDialogOpen}
-                  onOpenChange={setPasswordDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <Lock className="h-4 w-4" />
-                      Đổi mật khẩu
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Đổi mật khẩu</DialogTitle>
-                      <DialogDescription>
-                        Nhập mật khẩu hiện tại và mật khẩu mới để thay đổi.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form
-                      onSubmit={handleChangePassword}
-                      className="space-y-4 py-4"
-                    >
-                      <div className="space-y-2">
-                        <Label htmlFor="currentPassword">
-                          Mật khẩu hiện tại
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="currentPassword"
-                            name="currentPassword"
-                            type={showCurrentPassword ? "text" : "password"}
-                            value={passwordForm.currentPassword}
-                            onChange={handlePasswordInputChange}
-                            className="pr-10"
-                          />
-                          <button
-                            type="button"
-                            className="absolute inset-y-0 right-0 flex items-center pr-3"
-                            onClick={() =>
-                              setShowCurrentPassword(!showCurrentPassword)
-                            }
-                          >
-                            {showCurrentPassword ? (
-                              <EyeOff className="h-4 w-4 text-gray-500" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-gray-500" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="newPassword">Mật khẩu mới</Label>
-                        <div className="relative">
-                          <Input
-                            id="newPassword"
-                            name="newPassword"
-                            type={showNewPassword ? "text" : "password"}
-                            value={passwordForm.newPassword}
-                            onChange={handlePasswordInputChange}
-                            className="pr-10"
-                          />
-                          <button
-                            type="button"
-                            className="absolute inset-y-0 right-0 flex items-center pr-3"
-                            onClick={() => setShowNewPassword(!showNewPassword)}
-                          >
-                            {showNewPassword ? (
-                              <EyeOff className="h-4 w-4 text-gray-500" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-gray-500" />
-                            )}
-                          </button>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          Mật khẩu phải có ít nhất 6 ký tự
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">
-                          Xác nhận mật khẩu mới
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            type={showConfirmPassword ? "text" : "password"}
-                            value={passwordForm.confirmPassword}
-                            onChange={handlePasswordInputChange}
-                            className="pr-10"
-                          />
-                          <button
-                            type="button"
-                            className="absolute inset-y-0 right-0 flex items-center pr-3"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
-                          >
-                            {showConfirmPassword ? (
-                              <EyeOff className="h-4 w-4 text-gray-500" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-gray-500" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setPasswordDialogOpen(false)}
-                          disabled={changingPassword}
-                        >
-                          Hủy
-                        </Button>
-                        <Button
-                          type="submit"
-                          disabled={changingPassword}
-                          className="bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600"
-                        >
-                          {changingPassword ? (
-                            <div className="flex items-center">
-                              <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                              Đang xử lý...
-                            </div>
-                          ) : (
-                            "Đổi mật khẩu"
-                          )}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                <div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPasswordDialogOpen(true)}
+                    type="button"
+                  >
+                    <Lock className="mr-2 h-4 w-4" />
+                    Đổi mật khẩu
+                  </Button>
+                </div>
                 <div>
                   <Button
                     type="button"
@@ -1247,26 +1123,30 @@ const EditProfile = () => {
               </CardFooter>
             </Card>
 
+            {/* Add the UserAddressManager component right before the danger zone */}
+            <Card className="md:col-span-3 bg-white dark:bg-gray-800 shadow-sm">
+              <UserAddressManager />
+            </Card>
+
             {/* Thêm section xóa tài khoản */}
-            <div className="border-t border-gray-200 dark:border-gray-700 mt-6 pt-6 px-6">
-              <div className="flex flex-col">
-                <h3 className="text-lg font-medium text-red-500 mb-2">
+            <Card className="md:col-span-3 bg-white dark:bg-gray-800 shadow-sm border-red-200">
+              <CardHeader>
+                <CardTitle className="text-red-500 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
                   Vùng nguy hiểm
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
+                </CardTitle>
+                <CardDescription>
                   Hành động này không thể hoàn tác. Tài khoản của bạn sẽ bị xóa
                   vĩnh viễn.
-                </p>
-
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <Dialog
                   open={deleteDialogOpen}
                   onOpenChange={setDeleteDialogOpen}
                 >
                   <DialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      className="w-full sm:w-auto self-start"
-                    >
+                    <Button variant="destructive" className="w-full sm:w-auto">
                       <Trash2 className="mr-2 h-4 w-4" />
                       Xóa tài khoản
                     </Button>
@@ -1401,8 +1281,8 @@ const EditProfile = () => {
                     </form>
                   </DialogContent>
                 </Dialog>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

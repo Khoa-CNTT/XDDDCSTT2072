@@ -238,6 +238,7 @@ const Header = () => {
                     <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
                       <Link
                         to="/seller/orders"
+                        state={{ fromSellerDashboard: true }}
                         className="py-2 px-3 flex items-center gap-2 text-sm w-full"
                       >
                         <FaClipboardList size={16} className="text-blue-500" />
@@ -385,6 +386,7 @@ const Header = () => {
               <li className="hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors">
                 <Link
                   to="/seller/orders"
+                  state={{ fromSellerDashboard: true }}
                   className="py-2 px-3 flex items-center gap-2 w-full"
                 >
                   <FaClipboardList size={16} className="text-blue-500" />

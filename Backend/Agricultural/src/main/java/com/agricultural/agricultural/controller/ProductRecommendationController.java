@@ -27,12 +27,7 @@ public class ProductRecommendationController {
     private final IProductRecommendationService recommendationService;
     private final IUserRepository userRepository;
 
-    /**
-     * Lấy danh sách sản phẩm gợi ý cho người dùng hiện tại
-     * @param page Số trang (bắt đầu từ 0)
-     * @param size Kích thước trang
-     * @return Danh sách sản phẩm gợi ý
-     */
+
     @GetMapping("/personalized")
     public ResponseEntity<ApiResponse<Page<MarketPlaceDTO>>> getPersonalizedRecommendations(
             @RequestParam(defaultValue = "0") int page,
@@ -59,13 +54,7 @@ public class ProductRecommendationController {
     }
 
 
-    /**
-     * Lấy danh sách sản phẩm tương tự với sản phẩm đang xem
-     * @param productId ID của sản phẩm
-     * @param page Số trang (bắt đầu từ 0)
-     * @param size Kích thước trang
-     * @return Danh sách sản phẩm tương tự
-     */
+
     @GetMapping("/similar/{productId}")
     public ResponseEntity<ApiResponse<Page<MarketPlaceDTO>>> getSimilarProducts(
             @PathVariable Integer productId,
@@ -92,12 +81,7 @@ public class ProductRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách sản phẩm tương tự thành công", similarProducts));
     }
 
-    /**
-     * Lấy danh sách sản phẩm thường được mua cùng
-     * @param productId ID của sản phẩm
-     * @param limit Số lượng tối đa
-     * @return Danh sách sản phẩm thường được mua cùng
-     */
+
     @GetMapping("/bought-together/{productId}")
     public ResponseEntity<ApiResponse<List<MarketPlaceDTO>>> getFrequentlyBoughtTogether(
             @PathVariable Integer productId,
@@ -110,12 +94,7 @@ public class ProductRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách sản phẩm thường mua cùng thành công", boughtTogether));
     }
 
-    /**
-     * Lấy danh sách sản phẩm xu hướng
-     * @param page Số trang (bắt đầu từ 0)
-     * @param size Kích thước trang
-     * @return Danh sách sản phẩm xu hướng
-     */
+
     @GetMapping("/trending")
     public ResponseEntity<ApiResponse<Page<MarketPlaceDTO>>> getTrendingProducts(
             @RequestParam(defaultValue = "0") int page,

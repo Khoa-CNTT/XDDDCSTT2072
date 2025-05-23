@@ -11,9 +11,7 @@ public class KeywordValidatorService {
     private static final Set<String> AGRICULTURE_KEYWORDS = new HashSet<>();
 
     static {
-        // Từ khóa về cây trồng, rau củ, trái cây, chăn nuôi, đất, nông nghiệp thông minh, v.v.
         String[] keywords = {
-                // Cây trái
                 "cây", "cây trồng", "cây ăn quả", "xoài", "sầu riêng", "cam", "bưởi", "chuối", "ổi", "mít", "dừa",
                 "dưa hấu", "chanh", "nho", "vải", "na", "lựu", "măng cầu", "sapoche", "mận", "đào", "cốc", "quýt",
                 "bơ", "thanh long", "chôm chôm", "nhãn", "dâu tây", "dứa", "khế", "sung", "táo", "lê", "cherry", 
@@ -21,7 +19,6 @@ public class KeywordValidatorService {
                 "trái bòn bon", "trái cóc", "trái mãng cầu ta", "trái roi", "trái khóm", "trái hồng", "trái đu đủ",
                 "trái saboche", "trái nhãn lồng", "trái bưởi da xanh", "trái bưởi năm roi", "trái cam sành",
                 
-                // Rau củ
                 "rau", "bắp cải", "cà chua", "cà rốt", "hành", "tỏi", "cải", "bí", "dưa", "đậu", "mướp", "củ cải",
                 "rau muống", "rau dền", "xà lách", "rau ngót", "rau rền", "rau mùi", "húng quế", "rau răm",
                 "rau ngò", "đậu đũa", "đậu cove", "đậu Hà Lan", "bí ngòi", "bí đỏ", "khoai lang", "khoai môn",
@@ -31,7 +28,6 @@ public class KeywordValidatorService {
                 "củ niễng", "tỏi tây", "hành tây", "hành lá", "nấm hương", "nấm rơm", "nấm kim châm",
                 "nấm đông cô", "nấm hàu", "nấm mèo", "nấm linh chi", "giá đỗ", "rau sam", "rau đay",
                 
-                // Ngũ cốc - cây công nghiệp
                 "gạo", "lúa", "ngô", "khoai", "sắn", "mía", "cà phê", "cao su", "hồ tiêu", "điều", "trà", "chè",
                 "đậu nành", "đậu xanh", "đậu tương", "đậu phộng", "lạc", "đậu đen", "bông vải", "bông cotton",
                 "gạo nếp", "gạo tẻ", "gạo lứt", "gạo trắng", "gạo đỏ", "gạo huyết rồng", "gạo st25",
@@ -112,7 +108,6 @@ public class KeywordValidatorService {
                 "giấy gói", "màng bọc", "túi khí", "túi hút chân không", "khí quyển điều chỉnh", "kho lạnh", "kho thường", 
                 "hầm chứa", "silô", "cơ giới hóa", "tự động hóa", "robot nông nghiệp", "máy cấy", "máy gặt", "máy tuốt",
                 
-                // Bệnh hại và xử lý
                 "sâu", "bệnh", "nấm", "vi khuẩn", "rỉ sắt", "đạo ôn", "thán thư", "vàng lá", "héo rũ", "xoăn lá",
                 "sâu đục thân", "sâu đục quả", "sâu ăn lá", "sâu cuốn lá", "sâu khoang", "sâu xanh", "sâu róm", "sâu tơ",
                 "sâu vẽ bùa", "rầy nâu", "rầy xanh", "rầy lưng trắng", "bọ trĩ", "bọ xít", "bọ rùa", "ruồi đục quả",
@@ -128,7 +123,6 @@ public class KeywordValidatorService {
                 "ngộ độc phân bón", "ngộ độc thuốc BVTV", "cháy lá do thuốc", "cháy rễ", "thối rễ do ngập", "héo do hạn",
                 "rụng lá do khô", "rụng trái non", "nứt quả do mưa", "dập quả do mưa đá", "thối quả do mưa",
                 
-                // Kỹ thuật trồng và chăm sóc
                 "mật độ", "khoảng cách", "chiều sâu", "thời gian", "thời kỳ", "giai đoạn", "sinh trưởng",
                 "ra hoa", "đậu trái", "phát triển", "nuôi dưỡng", "chăm sóc",
                 "gieo hạt", "ươm mầm", "cây con", "cây mạ", "cấy", "trồng bầu", "trồng cây", "làm giàn", "làm chống",
@@ -142,7 +136,6 @@ public class KeywordValidatorService {
                 "đất thịt nhẹ", "đất mùn", "hỗn hợp giá thể", "giá thể hữu cơ", "giá thể vô cơ", "giá thể mụn dừa",
                 "giá thể đá vermiculite", "giá thể perlite", "giá thể sơ dừa", "giá thể than bùn", "lô hội", 
                 
-                // Nông nghiệp công nghệ cao
                 "thủy canh", "khí canh", "nhà kính", "nhà lưới", "tưới nhỏ giọt", "tưới phun mưa",
                 "IoT", "cảm biến", "tự động hóa", "nông nghiệp thông minh", "nông nghiệp 4.0",
                 "nông nghiệp hữu cơ", "nông nghiệp sạch", "nông nghiệp bền vững",
@@ -157,8 +150,7 @@ public class KeywordValidatorService {
                 "nông lâm kết hợp", "nông ngư kết hợp", "nông súc kết hợp", "hệ thống aquaponic", "thuỷ trồng kết hợp nuôi cá",
                 "nuôi tôm kết hợp trồng rừng", "vườn-ao-chuồng", "VAC", "thâm canh", "quảng canh", "canh tác tự nhiên",
                 
-                // Giao tiếp và chào hỏi
-                "xin chào", "chào bạn", "kính chào", "xin kính chào", "thân chào", "xin hỏi", "giúp tôi", "tư vấn", 
+                "xin chào", "chào bạn", "kính chào", "xin kính chào", "thân chào", "xin hỏi", "giúp tôi", "tư vấn",
                 "hỏi đáp", "hỏi thăm", "tạm biệt", "tư vấn", "chào hỏi", "hướng dẫn", "giải đáp", "thắc mắc",
                 "cảm ơn", "xin cảm ơn", "cám ơn", "cảm tạ", "tri ân", "cảm kích", "biết ơn", "xin lỗi", "xin phép",
                 "chúc mừng", "chúc ngon miệng", "chúc sức khỏe", "chúc may mắn", "chúc thành công", "chúc bình an",
@@ -176,27 +168,17 @@ public class KeywordValidatorService {
         }
     }
     
-    /**
-     * Lấy tất cả các từ khóa về nông nghiệp
-     * @return Set các từ khóa
-     */
+
     public Set<String> getAgricultureKeywords() {
         return AGRICULTURE_KEYWORDS;
     }
     
-    /**
-     * Lấy các từ khóa dưới dạng chuỗi, phân cách bởi dấu phẩy
-     * @return Chuỗi các từ khóa
-     */
+
     public String getAgricultureKeywordsString() {
         return String.join(", ", AGRICULTURE_KEYWORDS);
     }
     
-    /**
-     * Kiểm tra xem một từ có phải là từ khóa nông nghiệp không
-     * @param keyword Từ khóa cần kiểm tra
-     * @return true nếu là từ khóa nông nghiệp
-     */
+
     public boolean isAgricultureKeyword(String keyword) {
         if (keyword == null) return false;
         return AGRICULTURE_KEYWORDS.contains(keyword.toLowerCase().trim());

@@ -46,9 +46,7 @@ public class CartServiceImpl implements ICartService {
     private final CartMapper cartMapper;
     private final IVoucherRepository voucherRepository;
     
-    /**
-     * Lấy thông tin người dùng hiện tại từ SecurityContext
-     */
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -68,9 +66,7 @@ public class CartServiceImpl implements ICartService {
         return currentUser;
     }
     
-    /**
-     * Lấy hoặc tạo giỏ hàng cho người dùng
-     */
+
     private Cart getOrCreateCart(User user) {
         Optional<Cart> existingCart = cartRepository.findByUserIdWithCartItems(user.getId());
         
@@ -122,7 +118,6 @@ public class CartServiceImpl implements ICartService {
             throw new BadRequestException("Số lượng phải lớn hơn 0");
         }
         
-        // Lấy thông tin người dùng và giỏ hàng
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
@@ -417,7 +412,6 @@ public class CartServiceImpl implements ICartService {
     @Override
     @Transactional
     public CartDTO selectCartItems(List<Integer> cartItemIds, boolean selected) {
-        // Lấy thông tin người dùng và giỏ hàng
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
@@ -586,9 +580,7 @@ public class CartServiceImpl implements ICartService {
         return cartDTO;
     }
     
-    /**
-     * Phân bổ giảm giá cho các sản phẩm của một shop
-     */
+
     private void distributeDiscountToShopItems(Cart cart, Integer shopId, BigDecimal totalDiscount) {
         // Lấy danh sách sản phẩm được chọn của shop
         List<CartItem> shopItems = cart.getCartItems().stream()
@@ -601,7 +593,6 @@ public class CartServiceImpl implements ICartService {
             shopSubtotal = shopSubtotal.add(item.getTotalPrice());
         }
         
-        // Phân bổ giảm giá theo tỷ lệ
         for (CartItem item : shopItems) {
             if (shopSubtotal.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal ratio = item.getTotalPrice().divide(shopSubtotal, 4, java.math.RoundingMode.HALF_UP);
@@ -660,11 +651,9 @@ public class CartServiceImpl implements ICartService {
             cart.setShippingDiscount(BigDecimal.ZERO);
         }
         
-        // Tính lại tổng tiền
         cart.recalculateTotals();
         cartRepository.save(cart);
         
-        // Trả về thông tin giỏ hàng
         CartDTO cartDTO = cartMapper.toDTO(cart);
         cartDTO.setCartItems(cartMapper.toCartItemDTOList(cart.getCartItems()));
         
@@ -674,11 +663,9 @@ public class CartServiceImpl implements ICartService {
     @Override
     @Transactional
     public CartResponseDTO getCartResponse() {
-        // Lấy thông tin người dùng và giỏ hàng
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
-        // Tạo response
         CartResponseDTO response = CartResponseDTO.builder()
                 .id(cart.getId())
                 .userId(currentUser.getId())

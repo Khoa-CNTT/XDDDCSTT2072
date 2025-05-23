@@ -42,7 +42,6 @@ public class WeatherService implements IWeatherService {
     private final IUserWeatherSubscriptionRepository subscriptionRepository;
     private final INotificationService notificationService;
     
-    // Constructor với @Qualifier cho RestTemplate
     public WeatherService(
             IWeatherDataRepository weatherDataRepository,
             IAgriculturalAdviceRepository agriculturalAdviceRepository,
@@ -76,10 +75,8 @@ public class WeatherService implements IWeatherService {
             throw new BadRequestException("Tên quốc gia không được để trống");
         }
 
-        // Tạo key cho cache
         String cacheKey = city.toLowerCase() + "," + country.toLowerCase();
 
-        // Kiểm tra cache trước
         if (weatherCache.containsKey(cacheKey)) {
             WeatherDataDTO cachedData = weatherCache.get(cacheKey);
             // Cache hợp lệ trong 30 phút
@@ -88,7 +85,6 @@ public class WeatherService implements IWeatherService {
             }
         }
 
-        // Kiểm tra database có dữ liệu gần đây không
         Optional<WeatherData> recentData = weatherDataRepository
                 .findFirstByCityIgnoreCaseAndCountryIgnoreCaseOrderByDataTimeDesc(city, country);
 
@@ -100,13 +96,11 @@ public class WeatherService implements IWeatherService {
             return dto;
         }
 
-        // Dọn cache nếu đã lâu chưa dọn
         if (lastCleanupTime.isBefore(LocalDateTime.now().minusHours(1))) {
             cleanupCache();
         }
 
         try {
-            // Gọi API OpenWeather
             String url = UriComponentsBuilder
                     .fromHttpUrl(openWeatherConfig.getCurrentWeatherUrl())
                     .queryParam("q", city + "," + country)
@@ -118,21 +112,18 @@ public class WeatherService implements IWeatherService {
 
             ResponseEntity<Map> response = weatherRestTemplate.getForEntity(url, Map.class);
 
-            // Chuyển đổi dữ liệu từ API thành entity và lưu vào database
             WeatherData weatherData = mapOpenWeatherResponse(response.getBody());
             weatherData = weatherDataRepository.save(weatherData);
 
-            // Tạo lời khuyên nông nghiệp
             generateAgriculturalAdvice(weatherData);
 
             WeatherDataDTO dto = weatherDataMapper.toDTO(weatherData);
-            // Lưu vào cache
             weatherCache.put(cacheKey, dto);
             processWeatherAlert(weatherData);
             return dto;
         } catch (RestClientException e) {
             log.error("Lỗi khi lấy dữ liệu thời tiết từ API: " + e.getMessage());
-            // Nếu không kết nối được API, trả về dữ liệu cũ nhất từ database (nếu có)
+
             if (recentData.isPresent()) {
                 return weatherDataMapper.toDTO(recentData.get());
             }
@@ -154,7 +145,6 @@ public class WeatherService implements IWeatherService {
             startTime = LocalDateTime.now().minusDays(7); // Mặc định lấy 7 ngày gần nhất
         }
 
-        // API miễn phí không hỗ trợ dữ liệu lịch sử, chỉ trả về từ database
         List<WeatherData> weatherDataList = weatherDataRepository.findRecentWeatherData(city, country, startTime);
         return weatherDataList.stream()
                 .map(weatherDataMapper::toDTO)
@@ -174,7 +164,6 @@ public class WeatherService implements IWeatherService {
         // Tạo key cho cache
         String cacheKey = latitude + "," + longitude;
 
-        // Kiểm tra cache trước
         if (weatherCache.containsKey(cacheKey)) {
             WeatherDataDTO cachedData = weatherCache.get(cacheKey);
             // Cache hợp lệ trong 30 phút
@@ -183,20 +172,17 @@ public class WeatherService implements IWeatherService {
             }
         }
 
-        // Kiểm tra database có dữ liệu gần đây không
         Optional<WeatherData> recentData = weatherDataRepository
                 .findFirstByLatitudeAndLongitudeOrderByDataTimeDesc(latitude, longitude);
 
         if (recentData.isPresent() &&
                 recentData.get().getDataTime().isAfter(LocalDateTime.now().minusMinutes(60))) {
             WeatherDataDTO dto = weatherDataMapper.toDTO(recentData.get());
-            // Lưu vào cache
             weatherCache.put(cacheKey, dto);
             return dto;
         }
 
         try {
-            // Gọi API OpenWeather
             String url = UriComponentsBuilder
                     .fromHttpUrl(openWeatherConfig.getCurrentWeatherUrl())
                     .queryParam("lat", latitude)
@@ -209,21 +195,17 @@ public class WeatherService implements IWeatherService {
 
             ResponseEntity<Map> response = weatherRestTemplate.getForEntity(url, Map.class);
 
-            // Chuyển đổi dữ liệu từ API thành entity và lưu vào database
             WeatherData weatherData = mapOpenWeatherResponse(response.getBody());
             weatherData = weatherDataRepository.save(weatherData);
 
-            // Tạo lời khuyên nông nghiệp
             generateAgriculturalAdvice(weatherData);
 
             WeatherDataDTO dto = weatherDataMapper.toDTO(weatherData);
-            // Lưu vào cache
             weatherCache.put(cacheKey, dto);
             processWeatherAlert(weatherData);
             return dto;
         } catch (RestClientException e) {
             log.error("Lỗi khi lấy dữ liệu thời tiết từ API: " + e.getMessage());
-            // Nếu không kết nối được API, trả về dữ liệu cũ nhất từ database (nếu có)
             if (recentData.isPresent()) {
                 return weatherDataMapper.toDTO(recentData.get());
             }
@@ -286,7 +268,6 @@ public class WeatherService implements IWeatherService {
                 .collect(Collectors.toList());
     }
 
-    // Phương thức hỗ trợ để chuyển đổi dữ liệu từ API OpenWeather sang entity WeatherData
     private WeatherData mapOpenWeatherResponse(Map data) {
         WeatherData weatherData = new WeatherData();
 
@@ -318,12 +299,10 @@ public class WeatherService implements IWeatherService {
         return weatherData;
     }
 
-    // Phương thức hỗ trợ để tạo lời khuyên nông nghiệp dựa trên dữ liệu thời tiết
     private void generateAgriculturalAdvice(WeatherData weatherData) {
         AgriculturalAdvice advice = new AgriculturalAdvice();
         advice.setWeatherData(weatherData);
 
-        // Tạo tóm tắt thời tiết
         StringBuilder weatherSummary = new StringBuilder();
         weatherSummary.append("Thời tiết tại ")
                 .append(weatherData.getCity())
@@ -339,7 +318,6 @@ public class WeatherService implements IWeatherService {
 
         advice.setWeatherSummary(weatherSummary.toString());
 
-        // Xác định điều kiện thời tiết
         double temp = weatherData.getTemperature();
         int humidity = weatherData.getHumidity();
         double windSpeed = weatherData.getWindSpeed();
@@ -353,7 +331,6 @@ public class WeatherService implements IWeatherService {
         advice.setIsRainySeason(isRainy);
         advice.setIsDrySeason(!isRainy && humidity < 50);
 
-        // Tạo lời khuyên canh tác
         StringBuilder farmingAdvice = new StringBuilder();
         if (isRainy) {
             farmingAdvice.append("Thời tiết mưa, nên hạn chế phun thuốc bảo vệ thực vật. ");
@@ -375,7 +352,6 @@ public class WeatherService implements IWeatherService {
 
         advice.setFarmingAdvice(farmingAdvice.toString());
 
-        // Tạo lời khuyên về cây trồng
         StringBuilder cropAdvice = new StringBuilder();
         if (temp < 20) {
             cropAdvice.append("Nhiệt độ thấp phù hợp cho rau họ cải (bắp cải, súp lơ, cải thìa). ");
@@ -393,7 +369,6 @@ public class WeatherService implements IWeatherService {
 
         advice.setCropAdvice(cropAdvice.toString());
 
-        // Tạo cảnh báo nếu cần thiết
         StringBuilder warnings = new StringBuilder();
         if (isRainy && weatherData.getTemperature() < 20) {
             warnings.append("Thời tiết mưa lạnh có thể ảnh hưởng xấu đến cây trồng non. ");
@@ -409,7 +384,6 @@ public class WeatherService implements IWeatherService {
 
         advice.setWarnings(warnings.length() > 0 ? warnings.toString() : null);
 
-        // Tạo hoạt động đề xuất
         StringBuilder activities = new StringBuilder();
         if (Boolean.TRUE.equals(advice.getIsSuitableForPlanting())) {
             activities.append("Trồng cây mới. ");
@@ -427,7 +401,6 @@ public class WeatherService implements IWeatherService {
 
         advice.setRecommendedActivities(activities.toString());
 
-        // Lưu lời khuyên
         agriculturalAdviceRepository.save(advice);
     }
 

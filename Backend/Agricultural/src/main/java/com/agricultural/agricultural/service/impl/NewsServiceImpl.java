@@ -47,7 +47,6 @@ public class NewsServiceImpl implements NewsService {
         
         List<NewsDTO> newsDTOs = newsMapper.toDTOList(newsPage.getContent());
         
-        // Nếu không có dữ liệu, thực hiện fetch tin tức mới
         if (newsDTOs.isEmpty()) {
             log.warn("getAllNews: Không có dữ liệu từ database, đang thu thập tin tức mới từ nguồn...");
             try {
@@ -57,7 +56,6 @@ public class NewsServiceImpl implements NewsService {
                 newsDTOs = newsMapper.toDTOList(newsPage.getContent());
             } catch (Exception e) {
                 log.error("Lỗi khi thu thập tin tức: {}", e.getMessage());
-                // Return empty page instead of sample data
                 return new PageImpl<>(new ArrayList<>(), pageable, 0);
             }
         }
@@ -76,11 +74,9 @@ public class NewsServiceImpl implements NewsService {
         
         List<NewsDTO> newsDTOs = newsMapper.toDTOList(newsPage.getContent());
         
-        // Nếu không có dữ liệu, thử thu thập tin tức mới
         if (newsDTOs.isEmpty()) {
             log.warn("getNewsByCategory: Không có dữ liệu từ database cho category {}, đang thu thập tin tức mới...", category);
             try {
-                // Tìm các nguồn tin tức phù hợp với category này
                 List<NewsSource> newsSources = newsSourceRepository.findAllByActiveTrueAndCategoryIgnoreCase(category);
                 if (!newsSources.isEmpty()) {
                     for (NewsSource source : newsSources) {
@@ -91,7 +87,6 @@ public class NewsServiceImpl implements NewsService {
                         }
                     }
                     
-                    // Thử lấy lại dữ liệu sau khi fetch
                     newsPage = newsRepository.findAllByActiveTrueAndCategoryIgnoreCase(category, pageable);
                     newsDTOs = newsMapper.toDTOList(newsPage.getContent());
                 }
@@ -127,17 +122,14 @@ public class NewsServiceImpl implements NewsService {
         
         List<NewsDTO> latestNewsDTOs = newsMapper.toDTOList(latestNews);
         
-        // Nếu không có dữ liệu, thử thu thập tin tức mới
         if (latestNewsDTOs.isEmpty()) {
             log.warn("getLatestNews: Không có dữ liệu từ database, đang thu thập tin tức mới...");
             try {
                 fetchNewsFromSources();
-                // Thử lấy lại dữ liệu sau khi fetch
                 latestNews = newsRepository.findTop10ByActiveTrueOrderByPublishedDateDesc();
                 latestNewsDTOs = newsMapper.toDTOList(latestNews);
             } catch (Exception e) {
                 log.error("Lỗi khi thu thập tin tức mới: {}", e.getMessage());
-                // Return empty list instead of sample data
                 return new ArrayList<>();
             }
         }
@@ -152,12 +144,10 @@ public class NewsServiceImpl implements NewsService {
         
         List<NewsDTO> newsDTOs = newsMapper.toDTOList(newsPage.getContent());
         
-        // Nếu không có dữ liệu, thử thu thập tin tức mới
         if (newsDTOs.isEmpty()) {
             log.warn("searchNews: Không có dữ liệu từ database cho keyword {}, đang thu thập tin tức mới...", keyword);
             try {
                 fetchNewsFromSources();
-                // Thử tìm kiếm lại sau khi thu thập
                 newsPage = newsRepository.findByTitleContainingIgnoreCaseAndActiveTrue(keyword, pageable);
                 newsDTOs = newsMapper.toDTOList(newsPage.getContent());
             } catch (Exception e) {

@@ -36,15 +36,12 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Kiểm tra xem người dùng có tồn tại không
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
         }
         
-        // Lấy danh sách đăng ký của người dùng
         List<UserSubscription> subscriptions = userSubscriptionRepository.findByUserId(userId);
         
-        // Chuyển đổi sang DTO và trả về
         return userSubscriptionMapper.toDTOList(subscriptions);
     }
     
@@ -54,16 +51,13 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Kiểm tra xem người dùng có tồn tại không
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
         }
         
-        // Lấy danh sách đăng ký đang hoạt động của người dùng
-        List<UserSubscription> activeSubscriptions = 
+        List<UserSubscription> activeSubscriptions =
                 userSubscriptionRepository.findActiveSubscriptionsByUserId(userId, LocalDateTime.now());
         
-        // Chuyển đổi sang DTO và trả về
         return userSubscriptionMapper.toDTOList(activeSubscriptions);
     }
     
@@ -73,12 +67,10 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Kiểm tra xem người dùng có tồn tại không
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId);
         }
         
-        // Lấy đăng ký đang hoạt động mới nhất của người dùng
         return userSubscriptionRepository
                 .findFirstByUserIdAndIsActiveTrueAndEndDateGreaterThanOrderByEndDateDesc(userId, LocalDateTime.now())
                 .map(userSubscriptionMapper::toDTO);
@@ -95,34 +87,27 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID gói đăng ký không được để trống");
         }
         
-        // Kiểm tra xem người dùng có tồn tại không
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId));
         
-        // Kiểm tra xem gói đăng ký có tồn tại không
         SubscriptionPlan plan = subscriptionPlanRepository.findById(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy gói đăng ký với ID: " + planId));
         
-        // Kiểm tra xem gói đăng ký có đang hoạt động không
         if (!plan.getIsActive()) {
             throw new BadRequestException("Gói đăng ký này hiện không khả dụng");
         }
         
-        // Kiểm tra xem người dùng đã đăng ký gói này chưa
         LocalDateTime now = LocalDateTime.now();
         if (userSubscriptionRepository.existsActiveSubscriptionByUserIdAndPlanId(userId, planId, now)) {
             throw new BadRequestException("Bạn đã đăng ký gói này và gói đang còn hiệu lực");
         }
         
-        // Nếu là gói miễn phí, kiểm tra xem người dùng đã từng đăng ký gói này chưa
         if (plan.getIsFree() && userSubscriptionRepository.existsByUserIdAndPlanId(userId, planId)) {
             throw new BadRequestException("Mỗi người dùng chỉ được đăng ký gói miễn phí một lần");
         }
         
-        // Tính toán thời hạn của gói đăng ký
         LocalDateTime endDate = now.plusMonths(plan.getDurationMonths());
         
-        // Tạo đối tượng đăng ký mới
         UserSubscription subscription = new UserSubscription();
         subscription.setUser(user);
         subscription.setPlan(plan);
@@ -134,10 +119,8 @@ public class UserSubscriptionService implements IUserSubscriptionService {
         subscription.setIsAutoRenew(autoRenew != null ? autoRenew : false);
         subscription.setLocationsUsed(0);
         
-        // Lưu đăng ký vào cơ sở dữ liệu
         UserSubscription savedSubscription = userSubscriptionRepository.save(subscription);
         
-        // Chuyển đổi sang DTO và trả về
         return userSubscriptionMapper.toDTO(savedSubscription);
     }
     
@@ -148,11 +131,9 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID đăng ký không được để trống");
         }
         
-        // Kiểm tra xem đăng ký có tồn tại không
         UserSubscription subscription = userSubscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đăng ký với ID: " + subscriptionId));
         
-        // Hủy đăng ký
         subscription.setIsActive(false);
         userSubscriptionRepository.save(subscription);
     }
@@ -163,21 +144,17 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Lấy gói đăng ký mới nhất của người dùng
         Optional<UserSubscriptionDTO> latestSubscription = getLatestActiveSubscription(userId);
         
-        // Nếu không có gói đăng ký nào, kiểm tra xem có gói miễn phí không
         if (latestSubscription.isEmpty()) {
             Optional<SubscriptionPlan> freePlan = subscriptionPlanRepository.findByIsActiveTrueAndIsFreeTrue();
             if (freePlan.isPresent()) {
-                // Nếu có gói miễn phí, tự động đăng ký cho người dùng
                 UserSubscriptionDTO freeSubscription = subscribeUserToPlan(userId, freePlan.get().getId(), false);
                 return freeSubscription.getRemainingLocations() > 0;
             }
             return false;
         }
         
-        // Nếu có gói đăng ký, kiểm tra xem còn có thể đăng ký thêm không
         return latestSubscription.get().getRemainingLocations() > 0;
     }
     
@@ -187,20 +164,16 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Lấy gói đăng ký mới nhất của người dùng
         Optional<UserSubscriptionDTO> latestSubscription = getLatestActiveSubscription(userId);
         
-        // Nếu không có gói đăng ký nào, kiểm tra xem có gói miễn phí không
         if (latestSubscription.isEmpty()) {
             Optional<SubscriptionPlan> freePlan = subscriptionPlanRepository.findByIsActiveTrueAndIsFreeTrue();
             if (freePlan.isPresent()) {
-                // Nếu có gói miễn phí, trả về số lượng địa điểm của gói miễn phí
                 return freePlan.get().getMaxLocations();
             }
             return 0;
         }
         
-        // Nếu có gói đăng ký, trả về số lượng địa điểm còn lại
         return latestSubscription.get().getRemainingLocations();
     }
     
@@ -215,17 +188,14 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("Số lượng địa điểm đã sử dụng không được để trống");
         }
         
-        // Lấy đăng ký mới nhất của người dùng
         UserSubscription subscription = userSubscriptionRepository
                 .findFirstByUserIdAndIsActiveTrueAndEndDateGreaterThanOrderByEndDateDesc(userId, LocalDateTime.now())
                 .orElseThrow(() -> new BadRequestException("Người dùng chưa có gói đăng ký nào đang hoạt động"));
         
-        // Kiểm tra xem số lượng địa điểm đã sử dụng có vượt quá giới hạn không
         if (locationsUsed > subscription.getPlan().getMaxLocations()) {
             throw new BadRequestException("Số lượng địa điểm đã sử dụng vượt quá giới hạn của gói đăng ký");
         }
         
-        // Cập nhật số lượng địa điểm đã sử dụng
         subscription.setLocationsUsed(locationsUsed);
         userSubscriptionRepository.save(subscription);
     }
@@ -237,17 +207,14 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Kiểm tra xem người dùng có thể đăng ký thêm địa điểm không
         if (!canSubscribeMoreLocations(userId)) {
             return false;
         }
         
-        // Lấy đăng ký mới nhất của người dùng
         UserSubscription subscription = userSubscriptionRepository
                 .findFirstByUserIdAndIsActiveTrueAndEndDateGreaterThanOrderByEndDateDesc(userId, LocalDateTime.now())
                 .orElseThrow(() -> new BadRequestException("Người dùng chưa có gói đăng ký nào đang hoạt động"));
         
-        // Tăng số lượng địa điểm đã sử dụng lên 1
         subscription.setLocationsUsed(subscription.getLocationsUsed() + 1);
         userSubscriptionRepository.save(subscription);
         
@@ -261,7 +228,6 @@ public class UserSubscriptionService implements IUserSubscriptionService {
             throw new BadRequestException("ID người dùng không được để trống");
         }
         
-        // Lấy đăng ký mới nhất của người dùng
         Optional<UserSubscription> optionalSubscription = userSubscriptionRepository
                 .findFirstByUserIdAndIsActiveTrueAndEndDateGreaterThanOrderByEndDateDesc(userId, LocalDateTime.now());
         
@@ -271,12 +237,10 @@ public class UserSubscriptionService implements IUserSubscriptionService {
         
         UserSubscription subscription = optionalSubscription.get();
         
-        // Kiểm tra xem số lượng địa điểm đã sử dụng có lớn hơn 0 không
         if (subscription.getLocationsUsed() <= 0) {
             return false;
         }
         
-        // Giảm số lượng địa điểm đã sử dụng xuống 1
         subscription.setLocationsUsed(subscription.getLocationsUsed() - 1);
         userSubscriptionRepository.save(subscription);
         

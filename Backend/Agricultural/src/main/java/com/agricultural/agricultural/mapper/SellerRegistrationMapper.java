@@ -17,7 +17,6 @@ public class SellerRegistrationMapper {
             return null;
         }
         
-        // Ensure createdAt is never null
         LocalDateTime createdAt = entity.getCreatedAt();
         if (createdAt == null) {
             createdAt = LocalDateTime.now();

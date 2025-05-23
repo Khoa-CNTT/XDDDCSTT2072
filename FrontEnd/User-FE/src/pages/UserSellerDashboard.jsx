@@ -318,6 +318,7 @@ const UserSellerDashboard = () => {
             <div className="mt-4 md:mt-0 flex space-x-3">
               <Link
                 to="/seller/orders"
+                state={{ fromSellerDashboard: true }}
                 className="bg-white text-green-600 py-2 px-4 rounded-lg flex items-center shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1 relative"
               >
                 <FaClipboardList className="mr-2" /> Quản lý đơn hàng
@@ -349,6 +350,7 @@ const UserSellerDashboard = () => {
           />
           <Link
             to="/seller/orders"
+            state={{ fromSellerDashboard: true }}
             className="transition-transform hover:-translate-y-1"
           >
             <StatCard
@@ -391,6 +393,7 @@ const UserSellerDashboard = () => {
                   Vui lòng xem và xác nhận đơn hàng mới để giao cho khách hàng.
                   <Link
                     to="/seller/orders"
+                    state={{ fromSellerDashboard: true }}
                     className="ml-1 font-medium underline"
                   >
                     Xem ngay

@@ -18,11 +18,7 @@ public class CouponScheduler {
 
     private final ICouponRepository couponRepository;
 
-    /**
-     * Cập nhật trạng thái mã giảm giá mỗi ngày vào lúc 1 giờ sáng
-     * - Chuyển trạng thái các mã hết hạn thành 'expired'
-     * - Chuyển trạng thái các mã đã sử dụng hết số lượng thành 'expired'
-     */
+
     @Scheduled(cron = "0 0 1 * * ?") // Chạy lúc 1:00 AM mỗi ngày
     @Transactional
     public void updateCouponStatus() {

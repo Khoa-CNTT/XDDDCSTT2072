@@ -24,9 +24,7 @@ public class SellerRegistrationController {
 
     private final ISellerRegistrationService sellerRegistrationService;
 
-    /**
-     * Đăng ký bán hàng
-     */
+
     @PostMapping
     public ResponseEntity<ResponseDTO<SellerRegistrationDTO>> register(@Valid @RequestBody SellerRegistrationDTO registrationDTO) {
         log.info("Nhận yêu cầu đăng ký bán hàng");
@@ -41,9 +39,7 @@ public class SellerRegistrationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-    /**
-     * Lấy trạng thái đăng ký bán hàng mới nhất của người dùng hiện tại
-     */
+
     @GetMapping("/status")
     public ResponseEntity<ResponseDTO<SellerRegistrationDTO>> getStatus() {
         log.info("Nhận yêu cầu lấy trạng thái đăng ký bán hàng");
@@ -67,9 +63,7 @@ public class SellerRegistrationController {
         return ResponseEntity.ok(response);
     }
     
-    /**
-     * Lấy lịch sử đăng ký bán hàng của người dùng hiện tại
-     */
+
     @GetMapping("/history")
     public ResponseEntity<ResponseDTO<List<SellerRegistrationDTO>>> getHistory() {
         log.info("Nhận yêu cầu lấy lịch sử đăng ký bán hàng");
@@ -84,9 +78,7 @@ public class SellerRegistrationController {
         return ResponseEntity.ok(response);
     }
     
-    /**
-     * Kiểm tra người dùng hiện tại có đơn đăng ký đang chờ duyệt không
-     */
+
     @GetMapping("/has-pending")
     public ResponseEntity<ResponseDTO<Boolean>> hasPendingRegistration() {
         log.info("Nhận yêu cầu kiểm tra đơn đăng ký đang chờ duyệt");
@@ -100,10 +92,7 @@ public class SellerRegistrationController {
         
         return ResponseEntity.ok(response);
     }
-    
-    /**
-     * Kiểm tra người dùng hiện tại đã được phê duyệt bán hàng chưa
-     */
+
     @GetMapping("/is-approved")
     public ResponseEntity<ResponseDTO<Boolean>> isApproved() {
         log.info("Nhận yêu cầu kiểm tra trạng thái phê duyệt bán hàng");
@@ -120,9 +109,7 @@ public class SellerRegistrationController {
     
     // ADMIN ENDPOINTS
     
-    /**
-     * Lấy tất cả đơn đăng ký bán hàng (chỉ admin)
-     */
+
     @GetMapping
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ResponseDTO<List<SellerRegistrationDTO>>> getAllRegistrations() {
@@ -138,9 +125,7 @@ public class SellerRegistrationController {
         return ResponseEntity.ok(response);
     }
     
-    /**
-     * Lấy đơn đăng ký bán hàng theo trạng thái (chỉ admin)
-     */
+
     @GetMapping("/status/{status}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ResponseDTO<List<SellerRegistrationDTO>>> getRegistrationsByStatus(@PathVariable String status) {
@@ -156,9 +141,7 @@ public class SellerRegistrationController {
         return ResponseEntity.ok(response);
     }
     
-    /**
-     * Phê duyệt đơn đăng ký bán hàng (chỉ admin)
-     */
+
     @PutMapping("/approve/{id}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ResponseDTO<SellerRegistrationDTO>> approveRegistration(
@@ -178,9 +161,7 @@ public class SellerRegistrationController {
         return ResponseEntity.ok(response);
     }
     
-    /**
-     * Từ chối đơn đăng ký bán hàng (chỉ admin)
-     */
+
     @PutMapping("/reject/{id}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ResponseDTO<SellerRegistrationDTO>> rejectRegistration(
@@ -210,9 +191,7 @@ public class SellerRegistrationController {
         return ResponseEntity.ok(response);
     }
     
-    /**
-     * Kiểm tra một người dùng cụ thể đã được phê duyệt bán hàng chưa
-     */
+
     @GetMapping("/user/{userId}/is-approved")
     public ResponseEntity<ResponseDTO<Boolean>> isUserApproved(@PathVariable Integer userId) {
         log.info("Nhận yêu cầu kiểm tra trạng thái phê duyệt bán hàng của người dùng: {}", userId);

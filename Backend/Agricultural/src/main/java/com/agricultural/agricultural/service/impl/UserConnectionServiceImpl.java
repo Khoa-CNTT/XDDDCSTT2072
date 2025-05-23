@@ -33,19 +33,16 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
     @Override
     @Transactional
     public UserConnectionDTO sendConnectionRequest(Integer userId, Integer targetUserId) {
-        // Kiểm tra nếu người dùng đang gửi kết nối đến chính mình
         if (userId.equals(targetUserId)) {
             throw new BadRequestException("Không thể gửi yêu cầu kết nối đến chính mình");
         }
 
-        // Tìm người dùng
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId));
 
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + targetUserId));
 
-        // Kiểm tra nếu đã có kết nối
         Optional<UserConnection> existingConnection = userConnectionRepository
                 .findByUserIdAndConnectedUserId(userId, targetUserId);
 
@@ -64,14 +61,12 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
             }
         }
 
-        // Kiểm tra nếu có kết nối theo chiều ngược lại
         Optional<UserConnection> reverseConnection = userConnectionRepository
                 .findByUserIdAndConnectedUserId(targetUserId, userId);
 
         if (reverseConnection.isPresent()) {
             UserConnection connection = reverseConnection.get();
             if (connection.getStatus() == UserConnection.ConnectionStatus.PENDING) {
-                // Nếu người kia đã gửi yêu cầu, ta chấp nhận luôn
                 connection.setStatus(UserConnection.ConnectionStatus.ACCEPTED);
                 UserConnection savedConnection = userConnectionRepository.save(connection);
                 return mapToDTO(savedConnection);
@@ -82,7 +77,6 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
             }
         }
 
-        // Tạo kết nối mới
         UserConnection connection = UserConnection.builder()
                 .user(user)
                 .connectedUser(targetUser)
@@ -96,7 +90,6 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
     @Override
     @Transactional
     public UserConnectionDTO acceptConnectionRequest(Integer userId, Integer requesterId) {
-        // Tìm yêu cầu kết nối
         Optional<UserConnection> connectionOptional = userConnectionRepository
                 .findByUserIdAndConnectedUserId(requesterId, userId);
 
@@ -109,7 +102,6 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
             throw new BadRequestException("Yêu cầu kết nối không ở trạng thái chờ chấp nhận");
         }
 
-        // Chấp nhận yêu cầu
         connection.setStatus(UserConnection.ConnectionStatus.ACCEPTED);
         UserConnection savedConnection = userConnectionRepository.save(connection);
         return mapToDTO(savedConnection);
@@ -118,7 +110,6 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
     @Override
     @Transactional
     public UserConnectionDTO rejectConnectionRequest(Integer userId, Integer requesterId) {
-        // Tìm yêu cầu kết nối
         Optional<UserConnection> connectionOptional = userConnectionRepository
                 .findByUserIdAndConnectedUserId(requesterId, userId);
 
@@ -131,7 +122,6 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
             throw new BadRequestException("Yêu cầu kết nối không ở trạng thái chờ chấp nhận");
         }
 
-        // Từ chối yêu cầu
         connection.setStatus(UserConnection.ConnectionStatus.REJECTED);
         UserConnection savedConnection = userConnectionRepository.save(connection);
         return mapToDTO(savedConnection);
@@ -140,7 +130,6 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
     @Override
     @Transactional
     public UserConnectionDTO blockUser(Integer userId, Integer targetUserId) {
-        // Kiểm tra nếu đã có kết nối
         Optional<UserConnection> existingConnection = userConnectionRepository
                 .findByUserIdAndConnectedUserId(userId, targetUserId);
 
@@ -151,14 +140,12 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
             return mapToDTO(savedConnection);
         }
 
-        // Kiểm tra người dùng
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId));
 
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + targetUserId));
 
-        // Tạo kết nối chặn mới
         UserConnection connection = UserConnection.builder()
                 .user(user)
                 .connectedUser(targetUser)
@@ -172,7 +159,6 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
     @Override
     @Transactional
     public UserConnectionDTO unblockUser(Integer userId, Integer targetUserId) {
-        // Tìm kết nối chặn
         Optional<UserConnection> existingConnection = userConnectionRepository
                 .findByUserIdAndConnectedUserId(userId, targetUserId);
 
@@ -185,17 +171,14 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
             throw new BadRequestException("Người dùng này không bị chặn");
         }
 
-        // Xóa kết nối chặn
         userConnectionRepository.delete(connection);
         
-        // Trả về trạng thái trước khi xóa
         return mapToDTO(connection);
     }
 
     @Override
     @Transactional
     public void removeConnection(Integer userId, Integer connectedUserId) {
-        // Tìm kết nối theo cả hai chiều
         Optional<UserConnection> connection1 = userConnectionRepository
                 .findByUserIdAndConnectedUserId(userId, connectedUserId);
         
@@ -206,7 +189,6 @@ public class UserConnectionServiceImpl implements IUserConnectionService {
             throw new ResourceNotFoundException("Không tìm thấy kết nối giữa hai người dùng");
         }
         
-        // Xóa kết nối nếu có
         connection1.ifPresent(userConnectionRepository::delete);
         connection2.ifPresent(userConnectionRepository::delete);
     }

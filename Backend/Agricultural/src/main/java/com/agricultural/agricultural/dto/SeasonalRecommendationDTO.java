@@ -16,49 +16,30 @@ import java.util.List;
 @AllArgsConstructor
 public class SeasonalRecommendationDTO {
     
-    /**
-     * Tiêu đề của gợi ý
-     */
+
     private String title;
     
-    /**
-     * Mô tả chi tiết về gợi ý
-     */
+
     private String description;
     
-    /**
-     * Lý do gợi ý (dựa trên thời tiết, mùa vụ, v.v.)
-     */
+
     private String reason;
     
-    /**
-     * Danh sách sản phẩm được gợi ý
-     */
+
     private List<MarketPlaceDTO> products;
     
-    /**
-     * Loại gợi ý (VD: theo mùa, theo thời tiết, khuyến mãi, v.v.)
-     */
+
     private RecommendationType type;
     
-    /**
-     * Độ ưu tiên của gợi ý (để sắp xếp khi hiển thị)
-     */
+
     private int priority;
     
-    /**
-     * Icon hoặc hình ảnh đại diện cho gợi ý
-     */
+
     private String icon;
     
-    /**
-     * Thẻ màu để hiển thị trên UI
-     */
+
     private String colorTag;
-    
-    /**
-     * Các loại gợi ý
-     */
+
     public enum RecommendationType {
         SEASONAL("Theo mùa vụ"),
         WEATHER("Theo thời tiết"),

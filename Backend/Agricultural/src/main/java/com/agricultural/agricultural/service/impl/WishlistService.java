@@ -1,4 +1,4 @@
-package com.agricultural.agricultural.service;
+package com.agricultural.agricultural.service.impl;
 import com.agricultural.agricultural.dto.WishlistDTO;
 import com.agricultural.agricultural.dto.WishlistItemDTO;
 import com.agricultural.agricultural.entity.*;
@@ -32,9 +32,7 @@ public class WishlistService {
     private final IProductVariantRepository productVariantRepository;
     private final IUserProductInteractionRepository userProductInteractionRepository;
 
-    /**
-     * Get all wishlists for a user
-     */
+
     public ResponseEntity<?> getUserWishlists(Integer userId) {
         List<Wishlist> wishlists = wishlistRepository.findByUserId(userId);
         List<WishlistDTO> wishlistDTOs = wishlists.stream()
@@ -44,9 +42,7 @@ public class WishlistService {
         return ResponseEntity.ok(wishlistDTOs);
     }
 
-    /**
-     * Get a specific wishlist with items
-     */
+
     public ResponseEntity<?> getWishlistById(Integer wishlistId, Integer userId) {
         Wishlist wishlist = wishlistRepository.findByIdAndUserId(wishlistId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wishlist không tồn tại hoặc không thuộc về người dùng này"));
@@ -60,9 +56,7 @@ public class WishlistService {
         return ResponseEntity.ok(wishlistDTO);
     }
 
-    /**
-     * Create a new wishlist
-     */
+
     @Transactional
     public ResponseEntity<?> createWishlist(WishlistDTO wishlistDTO) {
         User user = userRepository.findById(wishlistDTO.getUserId())
@@ -73,8 +67,7 @@ public class WishlistService {
             throw new BadRequestException("Tên danh sách yêu thích không được để trống");
         }
         
-        // If isDefault is true, check if user already has a default wishlist
-        if (Boolean.TRUE.equals(wishlistDTO.getIsDefault()) && 
+        if (Boolean.TRUE.equals(wishlistDTO.getIsDefault()) &&
                 wishlistRepository.existsByUserIdAndIsDefaultTrue(wishlistDTO.getUserId())) {
             throw new BadRequestException("Người dùng đã có danh sách yêu thích mặc định");
         }
@@ -95,28 +88,22 @@ public class WishlistService {
                         .build());
     }
 
-    /**
-     * Update an existing wishlist
-     */
+
     @Transactional
     public ResponseEntity<?> updateWishlist(Integer wishlistId, WishlistDTO wishlistDTO, Integer userId) {
         Wishlist wishlist = wishlistRepository.findByIdAndUserId(wishlistId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Danh sách yêu thích không tồn tại hoặc không thuộc về người dùng này"));
         
-        // Check if name is provided
         if (wishlistDTO.getName() == null || wishlistDTO.getName().trim().isEmpty()) {
             throw new BadRequestException("Tên danh sách yêu thích không được để trống");
         }
         
-        // Check for duplicate name
-        if (!wishlist.getName().equals(wishlistDTO.getName()) && 
+        if (!wishlist.getName().equals(wishlistDTO.getName()) &&
                 wishlistRepository.existsByUserIdAndNameAndIdNot(userId, wishlistDTO.getName(), wishlistId)) {
             throw new BadRequestException("Tên danh sách yêu thích đã tồn tại");
         }
         
-        // If trying to set isDefault true and another wishlist is already default
         if (Boolean.TRUE.equals(wishlistDTO.getIsDefault()) && !Boolean.TRUE.equals(wishlist.getIsDefault())) {
-            // Find current default wishlist and update it
             Optional<Wishlist> defaultWishlist = wishlistRepository.findByUserIdAndIsDefaultTrue(userId);
             defaultWishlist.ifPresent(w -> {
                 w.setIsDefault(false);
@@ -138,15 +125,12 @@ public class WishlistService {
                 .build());
     }
 
-    /**
-     * Delete a wishlist
-     */
+
     @Transactional
     public ResponseEntity<?> deleteWishlist(Integer wishlistId, Integer userId) {
         Wishlist wishlist = wishlistRepository.findByIdAndUserId(wishlistId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Danh sách yêu thích không tồn tại hoặc không thuộc về người dùng này"));
         
-        // Can't delete default wishlist
         if (Boolean.TRUE.equals(wishlist.getIsDefault())) {
             throw new BadRequestException("Không thể xóa danh sách yêu thích mặc định");
         }
@@ -159,9 +143,7 @@ public class WishlistService {
                 .build());
     }
 
-    /**
-     * Add an item to a wishlist
-     */
+
     @Transactional
     public ResponseEntity<?> addItemToWishlist(Integer wishlistId, WishlistItemDTO itemDTO, Integer userId) {
         Wishlist wishlist = wishlistRepository.findByIdAndUserId(wishlistId, userId)
@@ -170,19 +152,16 @@ public class WishlistService {
         MarketPlace product = marketPlaceRepository.findById(itemDTO.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại"));
         
-        // Check if variant exists if provided
         ProductVariant variant = null;
         if (itemDTO.getVariantId() != null) {
             variant = productVariantRepository.findById(itemDTO.getVariantId())
                     .orElseThrow(() -> new ResourceNotFoundException("Biến thể sản phẩm không tồn tại"));
             
-            // Check if variant belongs to product
             if (!variant.getProduct().getId().equals(product.getId())) {
                 throw new BadRequestException("Biến thể không thuộc về sản phẩm này");
             }
         }
         
-        // Check if item already exists in wishlist
         if (itemDTO.getVariantId() == null) {
             if (wishlistItemRepository.existsByWishlistIdAndProductId(wishlistId, itemDTO.getProductId())) {
                 throw new BadRequestException("Sản phẩm đã tồn tại trong danh sách yêu thích");
@@ -195,7 +174,6 @@ public class WishlistService {
             }
         }
         
-        // Create new wishlist item
         WishlistItem item = WishlistItem.builder()
                 .wishlist(wishlist)
                 .product(product)
@@ -204,7 +182,6 @@ public class WishlistService {
         
         item = wishlistItemRepository.save(item);
         
-        // Record user interaction
         recordProductInteraction(userId, product.getId(), InteractionType.WISHLIST);
         
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -215,9 +192,7 @@ public class WishlistService {
                         .build());
     }
 
-    /**
-     * Remove an item from wishlist
-     */
+
     @Transactional
     public ResponseEntity<?> removeItemFromWishlist(Integer wishlistId, Integer itemId, Integer userId) {
         Wishlist wishlist = wishlistRepository.findByIdAndUserId(wishlistId, userId)
@@ -226,7 +201,6 @@ public class WishlistService {
         WishlistItem item = wishlistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại trong danh sách yêu thích"));
         
-        // Check if item belongs to the wishlist
         if (!item.getWishlist().getId().equals(wishlistId)) {
             throw new BadRequestException("Sản phẩm không thuộc về danh sách yêu thích này");
         }
@@ -239,9 +213,7 @@ public class WishlistService {
                 .build());
     }
 
-    /**
-     * Create default wishlist for user if not exists
-     */
+
     @Transactional
     public Wishlist createDefaultWishlist(Integer userId) {
         System.out.println("DEBUG - Creating default wishlist for user ID: " + userId);
@@ -272,9 +244,6 @@ public class WishlistService {
         return wishlist;
     }
 
-    /**
-     * Move item between wishlists
-     */
     @Transactional
     public ResponseEntity<?> moveItemBetweenWishlists(Integer sourceWishlistId, Integer targetWishlistId, 
                                                     Integer itemId, Integer userId) {
@@ -286,16 +255,13 @@ public class WishlistService {
         Wishlist targetWishlist = wishlistRepository.findByIdAndUserId(targetWishlistId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Danh sách yêu thích đích không tồn tại"));
         
-        // Validate item
         WishlistItem item = wishlistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại trong danh sách yêu thích"));
         
-        // Check if item belongs to source wishlist
         if (!item.getWishlist().getId().equals(sourceWishlistId)) {
             throw new BadRequestException("Sản phẩm không thuộc về danh sách yêu thích nguồn");
         }
         
-        // Check if product already exists in target wishlist
         if (item.getVariant() == null) {
             if (wishlistItemRepository.existsByWishlistIdAndProductId(targetWishlistId, item.getProduct().getId())) {
                 throw new BadRequestException("Sản phẩm đã tồn tại trong danh sách yêu thích đích");
@@ -310,7 +276,6 @@ public class WishlistService {
             }
         }
         
-        // Move item to target wishlist
         item.setWishlist(targetWishlist);
         wishlistItemRepository.save(item);
         
@@ -321,9 +286,7 @@ public class WishlistService {
                 .build());
     }
 
-    /**
-     * Convert Wishlist entity to DTO
-     */
+
     private WishlistDTO convertToDTO(Wishlist wishlist) {
         Integer itemCount = wishlistItemRepository.countItemsByWishlistId(wishlist.getId());
         
@@ -339,9 +302,7 @@ public class WishlistService {
                 .build();
     }
 
-    /**
-     * Convert WishlistItem entity to DTO
-     */
+
     private WishlistItemDTO convertItemToDTO(WishlistItem item) {
         MarketPlace product = item.getProduct();
         ProductVariant variant = item.getVariant();
@@ -376,35 +337,28 @@ public class WishlistService {
                 .build();
     }
 
-    /**
-     * Convert a list of WishlistItems to DTOs
-     */
+
     private List<WishlistItemDTO> convertItemsToDTO(List<WishlistItem> items) {
         return items.stream()
                 .map(this::convertItemToDTO)
                 .collect(Collectors.toList());
     }
     
-    /**
-     * Record a user's interaction with a product
-     */
+
     private void recordProductInteraction(Integer userId, Integer productId, InteractionType type) {
-        // Look for existing interaction
         Optional<UserProductInteraction> existingInteraction = userProductInteractionRepository
                 .findByUserIdAndProductIdAndType(userId, productId, type);
         
         if (existingInteraction.isPresent()) {
-            // Update existing interaction
             UserProductInteraction interaction = existingInteraction.get();
             interaction.incrementInteractionCount();
             userProductInteractionRepository.save(interaction);
         } else {
-            // Create new interaction
             UserProductInteraction interaction = UserProductInteraction.builder()
                     .userId(userId)
                     .productId(productId)
                     .type(type)
-                    .interactionScore(3) // Score for WISHLIST interaction
+                    .interactionScore(3)
                     .interactionCount(1)
                     .build();
             userProductInteractionRepository.save(interaction);

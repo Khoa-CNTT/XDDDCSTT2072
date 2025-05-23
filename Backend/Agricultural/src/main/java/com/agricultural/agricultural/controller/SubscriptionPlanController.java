@@ -29,18 +29,13 @@ public class SubscriptionPlanController {
     private final IPaymentService paymentService;
     private final VNPayUtils vnPayUtils;
     
-    /**
-     * Lấy tất cả các gói đăng ký đang hoạt động
-     */
+
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<List<SubscriptionPlanDTO>>> getActivePlans() {
         List<SubscriptionPlanDTO> plans = subscriptionPlanService.getActivePlans();
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách gói đăng ký thành công", plans));
     }
-    
-    /**
-     * Lấy thông tin gói đăng ký miễn phí
-     */
+
     @GetMapping("/free")
     public ResponseEntity<ApiResponse<SubscriptionPlanDTO>> getFreePlan() {
         Optional<SubscriptionPlanDTO> planOptional = subscriptionPlanService.getFreePlan();
@@ -51,9 +46,7 @@ public class SubscriptionPlanController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông tin gói miễn phí thành công", planOptional.get()));
     }
     
-    /**
-     * Lấy thông tin chi tiết của một gói đăng ký
-     */
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<SubscriptionPlanDTO>> getPlanById(@PathVariable String id) {
         try {
@@ -72,16 +65,7 @@ public class SubscriptionPlanController {
         }
     }
     
-    /**
-     * API tạo URL thanh toán cho gói đăng ký
-     * POST /api/v1/subscription-plans/payment
-     * 
-     * Request Body:
-     * {
-     *   "orderId": 123,
-     *   "paymentMethod": "VNPAY"
-     * }
-     */
+
     @PostMapping("/payment")
     public ResponseEntity<ApiResponse<PaymentUrlResponse>> createSubscriptionPayment(
             @RequestBody PaymentRequest paymentRequest, 
@@ -138,12 +122,7 @@ public class SubscriptionPlanController {
         }
     }
     
-    // ========== API dành cho Admin ==========
-    
-    /**
-     * Lấy tất cả các gói đăng ký
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @GetMapping
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<List<SubscriptionPlanDTO>>> getAllPlans() {
@@ -151,10 +130,7 @@ public class SubscriptionPlanController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách gói đăng ký thành công", plans));
     }
     
-    /**
-     * Tạo gói đăng ký mới
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @PostMapping
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<SubscriptionPlanDTO>> createPlan(@Valid @RequestBody SubscriptionPlanDTO planDTO) {
@@ -163,10 +139,7 @@ public class SubscriptionPlanController {
                 .body(new ApiResponse<>(true, "Tạo gói đăng ký mới thành công", newPlan));
     }
     
-    /**
-     * Cập nhật thông tin gói đăng ký
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<SubscriptionPlanDTO>> updatePlan(
@@ -182,10 +155,7 @@ public class SubscriptionPlanController {
         }
     }
     
-    /**
-     * Thay đổi trạng thái kích hoạt của gói đăng ký
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<SubscriptionPlanDTO>> togglePlanStatus(
@@ -202,10 +172,7 @@ public class SubscriptionPlanController {
         }
     }
     
-    /**
-     * Xóa gói đăng ký
-     * Chỉ Admin mới có quyền truy cập
-     */
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('Admin')")
     public ResponseEntity<ApiResponse<?>> deletePlan(@PathVariable String id) {

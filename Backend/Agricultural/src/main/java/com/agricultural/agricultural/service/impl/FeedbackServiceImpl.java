@@ -44,9 +44,7 @@ public class FeedbackServiceImpl implements IFeedbackService {
     // Định nghĩa đường dẫn lưu ảnh feedback trên Cloudinary
     private static final String FEEDBACK_IMAGE_PATH = "feedback-images";
 
-    /**
-     * Lấy thông tin người dùng hiện tại từ SecurityContext
-     */
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -109,11 +107,9 @@ public class FeedbackServiceImpl implements IFeedbackService {
     public FeedbackDTO updateFeedback(Integer id, FeedbackDTO feedbackDTO, List<MultipartFile> images) {
         User currentUser = getCurrentUser();
         
-        // Kiểm tra sự tồn tại của đánh giá
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá với ID: " + id));
         
-        // Kiểm tra quyền chỉnh sửa
         if (!Objects.equals(feedback.getUserId(), currentUser.getId())) {
             throw new BadRequestException("Bạn không có quyền chỉnh sửa đánh giá này");
         }
@@ -127,9 +123,7 @@ public class FeedbackServiceImpl implements IFeedbackService {
         
         Feedback updatedFeedback = feedbackRepository.save(feedback);
         
-        // Xử lý ảnh đánh giá nếu có
         if (images != null && !images.isEmpty()) {
-            // Xóa ảnh cũ trên Cloudinary và trong database
             List<FeedbackImage> oldImages = feedbackImageRepository.findByFeedbackIdOrderByDisplayOrderAsc(id);
             for (FeedbackImage oldImage : oldImages) {
                 try {
@@ -153,9 +147,7 @@ public class FeedbackServiceImpl implements IFeedbackService {
         return mapToDTO(updatedFeedback);
     }
 
-    /**
-     * Trích xuất public ID từ Cloudinary URL
-     */
+
     private String extractPublicIdFromUrl(String cloudinaryUrl) {
         if (cloudinaryUrl == null || !cloudinaryUrl.contains("cloudinary.com")) {
             return null;
@@ -190,7 +182,6 @@ public class FeedbackServiceImpl implements IFeedbackService {
     public void deleteFeedback(Integer id) {
         User currentUser = getCurrentUser();
         
-        // Kiểm tra sự tồn tại của đánh giá
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá với ID: " + id));
         
@@ -294,12 +285,10 @@ public class FeedbackServiceImpl implements IFeedbackService {
     public FeedbackDTO addReplyToFeedback(Integer id, String reply) {
         User currentUser = getCurrentUser();
         
-        // Debug thông tin người dùng và quyền
         System.out.println("===== ADD REPLY DEBUG =====");
         System.out.println("USER: " + currentUser.getEmail());
         System.out.println("ROLE: " + currentUser.getRole().getRoleName());
         
-        // Kiểm tra quyền phản hồi (chỉ Admin hoặc chủ sản phẩm) - case insensitive
         if (!currentUser.getRole().getRoleName().equalsIgnoreCase("Admin")) {
             throw new BadRequestException("Bạn không có quyền phản hồi đánh giá này");
         }
@@ -324,7 +313,6 @@ public class FeedbackServiceImpl implements IFeedbackService {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá với ID: " + id));
         
-        // Không thể đánh dấu đánh giá của chính mình
         if (Objects.equals(feedback.getUserId(), currentUser.getId())) {
             throw new BadRequestException("Bạn không thể đánh dấu đánh giá của chính mình");
         }
@@ -345,13 +333,11 @@ public class FeedbackServiceImpl implements IFeedbackService {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá với ID: " + id));
         
-        // Không thể đánh dấu đánh giá của chính mình
         if (Objects.equals(feedback.getUserId(), currentUser.getId())) {
             throw new BadRequestException("Bạn không thể đánh dấu đánh giá của chính mình");
         }
         
-        // TODO: Có thể thêm bảng để lưu lịch sử người dùng đã đánh giá không hữu ích để tránh trùng lặp
-        
+
         feedback.setNotHelpfulCount(feedback.getNotHelpfulCount() + 1);
         Feedback updatedFeedback = feedbackRepository.save(feedback);
         
@@ -362,7 +348,6 @@ public class FeedbackServiceImpl implements IFeedbackService {
     public Page<FeedbackDTO> getPendingFeedbacks(Pageable pageable) {
         User currentUser = getCurrentUser();
         
-        // Debug thông tin người dùng và quyền
         System.out.println("===== GET PENDING FEEDBACKS DEBUG =====");
         System.out.println("USER: " + currentUser.getEmail());
         System.out.println("ROLE: " + currentUser.getRole().getRoleName());
@@ -384,7 +369,6 @@ public class FeedbackServiceImpl implements IFeedbackService {
 
     @Override
     public List<FeedbackDTO> getLowestRatedFeedbacks(Integer productId, Integer limit) {
-        // Tìm đánh giá có rating thấp (1-2 sao)
         Page<Feedback> feedbacks = feedbackRepository.findByProductIdAndStatus(productId, "APPROVED", Pageable.ofSize(limit));
         
         return feedbacks.stream()
@@ -422,10 +406,7 @@ public class FeedbackServiceImpl implements IFeedbackService {
     @Override
     public boolean userHasPurchasedProduct(Integer userId, Integer productId) {
         try {
-            // Kiểm tra trong bảng order_items và orders xem người dùng đã mua sản phẩm này chưa
-            // Trạng thái đơn hàng phải là COMPLETED hoặc DELIVERED
-            
-            // Sử dụng native query để kiểm tra 
+
             Integer count = feedbackRepository.countUserPurchasedProduct(userId, productId);
             
             // Debug log
@@ -440,23 +421,16 @@ public class FeedbackServiceImpl implements IFeedbackService {
             return false;
         }
     }
-    
-    /**
-     * Lấy danh sách sản phẩm đã mua nhưng chưa đánh giá
-     */
+
     @Override
     public List<Map<String, Object>> getUnreviewedProducts(Integer userId) {
         // TODO: Implement logic to get list of purchased but unreviewed products
-        // Cần tích hợp với OrderRepository và MarketPlaceRepository
-        
-        // Trả về danh sách giả để test
+
         List<Map<String, Object>> result = new ArrayList<>();
         try {
-            // Lấy 5 sản phẩm đầu tiên trong MarketPlace
             List<MarketPlace> products = marketPlaceRepository.findAll(Pageable.ofSize(5)).getContent();
             
             for (MarketPlace product : products) {
-                // Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
                 boolean hasReviewed = userHasReviewedProduct(userId, product.getId());
                 
                 // Nếu chưa đánh giá, thêm vào danh sách kết quả
@@ -477,9 +451,7 @@ public class FeedbackServiceImpl implements IFeedbackService {
         return result;
     }
 
-    /**
-     * Xử lý các hình ảnh đánh giá
-     */
+
     private void processImages(Feedback feedback, List<MultipartFile> images) {
         int displayOrder = 0;
         for (MultipartFile image : images) {
@@ -510,9 +482,7 @@ public class FeedbackServiceImpl implements IFeedbackService {
         }
     }
 
-    /**
-     * Ánh xạ từ entity sang DTO
-     */
+
     private FeedbackDTO mapToDTO(Feedback feedback) {
         FeedbackDTO dto = feedbackMapper.toDTO(feedback);
         
@@ -529,9 +499,7 @@ public class FeedbackServiceImpl implements IFeedbackService {
         return dto;
     }
 
-    /**
-     * Chuyển đổi JSON string thành FeedbackDTO, xử lý enum case sensitivity
-     */
+
     @Override
     public FeedbackDTO convertJsonToFeedbackDTO(String feedbackJson) throws Exception {
         try {

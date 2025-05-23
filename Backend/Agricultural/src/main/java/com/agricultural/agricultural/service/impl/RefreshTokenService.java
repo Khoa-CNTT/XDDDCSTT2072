@@ -32,7 +32,6 @@ public class RefreshTokenService implements IRefreshTokenService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy người dùng với ID: " + userId));
 
-        // Xóa refresh token cũ (nếu có)
         refreshTokenRepository.findByUser(user).ifPresent(refreshTokenRepository::delete);
 
         RefreshToken refreshToken = RefreshToken.builder()

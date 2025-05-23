@@ -17,9 +17,7 @@ import java.util.List;
 public class UserAddressController {
     private final IUserAddressService addressService;
 
-    /**
-     * Lấy tất cả địa chỉ của người dùng đăng nhập hiện tại
-     */
+
     @GetMapping
     public ResponseEntity<?> getCurrentUserAddresses() {
         try {
@@ -32,9 +30,7 @@ public class UserAddressController {
         }
     }
 
-    /**
-     * Lấy tất cả địa chỉ của người dùng cụ thể (chỉ admin)
-     */
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserAddresses(@PathVariable int userId) {
         try {
@@ -46,9 +42,7 @@ public class UserAddressController {
         }
     }
 
-    /**
-     * Lấy thông tin địa chỉ cụ thể theo ID
-     */
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getAddressById(@PathVariable int id) {
         try {
@@ -60,9 +54,7 @@ public class UserAddressController {
         }
     }
 
-    /**
-     * Thêm địa chỉ mới cho người dùng đăng nhập hiện tại
-     */
+
     @PostMapping
     public ResponseEntity<?> addAddress(@Valid @RequestBody UserAddressDTO addressDTO) {
         try {
@@ -78,9 +70,7 @@ public class UserAddressController {
         }
     }
 
-    /**
-     * Cập nhật địa chỉ
-     */
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAddress(@PathVariable int id, @Valid @RequestBody UserAddressDTO addressDTO) {
         try {
@@ -102,9 +92,7 @@ public class UserAddressController {
         }
     }
 
-    /**
-     * Xóa địa chỉ
-     */
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAddress(@PathVariable int id) {
         try {

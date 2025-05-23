@@ -30,15 +30,7 @@ public class ProductWeatherRecommendationController {
     private final IProductRecommendationService recommendationService;
     private final IMarketPlaceWeatherService marketPlaceWeatherService;
 
-    /**
-     * Lấy sản phẩm phù hợp với điều kiện thời tiết hiện tại ở một địa điểm
-     * 
-     * @param city Tên thành phố
-     * @param country Mã quốc gia
-     * @param page Số trang (bắt đầu từ 0)
-     * @param size Kích thước trang
-     * @return Danh sách sản phẩm phù hợp với thời tiết
-     */
+
     @GetMapping("/by-weather")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getProductsByWeather(
             @RequestParam String city,
@@ -48,7 +40,6 @@ public class ProductWeatherRecommendationController {
         
         log.info("Lấy sản phẩm theo thời tiết - thành phố: {}, quốc gia: {}", city, country);
         
-        // Lấy thông tin thời tiết hiện tại
         WeatherDataDTO weatherData = weatherService.getCurrentWeather(city, country);
         
         // Lấy sản phẩm theo mùa vụ
@@ -59,7 +50,7 @@ public class ProductWeatherRecommendationController {
         if (seasonalProducts == null || seasonalProducts.isEmpty()) {
             log.warn("Không tìm thấy sản phẩm theo mùa vụ, thử lấy sản phẩm theo thời tiết");
             
-            // Thử lấy sản phẩm theo thời tiết
+
             List<MarketPlaceDTO> weatherBasedProducts = marketPlaceWeatherService.getProductsForCurrentWeather(city, country);
             
             if (weatherBasedProducts != null && !weatherBasedProducts.isEmpty()) {
@@ -78,7 +69,6 @@ public class ProductWeatherRecommendationController {
             } else {
                 log.warn("Không tìm thấy sản phẩm nào theo thời tiết, lấy tất cả sản phẩm từ database");
                 
-                // Nếu không có sản phẩm theo thời tiết, lấy tất cả sản phẩm
                 Page<MarketPlaceDTO> allProducts = recommendationService.getTrendingProducts(pageable);
                 
                 if (allProducts == null || allProducts.isEmpty()) {
@@ -98,13 +88,7 @@ public class ProductWeatherRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách sản phẩm theo thời tiết thành công", result));
     }
 
-    /**
-     * Lấy sản phẩm phù hợp để mua trong thời tiết mưa
-     * 
-     * @param page Số trang (bắt đầu từ 0)
-     * @param size Kích thước trang
-     * @return Danh sách sản phẩm phù hợp khi trời mưa
-     */
+
     @GetMapping("/rainy-season")
     public ResponseEntity<ApiResponse<Page<MarketPlaceDTO>>> getRainySeasonProducts(
             @RequestParam(defaultValue = "0") int page,
@@ -119,13 +103,7 @@ public class ProductWeatherRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách sản phẩm mùa mưa thành công", products));
     }
 
-    /**
-     * Lấy sản phẩm phù hợp để mua trong thời tiết nắng/khô
-     * 
-     * @param page Số trang (bắt đầu từ 0)
-     * @param size Kích thước trang
-     * @return Danh sách sản phẩm phù hợp khi trời nắng
-     */
+
     @GetMapping("/dry-season")
     public ResponseEntity<ApiResponse<Page<MarketPlaceDTO>>> getDrySeasonProducts(
             @RequestParam(defaultValue = "0") int page,
@@ -140,13 +118,7 @@ public class ProductWeatherRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách sản phẩm mùa khô thành công", products));
     }
 
-    /**
-     * Lấy sản phẩm sắp vào mùa vụ để chuẩn bị trước
-     * 
-     * @param page Số trang (bắt đầu từ 0)
-     * @param size Kích thước trang
-     * @return Danh sách sản phẩm sắp vào mùa vụ
-     */
+
     @GetMapping("/upcoming-season")
     public ResponseEntity<ApiResponse<Page<MarketPlaceDTO>>> getUpcomingSeasonProducts(
             @RequestParam(defaultValue = "0") int page,
@@ -160,14 +132,7 @@ public class ProductWeatherRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách sản phẩm sắp vào mùa vụ thành công", products));
     }
 
-    /**
-     * Lấy thông tin tổng hợp để hiển thị trên trang chủ
-     * Kết hợp thông tin thời tiết và các sản phẩm gợi ý
-     * 
-     * @param city Tên thành phố
-     * @param country Mã quốc gia
-     * @return Thông tin tổng hợp
-     */
+
     @GetMapping("/home-dashboard")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getHomeDashboard(
             @RequestParam String city,
@@ -202,12 +167,7 @@ public class ProductWeatherRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông tin dashboard thành công", result));
     }
     
-    /**
-     * Tạo thông điệp marketing dựa vào điều kiện thời tiết
-     * 
-     * @param weatherData Dữ liệu thời tiết
-     * @return Thông điệp marketing
-     */
+
     private String generateMarketingMessage(WeatherDataDTO weatherData) {
         String description = weatherData.getWeatherDescription().toLowerCase();
         double temperature = weatherData.getTemperature();
@@ -226,13 +186,7 @@ public class ProductWeatherRecommendationController {
         }
     }
 
-    /**
-     * Lấy danh sách chi tiết các gợi ý sản phẩm dựa trên thời tiết và mùa vụ
-     * 
-     * @param city Tên thành phố
-     * @param country Mã quốc gia
-     * @return Danh sách các gợi ý chi tiết
-     */
+
     @GetMapping("/detailed-recommendations")
     public ResponseEntity<ApiResponse<List<SeasonalRecommendationDTO>>> getDetailedRecommendations(
             @RequestParam String city,
@@ -245,13 +199,7 @@ public class ProductWeatherRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy danh sách gợi ý chi tiết thành công", recommendations));
     }
     
-    /**
-     * Lấy danh sách các gợi ý khuyến mãi theo mùa vụ
-     * 
-     * @param city Tên thành phố
-     * @param country Mã quốc gia
-     * @return Thông tin khuyến mãi theo mùa vụ
-     */
+
     @GetMapping("/seasonal-promotions")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getSeasonalPromotions(
             @RequestParam String city,
@@ -264,16 +212,7 @@ public class ProductWeatherRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông tin khuyến mãi theo mùa vụ thành công", promotions));
     }
     
-    /**
-     * Lấy sản phẩm phù hợp với cây trồng cụ thể dựa trên thời tiết hiện tại và dự báo
-     * 
-     * @param city Tên thành phố
-     * @param country Mã quốc gia
-     * @param cropType Loại cây trồng (lúa, rau, cây ăn quả, ...)
-     * @param page Số trang (bắt đầu từ 0)
-     * @param size Kích thước trang
-     * @return Danh sách sản phẩm phù hợp với cây trồng cụ thể
-     */
+
     @GetMapping("/by-crop")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getProductsByCropAndWeather(
             @RequestParam String city,
@@ -345,14 +284,7 @@ public class ProductWeatherRecommendationController {
         }
     }
     
-    /**
-     * Lấy gợi ý sản phẩm phù hợp để chuẩn bị trước thời tiết khắc nghiệt sắp tới
-     * 
-     * @param city Tên thành phố
-     * @param country Mã quốc gia
-     * @param forecastDays Số ngày dự báo (mặc định 7 ngày)
-     * @return Danh sách sản phẩm chuẩn bị trước thời tiết khắc nghiệt
-     */
+
     @GetMapping("/extreme-weather-preparation")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getExtremeWeatherPreparation(
             @RequestParam String city,
@@ -380,16 +312,7 @@ public class ProductWeatherRecommendationController {
         return ResponseEntity.ok(new ApiResponse<>(true, 
                 "Đã cập nhật dữ liệu", result));
     }
-    
-    /**
-     * Lấy báo cáo chi tiết về mối quan hệ giữa thời tiết và hiệu suất của các sản phẩm
-     * Cung cấp dữ liệu phân tích cho nông dân để tối ưu việc sử dụng sản phẩm
-     * 
-     * @param productId ID sản phẩm cần phân tích (không bắt buộc)
-     * @param region Khu vực phân tích (không bắt buộc)
-     * @param period Khoảng thời gian phân tích (3, 6, 12 tháng)
-     * @return Báo cáo chi tiết mối quan hệ thời tiết-hiệu suất sản phẩm
-     */
+
     @GetMapping("/weather-product-performance")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getWeatherProductPerformance(
             @RequestParam(required = false) Integer productId,

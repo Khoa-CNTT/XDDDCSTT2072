@@ -40,12 +40,7 @@ public class MomoPaymentService {
     private final IPaymentRepository paymentRepository;
     private final QRCodeUtils qrCodeUtils;
 
-    /**
-     * Tạo QR code thanh toán Momo
-     *
-     * @param paymentRequest Thông tin thanh toán
-     * @return Thông tin QR code
-     */
+
     public PaymentQRDTO createMomoQRCode(PaymentRequest paymentRequest, Integer currentUserId) {
         log.info("Tạo mã QR Momo cho đơn hàng: {}", paymentRequest.getOrderId());
 
@@ -71,11 +66,9 @@ public class MomoPaymentService {
                 throw new BadRequestException("Số tiền phải lớn hơn 0");
             }
 
-            // Tìm đơn hàng
             Order order = orderRepository.findById(Math.toIntExact(paymentRequest.getOrderId()))
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
 
-            // Tạo payment record
             String transactionId = UUID.randomUUID().toString();
             Payment payment = new Payment();
             payment.setOrderId(order.getId());
@@ -88,7 +81,6 @@ public class MomoPaymentService {
             payment.setUserId(currentUserId);
             payment = paymentRepository.save(payment);
 
-            // Tạo request gửi đến Momo
             String requestId = UUID.randomUUID().toString();
             String orderId = "MM" + System.currentTimeMillis();
             String orderInfo = paymentRequest.getDescription() != null 
@@ -98,11 +90,9 @@ public class MomoPaymentService {
             String extraData = "";
             String requestType = "captureWallet";
 
-            // Cập nhật payment note
             payment.setPaymentNote("MOMO_REQUEST_ID=" + requestId + "|ORDER_ID=" + orderId);
             paymentRepository.save(payment);
 
-            // Tạo signature
             String rawSignature = "accessKey=" + momoConfig.getAccessKey() +
                     "&amount=" + amount +
                     "&extraData=" + extraData +
@@ -126,7 +116,6 @@ public class MomoPaymentService {
                 throw new BadRequestException("Không thể tạo chữ ký: " + e.getMessage());
             }
 
-            // Tạo request body
             MomoQRRequest momoRequest = MomoQRRequest.builder()
                     .partnerCode(momoConfig.getPartnerCode())
                     .partnerName(momoConfig.getPartnerName())
@@ -143,7 +132,6 @@ public class MomoPaymentService {
                     .signature(signature)
                     .build();
 
-            // Gọi API Momo
             MomoQRResponse momoResponse = callMomoAPI(momoRequest);
 
             if (!"0".equals(momoResponse.getResultCode())) {
@@ -151,12 +139,10 @@ public class MomoPaymentService {
                 throw new BadRequestException("Không thể tạo mã QR thanh toán: " + momoResponse.getMessage());
             }
 
-            // Tạo mã QR từ qrCodeUrl nếu có, nếu không thì tạo từ payUrl
-            String qrSource = momoResponse.getQrCodeUrl() != null ? 
+            String qrSource = momoResponse.getQrCodeUrl() != null ?
                     momoResponse.getQrCodeUrl() : momoResponse.getPayUrl();
             String qrCodeBase64 = qrCodeUtils.generateQRCode(qrSource, 300, 300, true);
 
-            // Tạo response
             PaymentQRDTO responseDTO = PaymentQRDTO.builder()
                     .qrCodeBase64(qrCodeBase64)
                     .paymentUrl(momoResponse.getPayUrl())
@@ -175,18 +161,12 @@ public class MomoPaymentService {
         }
     }
 
-    /**
-     * Gọi API Momo để tạo QR code
-     *
-     * @param request Thông tin request
-     * @return Thông tin response từ Momo
-     */
+
     private MomoQRResponse callMomoAPI(MomoQRRequest request) {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost httpPost = new HttpPost(momoConfig.getApiEndpoint());
             httpPost.setHeader("Content-Type", "application/json; charset=UTF-8");
 
-            // Convert request to JSON
             String requestBody = objectMapper.writeValueAsString(request);
             log.debug("Request gửi đến Momo: {}", requestBody);
             

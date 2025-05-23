@@ -167,7 +167,6 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
             }
         }
 
-        // Xóa khỏi database
         forumPostImageRepository.delete(image);
     }
 
@@ -176,14 +175,12 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
     public void deleteAllImagesOfPost(Integer postId) {
         List<ForumPostImage> images = forumPostImageRepository.findByPostIdOrderByDisplayOrderAsc(postId);
 
-        // Xóa từng ảnh khỏi Cloudinary trước
         for (ForumPostImage image : images) {
             if (image.getPublicId() != null && !image.getPublicId().isEmpty()) {
                 try {
                     delete(image.getPublicId());
                 } catch (IOException e) {
                     log.error("Lỗi khi xóa ảnh khỏi Cloudinary", e);
-                    // Vẫn tiếp tục xóa các ảnh khác
                 }
             }
         }

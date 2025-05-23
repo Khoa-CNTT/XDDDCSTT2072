@@ -31,6 +31,9 @@ public interface IOrderService {
     // Phương thức lấy đơn hàng gần đây (cho Admin)
     Page<OrderDTO> getRecentOrders(Pageable pageable);
     
+    // Phương thức lấy đơn hàng dựa trên sản phẩm của người bán
+    List<OrderDTO> getOrdersBySellerProducts();
+    
     // Phương thức xử lý thanh toán
     PaymentResponse processPayment(Integer orderId, PaymentRequest paymentRequest);
 } 

@@ -31,7 +31,6 @@ public class HashtagServiceImpl implements IHashtagService {
 
     @Override
     public HashtagDTO createHashtag(String name) {
-        // Kiểm tra nếu hashtag đã tồn tại
         if (hashtagRepository.findByName(name).isPresent()) {
             log.info("Hashtag với tên {} đã tồn tại", name);
             return hashtagRepository.findByName(name)
@@ -39,13 +38,12 @@ public class HashtagServiceImpl implements IHashtagService {
                     .orElse(null);
         }
 
-        // Xử lý tên hashtag (loại bỏ khoảng trắng, chuyển thành lowercase)
         String processedName = name.trim().toLowerCase().replaceAll("\\s+", "");
         if (!processedName.startsWith("#")) {
             processedName = "#" + processedName;
         }
 
-        // Tạo và lưu hashtag mới
+        // Tạo và lưu hshtag mới
         Hashtag hashtag = Hashtag.builder()
                 .name(processedName)
                 .postCount(0)

@@ -119,6 +119,13 @@ public class OrderController {
         return ResponseEntity.ok(ResponseDTO.success(history));
     }
 
+    @GetMapping("/products/seller")
+    @PreAuthorize("hasAnyAuthority('User', 'Admin')")
+    public ResponseEntity<ResponseDTO<List<OrderDTO>>> getOrdersBySellerProducts() {
+        List<OrderDTO> orders = orderService.getOrdersBySellerProducts();
+        return ResponseEntity.ok(ResponseDTO.success(orders));
+    }
+
     @GetMapping("/recent")
     @PreAuthorize("hasAnyAuthority('Admin')")
     public ResponseEntity<ResponseDTO<Page<OrderDTO>>> getRecentOrders(Pageable pageable) {

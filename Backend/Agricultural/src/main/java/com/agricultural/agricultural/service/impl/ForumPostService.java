@@ -86,7 +86,6 @@ public class ForumPostService implements IForumPostService {
             throw new BadRequestException("Nội dung bài viết không được để trống");
         }
         
-        // Lấy user từ SecurityContextHolder
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> userOptional = userRepository.findByUserName(username);
 
@@ -96,19 +95,14 @@ public class ForumPostService implements IForumPostService {
 
         User user = userOptional.get();
 
-        // Chuyển ForumPostDTO sang ForumPost Entity (không ánh xạ user)
         ForumPost forumPost = forumPostMapper.toEntity(forumPostDto);
 
-        // Gán User vào ForumPost
         forumPost.setUser(user);
 
-        // Cập nhật thời gian tạo bài viết
         forumPost.setCreatedAt(new Timestamp(System.currentTimeMillis()));
 
-        // Lưu vào database
         forumPost = forumPostRepository.save(forumPost);
         
-        // Xử lý thêm images nếu có
         ForumPostDTO createdPostDTO = forumPostMapper.toDTO(forumPost);
         
         // Nếu có ảnh trong DTO
@@ -127,27 +121,22 @@ public class ForumPostService implements IForumPostService {
                 // Lưu lại bài viết với các ảnh
                 forumPost = forumPostRepository.save(forumPost);
                 
-                // Cập nhật DTO với danh sách ảnh mới
                 createdPostDTO = forumPostMapper.toDTO(forumPost);
             } catch (Exception e) {
                 log.error("Lỗi khi lưu ảnh bài viết", e);
-                // Vẫn trả về bài viết đã tạo, nhưng không có ảnh
             }
         }
 
-        // Trả về DTO
         return createdPostDTO;
     }
     
     @Override
     @Transactional
     public ForumPostDTO createPostWithImages(ForumPostRequest request, List<MultipartFile> images) {
-        // Tạo ForumPostDTO từ request
         ForumPostDTO forumPostDto = new ForumPostDTO();
         forumPostDto.setTitle(request.getTitle());
         forumPostDto.setContent(request.getContent());
         
-        // Set các thuộc tính khác từ request
         forumPostDto.setPrivacyLevel(request.getPrivacyLevel() != null ? request.getPrivacyLevel() : PrivacyLevel.PUBLIC);
         forumPostDto.setLocation(request.getLocation());
         forumPostDto.setFeeling(request.getFeeling());
@@ -155,36 +144,29 @@ public class ForumPostService implements IForumPostService {
         forumPostDto.setAttachmentType(request.getAttachmentType());
         forumPostDto.setAttachmentUrl(request.getAttachmentUrl());
         
-        // Tạo bài viết cơ bản trước
         ForumPostDTO createdPost = createPost(forumPostDto);
         
-        // Nếu có ảnh, lưu lại các ảnh
         if (images != null && !images.isEmpty()) {
             List<ForumPostImageDTO> imageList = new ArrayList<>();
             try {
                 for (MultipartFile imageFile : images) {
-                    // Sử dụng cloudinaryService để upload ảnh
                     String imageUrl = cloudinaryService.uploadImage(imageFile, "forum-posts/" + createdPost.getId());
                     
-                    // Tạo đối tượng DTO
                     ForumPostImageDTO imageDTO = ForumPostImageDTO.builder()
                             .postId(createdPost.getId())
                             .imageUrl(imageUrl)
                             .build();
                     
-                    // Lưu thông tin ảnh vào database
                     ForumPostImageDTO savedImage = forumPostImageService.addImageToPost(createdPost.getId(), imageDTO);
                     imageList.add(savedImage);
                 }
                 
-                // Cập nhật DTO với danh sách ảnh
                 createdPost.setImages(imageList);
             } catch (IOException e) {
                 log.error("Lỗi khi lưu ảnh cho bài viết", e);
             }
         }
         
-        // Xử lý hashtags nếu có
         if (request.getHashtags() != null && !request.getHashtags().isEmpty()) {
             for (String hashtagName : request.getHashtags()) {
                 Optional<Hashtag> existingHashtag = hashtagRepository.findByName(hashtagName);
@@ -207,7 +189,6 @@ public class ForumPostService implements IForumPostService {
                 forumPostRepository.save(post);
             }
             
-            // Cập nhật lại DTO để trả về
             ForumPost updatedPost = forumPostRepository.findById(createdPost.getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết"));
             
@@ -245,7 +226,6 @@ public class ForumPostService implements IForumPostService {
         forumPost.setTitle(forumPostDto.getTitle());
         forumPost.setContent(forumPostDto.getContent());
         
-        // Cập nhật các trường khác nếu có
         if (forumPostDto.getPrivacyLevel() != null) {
             forumPost.setPrivacyLevel(forumPostDto.getPrivacyLevel());
         }
@@ -265,30 +245,23 @@ public class ForumPostService implements IForumPostService {
             forumPost.setAttachmentUrl(forumPostDto.getAttachmentUrl());
         }
         
-        // Đánh dấu bài viết đã chỉnh sửa
         forumPost.setIsEdited(true);
         forumPost.setEditedAt(new Timestamp(System.currentTimeMillis()));
 
-        // Xử lý cập nhật ảnh nếu có
         if (forumPostDto.getImages() != null) {
             try {
-                // Lấy tất cả ảnh cũ của bài viết
                 List<ForumPostImageDTO> oldImages = forumPostImageService.getALlImagesByPost(id);
                 
-                // Xóa các ảnh cũ khỏi Cloudinary và database
                 for (ForumPostImageDTO oldImage : oldImages) {
                     try {
-                        // Trích xuất publicId từ URL
                         String publicId = cloudinaryService.extractPublicIdFromUrl(oldImage.getImageUrl());
                         if (publicId != null) {
-                            // Xóa ảnh từ Cloudinary
                             cloudinaryService.deleteImage(publicId);
                         }
                     } catch (Exception e) {
                         log.error("Lỗi khi xóa ảnh cũ từ Cloudinary", e);
                     }
                     
-                    // Xóa ảnh từ database
                     forumPostImageService.deleteImage(oldImage.getId());
                 }
                 
@@ -300,7 +273,6 @@ public class ForumPostService implements IForumPostService {
                 }
             } catch (Exception e) {
                 log.error("Lỗi khi cập nhật ảnh bài viết", e);
-                // Vẫn tiếp tục cập nhật bài viết, không cập nhật ảnh
             }
         }
 
@@ -321,10 +293,8 @@ public class ForumPostService implements IForumPostService {
             List<ForumPostImageDTO> images = forumPostImageService.getALlImagesByPost(id);
             for (ForumPostImageDTO image : images) {
                 try {
-                    // Trích xuất publicId từ URL
                     String publicId = cloudinaryService.extractPublicIdFromUrl(image.getImageUrl());
                     if (publicId != null) {
-                        // Xóa ảnh từ Cloudinary
                         cloudinaryService.deleteImage(publicId);
                     }
                 } catch (Exception e) {
@@ -336,7 +306,6 @@ public class ForumPostService implements IForumPostService {
             }
         } catch (Exception e) {
             log.error("Lỗi khi xóa ảnh của bài viết", e);
-            // Vẫn tiếp tục xóa bài viết
         }
         
         forumPostRepository.deleteById(id);
@@ -377,7 +346,6 @@ public class ForumPostService implements IForumPostService {
     
     @Override
     public Page<ForumPostDTO> getPostsByHashtag(String hashtag, Pageable pageable) {
-        // Đảm bảo hashtag theo định dạng chuẩn
         if (!hashtag.startsWith("#")) {
             hashtag = "#" + hashtag;
         }
@@ -393,11 +361,9 @@ public class ForumPostService implements IForumPostService {
         ForumPost post = forumPostRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài viết với ID: " + postId));
         
-        // Kiểm tra xem người dùng này đã xem bài viết chưa
         boolean hasViewed = postViewRepository.existsByPostIdAndUserId(postId, userId);
         
         if (!hasViewed) {
-            // Nếu chưa xem, lưu thông tin xem và tăng lượt xem
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId));
             
@@ -502,13 +468,10 @@ public class ForumPostService implements IForumPostService {
     
     @Override
     public Page<ForumPostDTO> getPostsFromConnections(Integer userId, Pageable pageable) {
-        // Lấy danh sách ID người dùng đã kết nối
         List<Integer> connectedUserIds = userConnectionRepository.findConnectedUserIds(userId);
         
-        // Thêm ID của người dùng hiện tại để hiển thị cả bài viết của họ
         connectedUserIds.add(userId);
         
-        // Lấy bài viết từ những người đã kết nối và bài viết công khai
         Page<ForumPost> posts = forumPostRepository.findPostsVisibleToUser(userId, connectedUserIds, pageable);
         
         return posts.map(forumPostMapper::toDTO);

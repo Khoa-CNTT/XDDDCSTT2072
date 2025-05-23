@@ -60,22 +60,18 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
 
         User user = null;
         try {
-            // 1. Thử tìm theo email
             Optional<User> userByEmail = userRepository.findByEmail(username);
             if (userByEmail.isPresent()) {
                 user = userByEmail.get();
                 log.info("Tìm thấy user theo email: {}", user.getId());
             } else {
-                // 2. Thử tìm theo username
                 Optional<User> userByUsername = userRepository.findByUserName(username);
                 if (userByUsername.isPresent()) {
                     user = userByUsername.get();
                     log.info("Tìm thấy user theo username: {}", user.getId());
                 } else {
-                    // 3. Nếu vẫn không tìm thấy, thử lấy danh sách tất cả người dùng
                     List<User> allUsers = userRepository.findAll();
                     
-                    // Thử tìm theo email trước
                     user = allUsers.stream()
                             .filter(u -> u.getEmail() != null && u.getEmail().equals(username))
                             .findFirst()
@@ -84,7 +80,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                     if (user != null) {
                         log.info("Tìm thấy user qua lọc danh sách theo email: {}", user.getId());
                     } else {
-                        // Thử tìm theo username nếu tìm theo email không thành công
                         user = allUsers.stream()
                                 .filter(u -> u.getUsername() != null && u.getUsername().equals(username))
                                 .findFirst()
@@ -93,14 +88,12 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                         if (user != null) {
                             log.info("Tìm thấy user qua lọc danh sách theo username: {}", user.getId());
                         } else {
-                            // 4. Nếu vẫn không tìm thấy và có ít nhất 1 người dùng, sử dụng người dùng đầu tiên
-                            // cho mục đích thử nghiệm
+
                             if (!allUsers.isEmpty()) {
                                 user = allUsers.get(0);
                                 log.warn("Không tìm thấy user với email/username '{}', sử dụng user đầu tiên ID={} cho mục đích debug", 
                                         username, user.getId());
                             } else {
-                                // Nếu không có người dùng nào, throw exception
                                 throw new ResourceNotFoundException("Không tìm thấy người dùng với email/username: " + username);
                             }
                         }
@@ -112,7 +105,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             throw new BadRequestException("Lỗi khi tìm kiếm người dùng: " + e.getMessage());
         }
 
-        // Validate thông tin khuyến mãi
         validateSaleInfo(productDTO);
 
         MarketPlace product = marketPlaceMapper.toEntity(productDTO);
@@ -120,20 +112,17 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             throw new BadRequestException("Chuyển đổi DTO sang entity thất bại");
         }
 
-        // Thêm giá trị mặc định cho image_url nếu nó null
         if (product.getImageUrl() == null) {
             product.setImageUrl("https://res.cloudinary.com/dey5xwdud/image/upload/v1618481241/default-product_ehoouh.jpg");
         }
 
         product.setUser(user);
-        // Phan Duc them
         if (productDTO.getCategoryId() != null) {
             ProductCategory category = productCategoryRepository.findById(productDTO.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy category với id = " + productDTO.getCategoryId()));
             product.setCategory(category);
         }
 
-        //
         MarketPlace savedProduct = marketPlaceRepository.save(product);
 
         return marketPlaceMapper.toDTO(savedProduct);
@@ -145,19 +134,15 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                                        Integer quantity, BigDecimal price, BigDecimal salePrice, LocalDateTime saleStartDate, 
                                        LocalDateTime saleEndDate, Integer categoryId, String sku, Double weight, 
                                        String dimensions, MultipartFile imageFile) throws IOException {
-        // Tìm sản phẩm để cập nhật
         MarketPlace product = marketPlaceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm ID: " + id));
         
-        // Lưu URL ảnh cũ để xóa sau nếu có upload ảnh mới
         String oldImageUrl = product.getImageUrl();
         
-        // Log thông tin cập nhật
         log.info("Đang cập nhật sản phẩm ID: {}, tên: {}", id, productName);
         log.info("Thông tin cũ: imageUrl={}, price={}, salePrice={}", 
                 oldImageUrl, product.getPrice(), product.getSalePrice());
         
-        // Cập nhật thông tin cơ bản
         if (productName != null) {
             product.setProductName(productName);
         }
@@ -178,7 +163,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             product.setPrice(price);
         }
         
-        // Cập nhật thông tin ưu đãi
         if (salePrice != null && salePrice.compareTo(BigDecimal.ZERO) > 0 && saleStartDate != null && saleEndDate != null) {
             log.info("Cập nhật thông tin giảm giá: giá={}, từ={}, đến={}", 
                     salePrice, saleStartDate, saleEndDate);
@@ -186,7 +170,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             product.setSaleStartDate(saleStartDate);
             product.setSaleEndDate(saleEndDate);
         } else {
-            // Xóa thông tin giảm giá
             log.info("Xóa thông tin giảm giá cho sản phẩm ID: {}", id);
             product.setSalePrice(null);
             product.setSaleStartDate(null);
@@ -200,7 +183,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             product.setCategory(category);
         }
         
-        // Cập nhật các thông tin khác
         if (sku != null) {
             product.setSku(sku);
         }
@@ -213,7 +195,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             product.setDimensions(dimensions);
         }
         
-        // Xử lý file ảnh nếu có
         if (imageFile != null && !imageFile.isEmpty()) {
             log.info("Đang xử lý file ảnh mới: name={}, size={}, type={}", 
                     imageFile.getOriginalFilename(), imageFile.getSize(), imageFile.getContentType());
@@ -284,9 +265,7 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         return marketPlaceMapper.toDTO(updatedProduct);
     }
 
-    /**
-     * Kiểm tra tính hợp lệ của thông tin khuyến mãi
-     */
+
     private void validateSaleInfo(MarketPlaceDTO productDTO) {
         // Nếu không có giá khuyến mãi, không cần validate thêm
         if (productDTO.getSalePrice() == null || "null".equals(String.valueOf(productDTO.getSalePrice()))) {
@@ -337,7 +316,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         // Lấy tất cả sản phẩm từ repository
         Page<MarketPlace> products = marketPlaceRepository.findAll(pageable);
         
-        // Cập nhật trạng thái tồn kho cho mỗi sản phẩm
         List<MarketPlace> updatedProducts = new ArrayList<>();
         for (MarketPlace product : products.getContent()) {
             updateStockStatus(product);
@@ -460,13 +438,9 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             throw new BadRequestException("Giá tối thiểu phải nhỏ hơn hoặc bằng giá tối đa");
         }
         
-        // Xử lý sắp xếp nếu không dùng pageable mặc định
         if (sortBy != null && !sortBy.isEmpty() && !sortBy.equals("newest")) {
             System.out.println("Đang áp dụng sắp xếp: " + sortBy);
-            // Các lựa chọn sắp xếp phía client hiện tại:
-            // newest, price-low, price-high, name-asc, name-desc, rating
-            
-            // Tạo sort mặc định theo updatedAt để luôn có sẵn sắp xếp phụ
+
             Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
             
             switch (sortBy) {
@@ -490,7 +464,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                     break;
             }
             
-            // Tạo pageable mới với sắp xếp đã chọn
             pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
         }
         
@@ -723,7 +696,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
     }
 
     private void updateStockStatus(MarketPlace product) {
-        // Cập nhật trạng thái tồn kho dựa trên số lượng
         if (product.getQuantity() <= 0) {
             product.setStockStatus(StockStatus.OUT_OF_STOCK);
             System.out.println("Cập nhật trạng thái: OUT_OF_STOCK cho sản phẩm " + product.getId() + " vì quantity = " + product.getQuantity());
@@ -766,7 +738,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                 System.out.println("Stockstatus không thay đổi: " + oldStatus);
             }
             
-            // Kiểm tra và log trạng thái giảm giá
             boolean isOnSale = product.isOnSale();
             System.out.println("Trạng thái giảm giá: " + (isOnSale ? "ĐANG GIẢM GIÁ" : "KHÔNG GIẢM GIÁ"));
             System.out.println("Chi tiết: salePrice=" + product.getSalePrice() + 
@@ -788,20 +759,16 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
     public List<MarketPlaceDTO> refreshAllProducts() {
         System.out.println("===== BẮT ĐẦU LÀM MỚI DỮ LIỆU CỦA TẤT CẢ SẢN PHẨM =====");
         
-        // Lấy tất cả sản phẩm từ repository
         List<MarketPlace> allProducts = marketPlaceRepository.findAll();
         System.out.println("Tổng số sản phẩm cần làm mới: " + allProducts.size());
         
         List<MarketPlace> updatedProducts = new ArrayList<>();
         
-        // Duyệt qua từng sản phẩm để làm mới
         for (MarketPlace product : allProducts) {
             boolean needsUpdate = false;
             
-            // 1. Kiểm tra và cập nhật trạng thái tồn kho
             StockStatus originalStatus = product.getStockStatus();
             
-            // Tính toán lại trạng thái tồn kho dựa trên số lượng
             StockStatus newStatus;
             if (product.getQuantity() <= 0) {
                 newStatus = StockStatus.OUT_OF_STOCK;
@@ -811,7 +778,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                 newStatus = StockStatus.IN_STOCK;
             }
             
-            // Nếu trạng thái đã thay đổi, cập nhật lại
             if (originalStatus != newStatus) {
                 System.out.println("Sản phẩm ID " + product.getId() + " - " + product.getProductName() + 
                         ": Cập nhật trạng thái từ " + originalStatus + " thành " + newStatus);
@@ -819,16 +785,13 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                 needsUpdate = true;
             }
             
-            // 2. Kiểm tra và làm mới thông tin giảm giá
             boolean originalOnSale = product.isOnSale();  // Gọi phương thức để kiểm tra
             
-            // Nếu đã có bất kỳ thay đổi nào, thêm vào danh sách cần cập nhật
             if (needsUpdate) {
                 updatedProducts.add(product);
             }
         }
         
-        // Lưu tất cả các sản phẩm đã cập nhật vào cơ sở dữ liệu
         if (!updatedProducts.isEmpty()) {
             System.out.println("Lưu " + updatedProducts.size() + " sản phẩm đã cập nhật vào database");
             marketPlaceRepository.saveAll(updatedProducts);
@@ -836,7 +799,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             System.out.println("Không có sản phẩm nào cần cập nhật");
         }
         
-        // Chuyển đổi tất cả sản phẩm thành DTO và trả về
         List<MarketPlaceDTO> productDTOs = allProducts.stream()
                 .map(marketPlaceMapper::toDTO)
                 .collect(Collectors.toList());
@@ -845,7 +807,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
         return productDTOs;
     }
 
-    // Thêm phương thức xử lý dữ liệu ngày tháng trước khi thực hiện thao tác cập nhật
     private void processDateTimeFields(MarketPlaceDTO productDTO) {
         // Xử lý salePrice
         if (productDTO.getSalePrice() != null) {
@@ -856,7 +817,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             }
         }
         
-        // Xử lý saleStartDate
         if (productDTO.getSaleStartDate() != null) {
             String dateStr = productDTO.getSaleStartDate().toString();
             if (dateStr.contains("null") || dateStr.contains("undefined")) {
@@ -905,16 +865,13 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                 try {
                     System.out.println("Service: Xử lý saleEndDate: " + dateStr);
                     
-                    // Thử chuyển đổi từ định dạng yyyy-MM-dd'T'HH:mm
                     if (dateStr.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}.*")) {
                         try {
-                            // Nếu chỉ có yyyy-MM-dd'T'HH:mm
                             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
                             LocalDateTime parsedDate = LocalDateTime.parse(dateStr.substring(0, 16), formatter);
                             productDTO.setSaleEndDate(parsedDate);
                             System.out.println("Service: Đã chuyển đổi saleEndDate thành công từ yyyy-MM-dd'T'HH:mm: " + parsedDate);
                         } catch (Exception e) {
-                            // Nếu có vùng thời gian, thử ISO
                             try {
                                 java.time.Instant instant = java.time.Instant.parse(dateStr);
                                 LocalDateTime convertedDate = LocalDateTime.ofInstant(
@@ -934,18 +891,15 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
             }
         }
         
-        // Đảm bảo trường images là null để tránh lỗi conversion
         productDTO.setImages(null);
     }
 
     @Override
     public MarketPlaceDTO updateProductWithImage(Integer id, MarketPlaceDTO productDTO) throws IOException {
         try {
-            // Tìm sản phẩm cần cập nhật
             MarketPlace product = marketPlaceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + id));
 
-            // Xử lý dữ liệu đặc biệt trước khi tiến hành cập nhật
             processDateTimeFields(productDTO);
             
             // Log thông tin trước khi cập nhật
@@ -1023,7 +977,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                     product.setSaleStartDate(productDTO.getSaleStartDate());
                     log.info("Đã cập nhật saleStartDate: {}", product.getSaleStartDate());
                 } else if (product.getSaleStartDate() == null) {
-                    // Nếu không có ngày bắt đầu thì đặt mặc định là ngày hiện tại
                     LocalDateTime now = LocalDateTime.now();
                     product.setSaleStartDate(now);
                     log.info("Đã đặt saleStartDate mặc định: {}", now);
@@ -1039,7 +992,6 @@ public class MarketPlaceServiceImpl implements IMarketPlaceService {
                     log.info("Đã đặt saleEndDate mặc định: {}", endDate);
                 }
             } else {
-                // Nếu tắt chế độ giảm giá, xóa tất cả thông tin liên quan
                 product.setSalePrice(null);
                 product.setSaleStartDate(null);
                 product.setSaleEndDate(null);
