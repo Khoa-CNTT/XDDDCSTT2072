@@ -34,7 +34,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
         ChatSession session = chatSessionRepository.findBySessionId(sessionId)
                 .orElseGet(() -> createSession(userId, source));
 
-        // Tạo tin nhắn người dùng
         ChatMessage userMsg = ChatMessage.builder()
                 .sessionId(session.getSessionId())
                 .userId(userId)
@@ -43,7 +42,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        // Tạo tin nhắn AI
         ChatMessage aiMsg = ChatMessage.builder()
                 .sessionId(session.getSessionId())
                 .userId(userId)
@@ -53,7 +51,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                 .timestamp(LocalDateTime.now().plusSeconds(1)) // Đảm bảo tin nhắn AI đến sau
                 .build();
 
-        // Lưu tin nhắn
         chatMessageRepository.save(userMsg);
         chatMessageRepository.save(aiMsg);
 
@@ -72,7 +69,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     @Override
     @Transactional
     public ChatSession createSession(String userId, String model) {
-        // Tạo ID ngẫu nhiên cho phiên chat
         String sessionId = UUID.randomUUID().toString();
 
         ChatSession session = ChatSession.builder()
@@ -94,7 +90,6 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
 
             List<ChatMessage> messages;
             if (sessionId != null && !sessionId.isEmpty()) {
-                // Nếu có sessionId, lấy tin nhắn theo phiên
                 messages = chatMessageRepository.findBySessionIdOrderByTimestampAsc(sessionId);
             } else if (userId != null && !userId.isEmpty()) {
                 messages = chatMessageRepository.findByUserIdOrderByTimestampDesc(userId);
@@ -102,14 +97,12 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                     messages = messages.subList(0, limit);
                 }
             } else {
-                // Không có thông tin để lấy lịch sử
                 return MessageHistoryResponse.builder()
                         .success(false)
                         .error("Thiếu thông tin sessionId hoặc userId")
                         .build();
             }
 
-            // Chuyển đổi thành định dạng cần thiết cho response
             List<Map<String, String>> formattedMessages = messages.stream()
                     .map(message -> {
                         Map<String, String> msgMap = new HashMap<>();
@@ -146,9 +139,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     public List<ChatBotRequest.MessageContext> getContextFromHistory(String sessionId, Integer limit) {
         List<ChatMessage> messages = chatMessageRepository.findBySessionIdOrderByTimestampAsc(sessionId);
 
-        // Giới hạn số lượng tin nhắn nếu cần
         if (limit != null && limit > 0 && messages.size() > limit) {
-            // Lấy tin nhắn mới nhất theo limit
             messages = messages.subList(messages.size() - limit, messages.size());
         }
 
@@ -164,7 +155,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     @Override
     public List<ChatSession> getChatSessionsByUserId(String userId) {
         if (userId == null || userId.isEmpty()) {
-            throw new IllegalArgumentException("UserId cannot be null or empty");
+            throw new IllegalArgumentException("UserId không duoc để trống");
         }
         return chatSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }

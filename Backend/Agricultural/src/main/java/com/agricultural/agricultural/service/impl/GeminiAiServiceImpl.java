@@ -73,26 +73,25 @@ public class GeminiAiServiceImpl implements GeminiAiService {
     @Override
     public ChatResponse generateContent(ChatRequest request) {
         try {
-            log.info("Sending request to Gemini API: {}", request.getMessage());
+            log.info("Gửi yêu cầu đến Gemini API: {}", request.getMessage());
             
             String apiUrl;
             if (aiConfig.getGemini() != null && aiConfig.getGemini().getEndpoint() != null && aiConfig.getGemini().getEndpoint().getText() != null) {
                 apiUrl = aiConfig.getGemini().getEndpoint().getText();
             } else if (aiConfig.getGemini() != null && aiConfig.getGemini().getApi() != null && aiConfig.getGemini().getApi().getUrl() != null) {
                 apiUrl = aiConfig.getGemini().getApi().getUrl();
-                log.warn("Endpoint text is null, using API URL instead: {}", apiUrl);
+                log.warn("Văn bản điểm cuối là null, thay vào đó hãy sử dụng URL API: {}", apiUrl);
             } else {
                 apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-                log.warn("No Gemini endpoint configured, using default URL: {}", apiUrl);
+                log.warn("Không có điểm cuối Gemini nào được cấu hình, sử dụng URL mặc định: {}", apiUrl);
             }
             
-            // Lấy API key từ cấu hình
             String apiKey;
             if (aiConfig.getGemini() != null && aiConfig.getGemini().getApi() != null && aiConfig.getGemini().getApi().getKey() != null) {
                 apiKey = aiConfig.getGemini().getApi().getKey();
             } else {
                 apiKey = "DEFAULT_API_KEY";
-                log.error("No Gemini API key configured, using default (which will fail)");
+                log.error("Không có khóa API Gemini được cấu hình, sử dụng mặc định (sẽ không thành công)");
             }
             
             // Thêm API key vào URL
@@ -147,16 +146,16 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                         .build();
             }
         } catch (RestClientException e) {
-            log.error("Rest client error when calling Gemini API", e);
+            log.error("Lỗi máy khách khi gọi API Gemini", e);
             return ChatResponse.builder()
                     .success(false)
-                    .error("Error connecting to Gemini API: " + e.getMessage())
+                    .error("Lỗi khi kết nối với Gemini API: " + e.getMessage())
                     .build();
         } catch (Exception e) {
-            log.error("Unexpected error when calling Gemini API", e);
+            log.error("Lỗi không mong muốn khi gọi API Gemini", e);
             return ChatResponse.builder()
                     .success(false)
-                    .error("Unexpected error: " + e.getMessage())
+                    .error("Lỗi không mong muốn: " + e.getMessage())
                     .build();
         }
     }
@@ -164,7 +163,7 @@ public class GeminiAiServiceImpl implements GeminiAiService {
     @Override
     public ChatResponse processChatBot(ChatBotRequest request) {
         try {
-            log.info("Processing chatbot request with Gemini: {}", request.getMessage());
+            log.info("Xử lý yêu cầu chatbot với Gemini: {}", request.getMessage());
             
             List<MarketPlaceDTO> relatedProducts = findRelatedProducts(request.getMessage());
             boolean isProductQuery = isProductRelatedQuery(request.getMessage());
@@ -175,10 +174,10 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 apiUrl = aiConfig.getGemini().getEndpoint().getText();
             } else if (aiConfig.getGemini() != null && aiConfig.getGemini().getApi() != null && aiConfig.getGemini().getApi().getUrl() != null) {
                 apiUrl = aiConfig.getGemini().getApi().getUrl();
-                log.warn("Endpoint text is null, using API URL instead: {}", apiUrl);
+                log.warn("Văn bản điểm cuối là null, thay vào đó hãy sử dụng URL API: {}", apiUrl);
             } else {
                 apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-                log.warn("No Gemini endpoint configured, using default URL: {}", apiUrl);
+                log.warn("Không có điểm cuối Gemini nào được cấu hình, sử dụng URL mặc định: {}", apiUrl);
             }
             
             String apiKey;
@@ -186,7 +185,7 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 apiKey = aiConfig.getGemini().getApi().getKey();
             } else {
                 apiKey = "DEFAULT_API_KEY";
-                log.error("No Gemini API key configured, using default (which will fail)");
+                log.error("Không có khóa API Gemini được cấu hình, sử dụng mặc định (sẽ không thành công)");
             }
             
             // Thêm API key vào URL
@@ -207,7 +206,7 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                     "  + Dự báo thời tiết nông vụ\n" +
                     "  + Trợ lý AI hỗ trợ các vấn đề nông nghiệp\n" +
                     "  + Đăng ký gói thành viên để nhận thêm quyền lợi\n" +
-                    "- Năm phát triển: 2023-2024\n" +
+                    "- Năm phát triển: 2024-2025\n" +
                     "- Công nghệ: Java Spring Boot, ReactJS, AI\n";
 
             if (request.getContext() != null && !request.getContext().isEmpty()) {
@@ -294,23 +293,23 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 
                 return response;
             } else {
-                log.error("Error calling Gemini API: {}", responseEntity.getStatusCode());
+                log.error("Lỗi khi gọi API Gemini: {}", responseEntity.getStatusCode());
                 return ChatResponse.builder()
                         .success(false)
-                        .error("Error calling Gemini API: " + responseEntity.getStatusCode())
+                        .error("Lỗi khi gọi API Gemini: " + responseEntity.getStatusCode())
                         .build();
             }
         } catch (RestClientException e) {
-            log.error("Rest client error when calling Gemini API", e);
+            log.error("Lỗi máy khách khi gọi API Gemini", e);
             return ChatResponse.builder()
                     .success(false)
-                    .error("Error connecting to Gemini API: " + e.getMessage())
+                    .error("Lỗi khi kết nối với Gemini API: " + e.getMessage())
                     .build();
         } catch (Exception e) {
-            log.error("Unexpected error when calling Gemini API", e);
+            log.error("Lỗi không mong muốn khi gọi API Gemini", e);
             return ChatResponse.builder()
                     .success(false)
-                    .error("Unexpected error: " + e.getMessage())
+                    .error("Lỗi không mong muốn: " + e.getMessage())
                     .build();
         }
     }
@@ -318,19 +317,19 @@ public class GeminiAiServiceImpl implements GeminiAiService {
     @Override
     public MessageHistoryResponse getMessageHistory(MessageHistoryRequest request) {
         try {
-            log.info("Getting message history for session: {}", request.getSessionId());
+            log.info("Nhận lịch sử tin nhắn cho phiên: {}", request.getSessionId());
             
             // Đầu tiên thử lấy từ database thông qua ChatHistoryService
             MessageHistoryResponse dbResponse = chatHistoryService.getMessageHistory(request);
             
             // Nếu có dữ liệu từ DB thì trả về
             if (dbResponse.isSuccess() && dbResponse.getMessages() != null && !dbResponse.getMessages().isEmpty()) {
-                log.info("Retrieved message history from database");
+                log.info("Lấy lại lịch sử tin nhắn từ cơ sở dữ liệu");
                 return dbResponse;
             }
             
 
-            log.info("Falling back to in-memory message history");
+            log.info("Quay lại lịch sử tin nhắn trong bộ nhớ");
             String sessionId = request.getSessionId() != null ? request.getSessionId() : request.getUserId();
             
             List<Map<String, String>> history = chatHistory.getOrDefault(sessionId, new ArrayList<>());
@@ -347,10 +346,10 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                     .build();
             
         } catch (Exception e) {
-            log.error("Error getting message history", e);
+            log.error("Lỗi khi lấy lịch sử tin nhắn", e);
             return MessageHistoryResponse.builder()
                     .success(false)
-                    .error("Error getting message history: " + e.getMessage())
+                    .error("Lỗi khi lấy lịch sử tin nhắn: " + e.getMessage())
                     .build();
         }
     }
@@ -377,10 +376,10 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                     .success(true)
                     .build();
         } catch (JsonProcessingException e) {
-            log.error("Error parsing Gemini response", e);
+            log.error("Lỗi khi phân tích phản hồi của Gemini", e);
             return ChatResponse.builder()
                     .success(false)
-                    .error("Error parsing Gemini response: " + e.getMessage())
+                    .error("Lỗi khi phân tích phản hồi của Gemini: " + e.getMessage())
                     .build();
         }
     }
@@ -413,7 +412,7 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 chatHistory.put(sessionId, history.subList(history.size() - 100, history.size()));
             }
         } catch (Exception e) {
-            log.error("Error saving to chat history", e);
+            log.error("Lỗi khi lưu vào lịch sử trò chuyện", e);
         }
     }
 
@@ -691,7 +690,6 @@ public class GeminiAiServiceImpl implements GeminiAiService {
                 "about us", "liên hệ", "contact", "thông tin", "info"
         );
         
-        // Kiểm tra xem có chứa bất kỳ từ khoá nào không
         for (String keyword : websiteKeywords) {
             if (lowercaseQuery.contains(keyword)) {
                 return true;

@@ -159,14 +159,12 @@ public class ForumReactionServiceImpl implements IForumReactionService {
         List<Object[]> results = forumReactionRepository.countReactionsByReplyIdGroupByType(replyId);
         Map<String, Integer> countMap = new HashMap<>();
         
-        // Chuyển đổi kết quả từ query thành map
         for (Object[] result : results) {
             ReactionType type = (ReactionType) result[0];
             Long count = (Long) result[1];
             countMap.put(type.name(), count.intValue());
         }
         
-        // Thêm các loại reaction chưa có với giá trị 0
         for (ReactionType type : ReactionType.values()) {
             countMap.putIfAbsent(type.name(), 0);
         }

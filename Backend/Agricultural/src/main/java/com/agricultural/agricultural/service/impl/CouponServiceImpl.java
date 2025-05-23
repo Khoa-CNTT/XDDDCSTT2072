@@ -47,7 +47,6 @@ public class CouponServiceImpl implements ICouponService {
             throw new BadRequestException("Mã giảm giá đã tồn tại: " + request.getCode());
         }
         
-        // Chuyển đổi và lưu coupon
         Coupon coupon = couponMapper.toEntity(request);
         coupon = couponRepository.save(coupon);
         
@@ -60,14 +59,11 @@ public class CouponServiceImpl implements ICouponService {
     public CouponDTO updateCoupon(Integer id, CouponRequest request) {
         log.info("Cập nhật mã giảm giá ID: {}", id);
         
-        // Kiểm tra valid
         request.validateData();
         
-        // Tìm coupon
         Coupon coupon = couponRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy mã giảm giá ID: " + id));
         
-        // Kiểm tra code đã tồn tại chưa (nếu thay đổi code)
         if (!coupon.getCode().equals(request.getCode()) && couponRepository.existsByCode(request.getCode())) {
             throw new BadRequestException("Mã giảm giá đã tồn tại: " + request.getCode());
         }
@@ -206,26 +202,20 @@ public class CouponServiceImpl implements ICouponService {
     public BigDecimal applyCoupon(Integer orderId, String couponCode) {
         log.info("Áp dụng mã giảm giá: {} cho đơn hàng ID: {}", couponCode, orderId);
         
-        // Tìm đơn hàng
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng ID: " + orderId));
         
-        // Tìm coupon
         Coupon coupon = couponRepository.findByCode(couponCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Mã giảm giá không tồn tại: " + couponCode));
         
-        // Kiểm tra đơn hàng đã áp dụng coupon này chưa
         if (orderCouponRepository.existsByOrderIdAndCouponId(orderId, coupon.getId())) {
             throw new BadRequestException("Đơn hàng đã áp dụng mã giảm giá này rồi");
         }
         
-        // Kiểm tra coupon có hợp lệ không
         validateCoupon(couponCode, order.getBuyerId(), order.getSubtotal());
         
-        // Tính số tiền giảm giá
         BigDecimal discountAmount = coupon.calculateDiscount(order.getSubtotal());
         
-        // Tạo bản ghi order_coupon
         OrderCoupon orderCoupon = OrderCoupon.builder()
                 .orderId(orderId)
                 .couponId(coupon.getId())
@@ -234,7 +224,6 @@ public class CouponServiceImpl implements ICouponService {
         
         orderCouponRepository.save(orderCoupon);
         
-        // Tăng số lượng sử dụng ngay khi áp dụng mã giảm giá
         if (coupon.getUsageCount() == null) {
             coupon.setUsageCount(1);
         } else {
@@ -260,18 +249,14 @@ public class CouponServiceImpl implements ICouponService {
     public void removeCouponFromOrder(Integer orderId, Integer couponId) {
         log.info("Hủy áp dụng mã giảm giá ID: {} cho đơn hàng ID: {}", couponId, orderId);
         
-        // Tìm đơn hàng
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng ID: " + orderId));
         
-        // Tìm order_coupon
         OrderCoupon orderCoupon = orderCouponRepository.findByOrderIdAndCouponId(orderId, couponId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy mã giảm giá áp dụng cho đơn hàng này"));
         
-        // Xóa order_coupon
         orderCouponRepository.delete(orderCoupon);
         
-        // Cập nhật lại đơn hàng
         order.setDiscountAmount(BigDecimal.ZERO);
         order.calculateTotals();
         orderRepository.save(order);
@@ -287,33 +272,24 @@ public class CouponServiceImpl implements ICouponService {
         Coupon coupon = couponRepository.findByCode(couponCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Mã giảm giá không tồn tại: " + couponCode));
         
-        // Kiểm tra còn hiệu lực không
         if (!coupon.isValid()) {
             return BigDecimal.ZERO;
         }
         
-        // Tính toán giảm giá
         return coupon.calculateDiscount(orderAmount);
     }
 
-    /**
-     * Phương thức đồng bộ số lần sử dụng của coupon từ dữ liệu thực tế
-     * Số lần sử dụng = số người dùng khác nhau đã áp dụng coupon
-     */
+
     @Override
     @Transactional
     public void synchronizeCouponUsage(Integer couponId) {
         log.info("Chức năng đồng bộ đã bị vô hiệu hóa, giữ nguyên giá trị hiện tại");
         // Không thực hiện bất kỳ thay đổi nào đối với giá trị usage_count
     }
-    
-    /**
-     * Phương thức đồng bộ số lần sử dụng tất cả coupon
-     */
+
     @Override
     @Transactional
     public void synchronizeAllCouponsUsage() {
         log.info("Chức năng đồng bộ tất cả đã bị vô hiệu hóa, giữ nguyên giá trị hiện tại trong database");
-        // Không thực hiện thay đổi nào đối với giá trị usage_count
     }
 } 

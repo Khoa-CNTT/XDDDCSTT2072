@@ -46,7 +46,6 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
             throw new BadRequestException("Tên file không được để trống");
         }
 
-        // Log thông tin file trước khi upload
         System.out.println("Đang upload file: " + file.getOriginalFilename() +
                 ", MIME type: " + file.getContentType() +
                 ", Kích thước: " + file.getSize() + " bytes");
@@ -89,14 +88,12 @@ public class CloudinaryServiceImpl implements ICloudinaryService {
             throw new BadRequestException("URL không được để trống");
         }
 
-        // Cloudinary URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/{public_id}.{format}
         String[] parts = cloudinaryUrl.split("/upload/");
         if (parts.length < 2) {
             throw new BadRequestException("URL không hợp lệ");
         }
 
         String publicIdWithVersion = parts[1];
-        // Remove version if exists (v1234567890/)
         if (publicIdWithVersion.startsWith("v")) {
             int slashIndex = publicIdWithVersion.indexOf("/");
             if (slashIndex != -1) {

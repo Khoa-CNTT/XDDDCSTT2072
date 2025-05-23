@@ -152,9 +152,7 @@ public class ForumReplyService implements IForumReplyService {
                 notificationService.createNotification(notification);
             }
         } else {
-            // Đây là bình luận gốc (không phải reply), gửi thông báo cho chủ bài viết nếu cần
             if (post.getUser().getId() != userId) {
-                // Tạo thông báo về bình luận mới
                 NotificationDTO notification = NotificationDTO.builder()
                         .receiverId(post.getUser().getId())
                         .senderId(userId)
@@ -199,10 +197,8 @@ public class ForumReplyService implements IForumReplyService {
             throw new BadRequestException("Bạn không có quyền sửa bình luận này");
         }
         
-        // Kiểm tra nội dung có chứa từ ngữ không phù hợp không
         boolean containsProfanity = profanityFilterService.containsProfanity(content);
         
-        // Lọc nội dung bình luận nếu có từ ngữ tục tĩu
         String filteredContent = profanityFilterService.filterProfanity(content);
         
         reply.setContent(filteredContent);
