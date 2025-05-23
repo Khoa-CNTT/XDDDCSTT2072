@@ -49,13 +49,11 @@ public class ForumPostImageServiceImpl implements IForumPostImageService {
         ForumPostImage image = forumPostImageMapper.toEntity(imageDTO);
         image.setPost(post);
 
-        // Nếu không có displayOrder, lấy thứ tự cao nhất + 1
         if (image.getDisplayOrder() == null) {
             Integer maxOrder = forumPostImageRepository.findMaxDisplayOrderByPostId(postId);
             image.setDisplayOrder(maxOrder != null ? maxOrder + 1 : 0);
         }
 
-        // Lưu vào database
         image = forumPostImageRepository.save(image);
         return forumPostImageMapper.toDTO(image);
     }

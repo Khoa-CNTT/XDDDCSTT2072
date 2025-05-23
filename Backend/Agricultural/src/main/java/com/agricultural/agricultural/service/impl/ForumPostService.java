@@ -105,20 +105,15 @@ public class ForumPostService implements IForumPostService {
         
         ForumPostDTO createdPostDTO = forumPostMapper.toDTO(forumPost);
         
-        // Nếu có ảnh trong DTO
         if (forumPostDto.getImages() != null && !forumPostDto.getImages().isEmpty()) {
-            // Thêm ảnh vào bài viết
             try {
                 for (ForumPostImageDTO imageDTO : forumPostDto.getImages()) {
-                    // Đảm bảo có postId
                     imageDTO.setPostId(forumPost.getId());
-                    // Dùng ForumPostImage service để lưu ảnh
                     ForumPostImage image = forumPostImageMapper.toEntity(imageDTO);
                     image.setPost(forumPost);
                     forumPost.addImage(image);
                 }
                 
-                // Lưu lại bài viết với các ảnh
                 forumPost = forumPostRepository.save(forumPost);
                 
                 createdPostDTO = forumPostMapper.toDTO(forumPost);

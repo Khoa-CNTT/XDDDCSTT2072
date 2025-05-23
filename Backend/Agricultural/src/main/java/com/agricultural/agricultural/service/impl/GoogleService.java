@@ -60,7 +60,7 @@ public class GoogleService implements IGoogleService {
             logger.info("Đang xử lý đăng nhập Google với token: " + (idToken != null ? idToken.substring(0, Math.min(idToken.length(), 20)) + "..." : "null"));
             
             // Thêm log để debug Client ID từ cấu hình
-            logger.info("Configured Google client ID: " + googleClientId);
+            logger.info("Đã cấu hình ID máy khách Google: " + googleClientId);
             logger.info("Đang thử xác thực với danh sách Client ID: " + TRUSTED_CLIENT_IDS);
             
             // Xác thực token ID từ Google - chấp nhận nhiều Client IDs
@@ -70,7 +70,6 @@ public class GoogleService implements IGoogleService {
                     .setAudience(TRUSTED_CLIENT_IDS)
                     .build();
             
-            // Xác thực token
             GoogleIdToken googleIdToken = null;
             try {
                 googleIdToken = verifier.verify(idToken);

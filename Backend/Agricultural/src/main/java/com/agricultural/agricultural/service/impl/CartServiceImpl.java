@@ -121,32 +121,26 @@ public class CartServiceImpl implements ICartService {
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
-        // Lấy thông tin sản phẩm
         MarketPlace product = marketPlaceRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm với ID: " + productId));
         
-        // Kiểm tra người mua không phải là người bán của sản phẩm
         if (product.getUser() != null && Objects.equals(product.getUser().getId(), currentUser.getId())) {
             throw new BadRequestException("Bạn không thể mua sản phẩm do chính mình đăng bán");
         }
         
-        // Kiểm tra số lượng tồn kho
         if (product.getQuantity() < quantity) {
             throw new BadRequestException("Sản phẩm " + product.getProductName() + " chỉ còn " + product.getQuantity() + " sản phẩm");
         }
         
-        // Kiểm tra variant nếu có
         ProductVariant variant = null;
         if (variantId != null) {
             variant = productVariantRepository.findById(variantId)
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy biến thể sản phẩm với ID: " + variantId));
             
-            // Kiểm tra variant có thuộc sản phẩm không
             if (!Objects.equals(variant.getProduct().getId(), productId)) {
                 throw new BadRequestException("Biến thể sản phẩm không thuộc sản phẩm này");
             }
             
-            // Kiểm tra số lượng tồn kho của variant
             if (variant.getQuantity() < quantity) {
                 throw new BadRequestException("Biến thể " + variant.getName() + " chỉ còn " + variant.getQuantity() + " sản phẩm");
             }
@@ -229,20 +223,16 @@ public class CartServiceImpl implements ICartService {
             throw new BadRequestException("Số lượng phải lớn hơn 0");
         }
         
-        // Lấy thông tin người dùng và giỏ hàng
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
-        // Lấy thông tin cart item
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm trong giỏ hàng với ID: " + cartItemId));
         
-        // Kiểm tra cart item có thuộc giỏ hàng của người dùng không
         if (!Objects.equals(cartItem.getCart().getId(), cart.getId())) {
             throw new BadRequestException("Sản phẩm này không thuộc giỏ hàng của bạn");
         }
         
-        // Kiểm tra số lượng tồn kho
         MarketPlace product = cartItem.getProduct();
         ProductVariant variant = cartItem.getVariant();
         
@@ -389,18 +379,13 @@ public class CartServiceImpl implements ICartService {
     @Override
     @Transactional
     public CartDTO calculateShippingFee(Integer addressId) {
-        // Lấy thông tin người dùng và giỏ hàng
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
-        // TODO: Tính toán phí vận chuyển dựa trên địa chỉ và sản phẩm trong giỏ hàng
-        // Đây chỉ là phí vận chuyển giả định để demo
         BigDecimal shippingFee = new BigDecimal("30000"); // 30.000 VND
         
-        // Tính thuế (nếu cần)
         BigDecimal tax = cart.getSubtotal().multiply(new BigDecimal("0.1")); // 10% thuế
         
-        // Trả về thông tin giỏ hàng
         CartDTO cartDTO = cartMapper.toDTO(cart);
         cartDTO.setCartItems(cartMapper.toCartItemDTOList(cart.getCartItems()));
         cartDTO.setEstimatedShippingFee(shippingFee);
@@ -415,13 +400,11 @@ public class CartServiceImpl implements ICartService {
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
-        // Cập nhật trạng thái chọn cho các item
         if (cartItemIds != null && !cartItemIds.isEmpty()) {
             for (Integer itemId : cartItemIds) {
                 CartItem cartItem = cartItemRepository.findById(itemId)
                         .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm trong giỏ hàng với ID: " + itemId));
                 
-                // Kiểm tra cart item có thuộc giỏ hàng của người dùng không
                 if (!Objects.equals(cartItem.getCart().getId(), cart.getId())) {
                     throw new BadRequestException("Sản phẩm này không thuộc giỏ hàng của bạn");
                 }
@@ -431,11 +414,9 @@ public class CartServiceImpl implements ICartService {
             }
         }
         
-        // Tính lại tổng tiền
         cart.recalculateTotals();
         cartRepository.save(cart);
         
-        // Trả về thông tin giỏ hàng
         CartDTO cartDTO = cartMapper.toDTO(cart);
         cartDTO.setCartItems(cartMapper.toCartItemDTOList(cart.getCartItems()));
         
@@ -445,21 +426,17 @@ public class CartServiceImpl implements ICartService {
     @Override
     @Transactional
     public CartDTO selectAllCartItems(boolean selected) {
-        // Lấy thông tin người dùng và giỏ hàng
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
-        // Cập nhật trạng thái chọn cho tất cả item
         for (CartItem cartItem : cart.getCartItems()) {
             cartItem.setIsSelected(selected);
             cartItemRepository.save(cartItem);
         }
         
-        // Tính lại tổng tiền
         cart.recalculateTotals();
         cartRepository.save(cart);
         
-        // Trả về thông tin giỏ hàng
         CartDTO cartDTO = cartMapper.toDTO(cart);
         cartDTO.setCartItems(cartMapper.toCartItemDTOList(cart.getCartItems()));
         
@@ -469,42 +446,32 @@ public class CartServiceImpl implements ICartService {
     @Override
     @Transactional
     public CartDTO applyVoucher(String voucherCode) {
-        // Lấy thông tin người dùng và giỏ hàng
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
-        // Kiểm tra mã voucher
         Voucher voucher = voucherRepository.findByCodeAndIsActiveTrue(voucherCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy mã giảm giá hợp lệ: " + voucherCode));
         
-        // Kiểm tra voucher có hợp lệ không
         if (!voucher.isValid()) {
             throw new BadRequestException("Mã giảm giá đã hết hạn hoặc đã hết lượt sử dụng");
         }
         
-        // Kiểm tra voucher có thuộc về người dùng hiện tại không (nếu voucher chỉ định người dùng)
         if (voucher.getShopId() != null && !voucher.getShopId().equals(currentUser.getId())) {
             throw new BadRequestException("Mã giảm giá này không thuộc về bạn");
         }
         
-        // Kiểm tra điều kiện áp dụng
         if (voucher.getMinOrderAmount() != null && cart.getSubtotal().compareTo(voucher.getMinOrderAmount()) < 0) {
             throw new BadRequestException("Đơn hàng của bạn chưa đạt giá trị tối thiểu " 
                     + voucher.getMinOrderAmount() + "đ để áp dụng mã giảm giá này");
         }
         
-        // Áp dụng voucher dựa vào loại
         if ("PLATFORM".equals(voucher.getType())) {
-            // Voucher toàn sàn
             cart.setAppliedVoucherCode(voucherCode);
             
-            // Tính giảm giá
             BigDecimal discount = voucher.calculateDiscount(cart.getSubtotal(), cart.getShippingFee());
             cart.setDiscountAmount(discount);
             
         } else if ("SHOP".equals(voucher.getType())) {
-            // Voucher của shop
-            // Kiểm tra giỏ hàng có sản phẩm của shop này không
             boolean hasShopItems = cart.getCartItems().stream()
                     .anyMatch(item -> Objects.equals(item.getShopId(), voucher.getShopId()) && Boolean.TRUE.equals(item.getIsSelected()));
             
@@ -512,21 +479,17 @@ public class CartServiceImpl implements ICartService {
                 throw new BadRequestException("Bạn không có sản phẩm nào từ shop " + voucher.getShopName() + " trong giỏ hàng");
             }
             
-            // Tính tổng giá trị sản phẩm của shop
             BigDecimal shopSubtotal = cart.getShopSubtotal(voucher.getShopId());
             
-            // Kiểm tra điều kiện áp dụng với tổng shop
             if (voucher.getMinOrderAmount() != null && shopSubtotal.compareTo(voucher.getMinOrderAmount()) < 0) {
                 throw new BadRequestException("Tổng giá trị sản phẩm từ shop " + voucher.getShopName() 
                         + " chưa đạt giá trị tối thiểu " + voucher.getMinOrderAmount() + "đ để áp dụng mã giảm giá này");
             }
             
-            // Lưu thông tin voucher shop
             String shopVouchers = cart.getAppliedShopVouchers();
             if (shopVouchers == null) {
                 shopVouchers = voucher.getShopId() + ":" + voucherCode;
             } else {
-                // Kiểm tra đã có voucher của shop này chưa
                 String[] vouchers = shopVouchers.split(",");
                 StringBuilder newVouchers = new StringBuilder();
                 boolean replaced = false;
@@ -534,21 +497,17 @@ public class CartServiceImpl implements ICartService {
                 for (String v : vouchers) {
                     String[] parts = v.split(":");
                     if (parts.length == 2 && parts[0].equals(voucher.getShopId().toString())) {
-                        // Thay thế voucher cũ
                         newVouchers.append(voucher.getShopId()).append(":").append(voucherCode);
                         replaced = true;
                     } else {
-                        // Giữ nguyên voucher của shop khác
                         newVouchers.append(v);
                     }
                     newVouchers.append(",");
                 }
                 
                 if (!replaced) {
-                    // Thêm mới nếu chưa có
                     newVouchers.append(voucher.getShopId()).append(":").append(voucherCode);
                 } else {
-                    // Xóa dấu phẩy cuối cùng nếu thay thế
                     newVouchers.deleteCharAt(newVouchers.length() - 1);
                 }
                 
@@ -557,23 +516,18 @@ public class CartServiceImpl implements ICartService {
             
             cart.setAppliedShopVouchers(shopVouchers);
             
-            // Áp dụng giảm giá cho sản phẩm của shop
             BigDecimal discount = voucher.calculateDiscount(shopSubtotal, null);
             
-            // Phân bổ giảm giá cho từng sản phẩm
             distributeDiscountToShopItems(cart, voucher.getShopId(), discount);
             
         } else if (Boolean.TRUE.equals(voucher.getIsShippingVoucher())) {
-            // Voucher miễn phí vận chuyển
             BigDecimal discount = voucher.calculateDiscount(cart.getSubtotal(), cart.getShippingFee());
             cart.setShippingDiscount(discount);
         }
         
-        // Tính lại tổng tiền
         cart.recalculateTotals();
         cartRepository.save(cart);
         
-        // Trả về thông tin giỏ hàng
         CartDTO cartDTO = cartMapper.toDTO(cart);
         cartDTO.setCartItems(cartMapper.toCartItemDTOList(cart.getCartItems()));
         
@@ -582,12 +536,10 @@ public class CartServiceImpl implements ICartService {
     
 
     private void distributeDiscountToShopItems(Cart cart, Integer shopId, BigDecimal totalDiscount) {
-        // Lấy danh sách sản phẩm được chọn của shop
         List<CartItem> shopItems = cart.getCartItems().stream()
                 .filter(item -> Objects.equals(item.getShopId(), shopId) && Boolean.TRUE.equals(item.getIsSelected()))
                 .toList();
         
-        // Tính tổng giá trị sản phẩm của shop
         BigDecimal shopSubtotal = BigDecimal.ZERO;
         for (CartItem item : shopItems) {
             shopSubtotal = shopSubtotal.add(item.getTotalPrice());
@@ -606,17 +558,14 @@ public class CartServiceImpl implements ICartService {
     @Override
     @Transactional
     public CartDTO removeVoucher(String type, Integer shopId) {
-        // Lấy thông tin người dùng và giỏ hàng
         User currentUser = getCurrentUser();
         Cart cart = getOrCreateCart(currentUser);
         
         if ("PLATFORM".equals(type)) {
-            // Xóa voucher toàn sàn
             cart.setAppliedVoucherCode(null);
             cart.setDiscountAmount(BigDecimal.ZERO);
             
         } else if ("SHOP".equals(type) && shopId != null) {
-            // Xóa voucher của shop
             String shopVouchers = cart.getAppliedShopVouchers();
             if (shopVouchers != null && !shopVouchers.isEmpty()) {
                 String[] vouchers = shopVouchers.split(",");
@@ -625,12 +574,10 @@ public class CartServiceImpl implements ICartService {
                 for (String v : vouchers) {
                     String[] parts = v.split(":");
                     if (parts.length == 2 && !parts[0].equals(shopId.toString())) {
-                        // Giữ lại voucher của các shop khác
                         newVouchers.append(v).append(",");
                     }
                 }
                 
-                // Xóa dấu phẩy cuối cùng nếu có
                 if (newVouchers.length() > 0 && newVouchers.charAt(newVouchers.length() - 1) == ',') {
                     newVouchers.deleteCharAt(newVouchers.length() - 1);
                 }
@@ -638,7 +585,6 @@ public class CartServiceImpl implements ICartService {
                 cart.setAppliedShopVouchers(newVouchers.toString());
             }
             
-            // Xóa giảm giá áp dụng cho sản phẩm của shop
             for (CartItem item : cart.getCartItems()) {
                 if (Objects.equals(item.getShopId(), shopId)) {
                     item.setDiscountAmount(BigDecimal.ZERO);
@@ -647,7 +593,6 @@ public class CartServiceImpl implements ICartService {
             }
             
         } else if ("SHIPPING".equals(type)) {
-            // Xóa voucher miễn phí vận chuyển
             cart.setShippingDiscount(BigDecimal.ZERO);
         }
         
@@ -689,29 +634,24 @@ public class CartServiceImpl implements ICartService {
             Integer shopId = entry.getKey();
             List<CartItem> shopItems = entry.getValue();
             
-            // Lấy thông tin shop
             String shopName = "";
             if (!shopItems.isEmpty() && shopItems.get(0).getShopName() != null) {
                 shopName = shopItems.get(0).getShopName();
             }
             
-            // Tạo shop group
             CartResponseDTO.ShopGroupDTO shopGroup = CartResponseDTO.ShopGroupDTO.builder()
                     .shopId(shopId)
                     .shopName(shopName)
                     .shopSubtotal(cart.getShopSubtotal(shopId))
                     .build();
             
-            // Thêm các item của shop
             shopGroup.setItems(cartMapper.toCartItemDTOList(shopItems));
             
-            // Thêm vào danh sách
             shopGroups.add(shopGroup);
         }
         
         response.setShopGroups(shopGroups);
         
-        // Lấy danh sách voucher
         List<Voucher> platformVouchers = voucherRepository.findAllActivePlatformVouchers(LocalDateTime.now());
         List<VoucherDTO> availableVouchers = platformVouchers.stream()
                 .map(this::convertToVoucherDTO)
@@ -719,7 +659,6 @@ public class CartServiceImpl implements ICartService {
         
         response.setAvailableVouchers(availableVouchers);
         
-        // Thêm voucher shop cho mỗi shop group
         for (CartResponseDTO.ShopGroupDTO shopGroup : shopGroups) {
             List<Voucher> shopVouchers = voucherRepository.findAllActiveShopVouchers(LocalDateTime.now(), shopGroup.getShopId());
             List<VoucherDTO> shopVoucherDTOs = shopVouchers.stream()

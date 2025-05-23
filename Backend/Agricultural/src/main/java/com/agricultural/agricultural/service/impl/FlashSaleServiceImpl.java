@@ -57,7 +57,6 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
     public FlashSaleResponse updateFlashSale(Integer id, FlashSaleRequest request) {
         log.info("Cập nhật flash sale ID {}: {}", id, request);
         
-        // Tìm flash sale theo ID
         FlashSale flashSale = flashSaleRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Flash sale không tồn tại với ID: " + id));
         
@@ -93,7 +92,6 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
     public FlashSaleResponse getFlashSaleById(Integer id) {
         log.info("Lấy thông tin flash sale ID: {}", id);
         
-        // Tìm flash sale theo ID
         FlashSale flashSale = flashSaleRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Flash sale không tồn tại với ID: " + id));
         
@@ -104,7 +102,6 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
     public List<FlashSaleResponse> getFlashSalesByStatus(FlashSaleStatus status) {
         log.info("Lấy danh sách flash sale theo trạng thái: {}", status);
         
-        // Lấy danh sách flash sale theo trạng thái
         List<FlashSale> flashSales = flashSaleRepository.findByStatus(status);
         
         return flashSales.stream()
@@ -116,7 +113,6 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
     public List<FlashSaleResponse> getActiveFlashSales() {
         log.info("Lấy danh sách flash sale đang hoạt động");
         
-        // Lấy danh sách flash sale đang hoạt động
         List<FlashSale> activeFlashSales = flashSaleRepository.findCurrentlyActiveFlashSales(
             LocalDateTime.now(), FlashSaleStatus.ACTIVE);
         
@@ -129,7 +125,6 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
     public List<FlashSaleResponse> getUpcomingFlashSales() {
         log.info("Lấy danh sách flash sale sắp diễn ra");
         
-        // Lấy danh sách flash sale sắp diễn ra
         List<FlashSale> upcomingFlashSales = flashSaleRepository.findUpcomingFlashSales(
             LocalDateTime.now(), FlashSaleStatus.UPCOMING);
         
@@ -143,21 +138,17 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
     public FlashSaleResponse addProductToFlashSale(Integer flashSaleId, FlashSaleItemRequest request) {
         log.info("Thêm sản phẩm vào flash sale ID {}: {}", flashSaleId, request);
         
-        // Tìm flash sale theo ID
         FlashSale flashSale = flashSaleRepository.findById(flashSaleId)
             .orElseThrow(() -> new ResourceNotFoundException("Flash sale không tồn tại với ID: " + flashSaleId));
         
-        // Tìm sản phẩm theo ID
         MarketPlace product = marketPlaceRepository.findById(request.getProductId().intValue())
             .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại với ID: " + request.getProductId()));
         
-        // Kiểm tra xem sản phẩm đã tồn tại trong flash sale chưa
         flashSaleItemRepository.findByFlashSaleAndProduct(flashSale, product)
             .ifPresent(item -> {
                 throw new IllegalArgumentException("Sản phẩm đã tồn tại trong flash sale");
             });
         
-        // Tạo đối tượng flash sale item từ request
         FlashSaleItem flashSaleItem = new FlashSaleItem();
         flashSaleItem.setFlashSale(flashSale);
         flashSaleItem.setProduct(product);
@@ -166,7 +157,6 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
         flashSaleItem.setDiscountPrice(request.getDiscountPrice());
         flashSaleItem.setOriginalPrice(request.getOriginalPrice());
         
-        // Tính phần trăm giảm giá nếu không được cung cấp
         Integer discountPercentage = request.getDiscountPercentage();
         if (discountPercentage == null) {
             BigDecimal discount = request.getOriginalPrice().subtract(request.getDiscountPrice());
@@ -176,10 +166,8 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
         }
         flashSaleItem.setDiscountPercentage(discountPercentage);
         
-        // Thêm item vào flash sale
         flashSale.addItem(flashSaleItem);
         
-        // Lưu thay đổi vào database
         flashSaleItemRepository.save(flashSaleItem);
         FlashSale updatedFlashSale = flashSaleRepository.save(flashSale);
         
@@ -191,11 +179,9 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
     public FlashSaleResponse removeProductFromFlashSale(Integer flashSaleId, Integer productId) {
         log.info("Xóa sản phẩm ID {} khỏi flash sale ID {}", productId, flashSaleId);
         
-        // Tìm flash sale theo ID
         FlashSale flashSale = flashSaleRepository.findById(flashSaleId)
             .orElseThrow(() -> new ResourceNotFoundException("Flash sale không tồn tại với ID: " + flashSaleId));
         
-        // Tìm flash sale item theo flash sale ID và product ID
         FlashSaleItem flashSaleItem = flashSaleItemRepository.findByFlashSaleIdAndProductId(flashSaleId, productId)
             .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại trong flash sale"));
         
@@ -237,7 +223,6 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
         
         flashSaleItem.setSoldQuantity(flashSaleItem.getSoldQuantity() + quantitySold);
         
-        // Lưu thay đổi vào database
         flashSaleItemRepository.save(flashSaleItem);
     }
 
@@ -257,7 +242,6 @@ public class FlashSaleServiceImpl implements IFlashSaleService {
         FlashSaleItem flashSaleItem = flashSaleItemRepository.findActiveFlashSaleItemByProductId(productId)
             .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại trong flash sale đang hoạt động"));
         
-        // Lấy thông tin flash sale
         FlashSale flashSale = flashSaleItem.getFlashSale();
         
         return mapToFlashSaleResponse(flashSale);
